@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    tools:context=".MainActivity"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="100dp"
+        android:text="Number : 0"
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="24sp"></TextView>
+
+    <Button
+        android:id="@+id/counter_increase_btn"
+        android:layout_width="400dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="100dp"
+        android:text=" increase + 2"></Button>
+
+    <Button
+        android:id="@+id/counter_decrease_btn"
+        android:layout_width="400dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp"
+        android:text="decrease -2"></Button>
+
+    <Button
+        android:id="@+id/counter_back_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="50dp"
+        android:text="Back to Main" >
+
+    </Button>
+
+    <Button
+        android:id="@+id/counter_reset_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="50dp"
+        android:text="Reset" >
+
+    </Button>
+
+
+</androidx.appcompat.widget.LinearLayoutCompat>
