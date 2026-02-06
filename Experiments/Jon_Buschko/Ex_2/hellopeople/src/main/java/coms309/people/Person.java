@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 /**
  * Provides the Definition/Structure for the people row
  *
@@ -25,16 +27,20 @@ public class Person {
 
     private String vibe;
 
+    private List<String> interests;
+
+
 //    public Person(){
 //
 //    }
 
-    public Person(String firstName, String lastName, String address, String telephone, String vibe){
+    public Person(String firstName, String lastName, String address, String telephone, String vibe, List<String> interests){
         this.firstName = firstName;
         this.lastName = lastName;
         this.address = address;
         this.telephone = telephone;
         this.vibe = vibe;
+        this.interests = interests;
     }
 
 
@@ -83,12 +89,21 @@ public class Person {
         this.vibe = vibe;
     }
 
+    public List<String> getInterests() {
+        return this.interests;
+    }
+
+    public void setInterests(List<String> interests) {
+        this.interests = interests;
+    }
+
     @Override
     public String toString() {
         return firstName + " "
                 + lastName + " "
                 + address + " "
                 + telephone + " "
-                + vibe;
+                + vibe + " "
+                + interests;
     }
 }

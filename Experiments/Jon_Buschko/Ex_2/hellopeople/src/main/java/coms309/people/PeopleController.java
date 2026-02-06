@@ -3,9 +3,7 @@ package coms309.people;
 import org.springframework.web.bind.annotation.*;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Controller used to showcase Create and Read from a LIST
@@ -40,7 +38,7 @@ public class PeopleController {
     // It returns a string message in THIS example.
     // Note: To CREATE we use POST method
     @PostMapping("/people")
-    public  String createPerson(@RequestBody Person person) {
+    public String createPerson(@RequestBody Person person) {
         System.out.println(person);
         peopleList.put(person.getFirstName(), person);
         String s = "New person "+ person.getFirstName() + " Saved";
@@ -100,22 +98,122 @@ public class PeopleController {
         return peopleList;
     }
 
-    record MatchResult(String personA, String personB, boolean sameCity, String vibeA, String vibeB) {}
+    @DeleteMapping("/people")
+    public String deleteAllPeople() {
+        peopleList.clear();
+        return "Deleted all people";
+    }
 
+    // Searches for people based on the city they live in
+    @GetMapping("/people/city")
+    public List<Person> getByCity(@RequestParam("city") String city) {
+        List<Person> res = new ArrayList<>();
+        for (Person p : peopleList.values()) {
+            if (p.getAddress().contains(city))
+                res.add(p);
+        }
+        return res;
+    }
+
+    // Computes the compatibility score of every person based on the input name
+    // Then returns the top 3 most compatible people in comparison to the input
+    @GetMapping("/people/match/{name}")
+    public List<Map<String, Object>> topMatches(@PathVariable String name){
+        List<Map<String, Object>> res = new ArrayList<>();
+
+        Person PersonA = peopleList.get(name);
+
+        // Returns null instead of erroring when a non-existent person is input
+        if (PersonA == null) return res;
+
+        for (Person p : peopleList.values()) {
+            // Don't compare a person to themself
+            if(p.getFirstName().equals(name) || p.getLastName().equals(PersonA.getLastName())) continue;
+
+            int score = 0;
+
+            if (PersonA.getAddress().equalsIgnoreCase(p.getAddress())) score += 50;
+            if (PersonA.getVibe().equalsIgnoreCase(p.getVibe())) score += 20;
+            if (PersonA.getInterests().stream().anyMatch(p.getInterests()::contains)) score += 30;
+
+            Map<String, Object> match = new HashMap<>();
+            match.put("name", p.getFirstName());
+            match.put("score", score);
+
+            res.add(match);
+        }
+
+        res.sort((a, b) -> (int)b.get("score") - (int)a.get("score"));
+
+        return res;
+    }
+
+    // Compare the match potential of 2 specific people
     @GetMapping("/people/match/{p1}/{p2}")
-    public MatchResult getMatch(@PathVariable String p1, @PathVariable String p2) {
+    public LinkedHashMap<String, Object> getMatch(@PathVariable String p1, @PathVariable String p2) {
         Person Person1 = peopleList.get(p1);
         Person Person2 = peopleList.get(p2);
+        int score = 0;
         if (Person1 == null || Person2 == null) return null;
 
         boolean sameCity = (Person1.getAddress()).equalsIgnoreCase(Person2.getAddress());
 
-        return new MatchResult(
-                Person1.getFirstName(),
-                Person2.getFirstName(),
-                sameCity,
-                Person1.getVibe(),
-                Person2.getVibe()
-        );
+        if (sameCity) score += 50;
+        if (Person1.getVibe().equalsIgnoreCase(Person2.getVibe())) score += 20;
+        if (Person1.getInterests().stream().anyMatch(Person2.getInterests()::contains)) {
+            score += 30;
+        }
+        LinkedHashMap match = new LinkedHashMap();
+
+        match.put("PersonA", Person1.getFirstName());
+        match.put("PersonB", Person2.getFirstName());
+        match.put("SameCity", sameCity);
+        match.put("VibeA", Person1.getVibe());
+        match.put("VibeB", Person2.getVibe());
+        match.put("Compatibility%", score);
+        return match;
+    }
+
+    // Auto creates a few people for testing
+    @PostMapping("/people/seed")
+    public List<Person> createExamplePeople(){
+        List<Person> seeded = new ArrayList<>();
+
+        Person p1 = new Person();
+        p1.setFirstName("JJ");
+        p1.setLastName("Buschko");
+        p1.setAddress("Ames");
+        p1.setVibe("Chill");
+        p1.setInterests(new ArrayList<>(List.of("lifting", "compression", "space")));
+
+        Person p2 = new Person();
+        p2.setFirstName("Alex");
+        p2.setLastName("Smith");
+        p2.setAddress("Ames");
+        p2.setVibe("Chill");
+        p2.setInterests(new ArrayList<>(List.of("gaming", "space", "coding")));
+
+        Person p3 = new Person();
+        p3.setFirstName("Taylor");
+        p3.setLastName("Jones");
+        p3.setAddress("Des Moines");
+        p3.setVibe("Energetic");
+        p3.setInterests(new ArrayList<>(List.of("running", "music", "lifting")));
+
+        Person p4 = new Person();
+        p4.setFirstName("Sam");
+        p4.setLastName("Lee");
+        p4.setAddress("Ames");
+        p4.setVibe("Calm");
+        p4.setInterests(new ArrayList<>(List.of("reading", "coding", "space")));
+
+        List<Person> demo = List.of(p1, p2, p3, p4);
+
+        for (Person p : demo) {
+            peopleList.put(p.getFirstName(), p);
+            seeded.add(p);
+        }
+
+        return seeded;
     }
 } // end of people controller
