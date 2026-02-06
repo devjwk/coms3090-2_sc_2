@@ -3,7 +3,7 @@
     <style name="Base.Theme.AndroidExample" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-        <item name="android:statusBarColor">#64B641</item>
+        <item name="android:statusBarColor">#64B641</item>d
         <item name="android:windowLightStatusBar">true</item>
         <item name="backgroundColor">#E61616</item>
     </style>
