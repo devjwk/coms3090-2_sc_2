@@ -99,5 +99,23 @@ public class PeopleController {
         peopleList.remove(firstName);
         return peopleList;
     }
-} // end of people controller
 
+    record MatchResult(String personA, String personB, boolean sameCity, String vibeA, String vibeB) {}
+
+    @GetMapping("/people/match/{p1}/{p2}")
+    public MatchResult getMatch(@PathVariable String p1, @PathVariable String p2) {
+        Person Person1 = peopleList.get(p1);
+        Person Person2 = peopleList.get(p2);
+        if (Person1 == null || Person2 == null) return null;
+
+        boolean sameCity = (Person1.getAddress()).equalsIgnoreCase(Person2.getAddress());
+
+        return new MatchResult(
+                Person1.getFirstName(),
+                Person2.getFirstName(),
+                sameCity,
+                Person1.getVibe(),
+                Person2.getVibe()
+        );
+    }
+} // end of people controller

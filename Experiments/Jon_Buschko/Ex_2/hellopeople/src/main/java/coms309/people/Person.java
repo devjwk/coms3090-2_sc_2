@@ -23,15 +23,18 @@ public class Person {
 
     private String telephone;
 
+    private String vibe;
+
 //    public Person(){
 //
 //    }
 
-    public Person(String firstName, String lastName, String address, String telephone){
+    public Person(String firstName, String lastName, String address, String telephone, String vibe){
         this.firstName = firstName;
         this.lastName = lastName;
         this.address = address;
         this.telephone = telephone;
+        this.vibe = vibe;
     }
 
 
@@ -72,11 +75,20 @@ public class Person {
         this.telephone = telephone;
     }
 
+    public String getVibe() {
+        return this.vibe;
+    }
+
+    public void setVibe(String vibe) {
+        this.vibe = vibe;
+    }
+
     @Override
     public String toString() {
-        return firstName + " " 
-               + lastName + " "
-               + address + " "
-               + telephone;
+        return firstName + " "
+                + lastName + " "
+                + address + " "
+                + telephone + " "
+                + vibe;
     }
 }
