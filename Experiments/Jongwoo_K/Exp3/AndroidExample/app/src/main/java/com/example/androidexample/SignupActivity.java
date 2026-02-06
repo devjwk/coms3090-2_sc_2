@@ -41,21 +41,31 @@ public class SignupActivity extends AppCompatActivity {
         });
 
         /* click listener on signup button pressed */
-        signupButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        signupButton.setOnClickListener(v -> {
 
-                /* grab strings from user inputs */
-                String username = usernameEditText.getText().toString();
-                String password = passwordEditText.getText().toString();
-                String confirm = confirmEditText.getText().toString();
+            String username = usernameEditText.getText().toString().trim();
+            String password = passwordEditText.getText().toString().trim();
+            String confirm  = confirmEditText.getText().toString().trim();
 
-                if (password.equals(confirm)){
-                    Toast.makeText(getApplicationContext(), "Signing up", Toast.LENGTH_LONG).show();
-                }
-                else {
-                    Toast.makeText(getApplicationContext(), "Password don't match", Toast.LENGTH_LONG).show();
-                }
+            if(password.equals(confirm)){
+
+                // SharedPreferences save
+                getSharedPreferences("USER_INFO", MODE_PRIVATE)
+                        .edit()
+                        .putString("USERNAME", username)
+                        .putString("PASSWORD", password)
+                        .apply();
+
+                Toast.makeText(getApplicationContext(),
+                        "Signup Complete", Toast.LENGTH_LONG).show();
+
+                // going to Login page
+                startActivity(new Intent(SignupActivity.this, LoginActivity.class));
+                finish();
+
+            }else{
+                Toast.makeText(getApplicationContext(),
+                        "Password don't match", Toast.LENGTH_LONG).show();
             }
         });
     }
