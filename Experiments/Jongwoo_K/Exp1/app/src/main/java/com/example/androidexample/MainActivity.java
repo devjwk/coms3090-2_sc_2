@@ -41,6 +41,7 @@ import org.w3c.dom.Text;
 public class MainActivity extends AppCompatActivity {
 
     private TextView messageText;   // define message textview variable
+    private Button demo1Button; // going to demo1 page
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,5 +54,15 @@ public class MainActivity extends AppCompatActivity {
 
         messageText = findViewById(R.id.main_description_txt);
         messageText.setText("Welcome To COMS 3090 DEMO1 !!");
+
+        demo1Button = findViewById(R.id.demo1_btn);
+
+        demo1Button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, demo1activity.class);
+                startActivity(intent);
+            }
+        });
     }
 }

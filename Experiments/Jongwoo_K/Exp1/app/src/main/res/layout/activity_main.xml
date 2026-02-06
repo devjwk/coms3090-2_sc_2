@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.appcompat.widget.LinearLayoutCompat
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#E90505"
     android:orientation="vertical"
     android:rotationX="360"
-    android:background="#000000"
     tools:context=".MainActivity">
 
     <TextView
@@ -13,9 +15,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:gravity ="center"
         android:layout_marginTop="100dp"
         android:layout_marginBottom="50dp"
+        android:gravity="center"
         android:textColor="#FFFFFF"
         android:textSize="50dp"></TextView>
 
@@ -24,10 +26,20 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:gravity ="center"
         android:layout_marginTop="30dp"
         android:layout_marginBottom="50dp"
+        android:gravity="center"
         android:textColor="#FFFFFF"
         android:textSize="30dp"></TextView>
+
+    <Button
+        android:id="@+id/demo1_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Demo1"
+
+        android:layout_gravity="center">
+    </Button>
 
 </androidx.appcompat.widget.LinearLayoutCompat>
