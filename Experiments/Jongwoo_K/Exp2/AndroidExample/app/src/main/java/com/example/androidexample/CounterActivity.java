@@ -23,7 +23,7 @@ public class CounterActivity extends AppCompatActivity {
             numberTxt.setText("Congratulation!! get 10");
         }
         else {
-            numberTxt.setText("Number: " + counter);
+            numberTxt.setText("Number= " + counter);
         }
         }
 
