@@ -98,6 +98,12 @@ public class PeopleController {
         return peopleList;
     }
 
+    @DeleteMapping("/people")
+    public String deleteAllPeople() {
+        peopleList.clear();
+        return "Deleted all people";
+    }
+
     // Searches for people based on the city they live in
     @GetMapping("/people/city")
     public List<Person> getByCity(@RequestParam("city") String city) {
