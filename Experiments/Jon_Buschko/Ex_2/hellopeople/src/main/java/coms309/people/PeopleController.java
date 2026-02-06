@@ -3,9 +3,7 @@ package coms309.people;
 import org.springframework.web.bind.annotation.*;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Controller used to showcase Create and Read from a LIST
@@ -100,22 +98,38 @@ public class PeopleController {
         return peopleList;
     }
 
-    record MatchResult(String personA, String personB, boolean sameCity, String vibeA, String vibeB) {}
+    @GetMapping("/people/{city}")
+    public List<Person> getAddressByParam(@RequestParam("city") String city) {
+        List<Person> res = new ArrayList<>();
+        for (Person p : peopleList.values()) {
+            if (p.getAddress().contains(city))
+                res.add(p);
+        }
+        return res;
+    }
 
     @GetMapping("/people/match/{p1}/{p2}")
-    public MatchResult getMatch(@PathVariable String p1, @PathVariable String p2) {
+    public LinkedHashMap<String, Object> getMatch(@PathVariable String p1, @PathVariable String p2) {
         Person Person1 = peopleList.get(p1);
         Person Person2 = peopleList.get(p2);
+        int score = 0;
         if (Person1 == null || Person2 == null) return null;
 
         boolean sameCity = (Person1.getAddress()).equalsIgnoreCase(Person2.getAddress());
 
-        return new MatchResult(
-                Person1.getFirstName(),
-                Person2.getFirstName(),
-                sameCity,
-                Person1.getVibe(),
-                Person2.getVibe()
-        );
+        if (sameCity) score += 50;
+        if (Person1.getVibe().equalsIgnoreCase(Person2.getVibe())) score += 20;
+        if (Person1.getInterests().stream().anyMatch(Person2.getInterests()::contains)) {
+            score += 30;
+        }
+        LinkedHashMap match = new LinkedHashMap();
+
+        match.put("PersonA", Person1.getFirstName());
+        match.put("PersonB", Person2.getFirstName());
+        match.put("SameCity", sameCity);
+        match.put("VibeA", Person1.getVibe());
+        match.put("VibeB", Person2.getVibe());
+        match.put("Compatibility%", score);
+        return match;
     }
 } // end of people controller
