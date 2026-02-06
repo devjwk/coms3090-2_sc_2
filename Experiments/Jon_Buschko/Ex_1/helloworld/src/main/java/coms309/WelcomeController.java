@@ -23,8 +23,7 @@ class WelcomeController {
 
 
     @GetMapping("/hello")
-    public String welcomeparam(@RequestParam String name,
-    @RequestParam(required = false, defaultValue = "chill hangouts") String vibe) {
+    public String welcomeparam(@RequestParam String name, @RequestParam(required = false, defaultValue = "chill hangouts") String vibe) {
         return "Hey " + name + "! Looking for friends who like: " + vibe;
     }
 
