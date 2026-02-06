@@ -5,7 +5,7 @@
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
 
         <!--text/icon color at container-->
-        <item name="colorOnPrimary">#1B1A1A</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
 
         <item name="android:windowLightStatusBar">true</item>
         <!--toolbar/button/primary color-->

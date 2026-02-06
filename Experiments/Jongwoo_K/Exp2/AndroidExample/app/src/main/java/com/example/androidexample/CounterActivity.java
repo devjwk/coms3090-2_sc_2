@@ -44,7 +44,7 @@ public class CounterActivity extends AppCompatActivity {
         increaseBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                numberTxt.setText(String.valueOf(counter+=2));
+                numberTxt.setText(String.valueOf(counter+=3));
             }
         });
 
@@ -52,15 +52,15 @@ public class CounterActivity extends AppCompatActivity {
         decreaseBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                numberTxt.setText(String.valueOf(counter-=2));
+                numberTxt.setText(String.valueOf(counter-=3));
             }
         });
         increaseBtn.setOnClickListener(v -> {
-            counter += 2;
+            counter += 3;
             updateNumberLabel();
         });
         decreaseBtn.setOnClickListener(v -> {
-            counter -= 2;
+            counter -= 3;
             updateNumberLabel();
         });
         resetBtn.setOnClickListener(v -> {

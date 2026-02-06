@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="150dp"
         android:text="Number : 0"
         android:textAlignment="center"
         android:textColor="#000000"
@@ -24,22 +24,22 @@
         android:layout_height="40dp"
         android:layout_gravity="center"
         android:layout_marginTop="100dp"
-        android:text=" increase + 2"></Button>
+        android:text=" increase + 3"></Button>
 
     <Button
         android:id="@+id/counter_decrease_btn"
         android:layout_width="400dp"
         android:layout_height="40dp"
         android:layout_gravity="center"
-        android:layout_marginTop="10dp"
-        android:text="decrease -2"></Button>
+        android:layout_marginTop="30dp"
+        android:text="decrease - 3"></Button>
 
     <Button
         android:id="@+id/counter_back_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="200dp"
         android:text="Back to Main" >
 
     </Button>
@@ -49,7 +49,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="20dp"
         android:text="Reset" >
 
     </Button>
