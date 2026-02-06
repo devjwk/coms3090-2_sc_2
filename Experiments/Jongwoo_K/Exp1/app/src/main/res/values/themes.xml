@@ -5,7 +5,7 @@
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
         <item name="android:statusBarColor">#64B641</item>d
         <item name="android:windowLightStatusBar">true</item>
-        <item name="backgroundColor">#16E61D</item>
+        <item name="backgroundColor">#E61616</item>
     </style>
 
     <style name="Theme.AndroidExample" parent="Base.Theme.AndroidExample" />
