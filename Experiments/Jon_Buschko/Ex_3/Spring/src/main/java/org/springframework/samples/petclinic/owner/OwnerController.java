@@ -45,7 +45,7 @@ class OwnerController {
         return "New Owner "+ owner.getFirstName() + " Saved";
     }
      // function just to create dummy data
-    @RequestMapping(method = RequestMethod.GET, path = "/owner/create")
+    @RequestMapping(method = RequestMethod.GET, path = "/owners/create")
     public String createDummyData() {
         Owners o1 = new Owners(1, "John", "Doe", "404 Not found", "some numbers");
         Owners o2 = new Owners(2, "Jane", "Doe", "Its a secret", "you wish");
