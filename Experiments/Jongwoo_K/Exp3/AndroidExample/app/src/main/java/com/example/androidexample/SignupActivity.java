@@ -63,10 +63,9 @@ public class SignupActivity extends AppCompatActivity {
                 startActivity(new Intent(SignupActivity.this, LoginActivity.class));
                 finish();
 
-            }else{
+            }
                 Toast.makeText(getApplicationContext(),
                         "Password don't match", Toast.LENGTH_LONG).show();
-            }
-        });
+            });
+        };
     }
-}

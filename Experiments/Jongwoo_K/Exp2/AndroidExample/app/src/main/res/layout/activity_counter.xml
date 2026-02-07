@@ -24,7 +24,7 @@
         android:layout_height="40dp"
         android:layout_gravity="center"
         android:layout_marginTop="100dp"
-        android:text=" increase + 3"></Button>
+        android:text=" increase + 2"></Button>
 
     <Button
         android:id="@+id/counter_decrease_btn"
@@ -32,7 +32,7 @@
         android:layout_height="40dp"
         android:layout_gravity="center"
         android:layout_marginTop="30dp"
-        android:text="decrease - 3"></Button>
+        android:text="decrease - 2"></Button>
 
     <Button
         android:id="@+id/counter_back_btn"
