@@ -1,8 +1,10 @@
 package coms309.people;
 
+import coms309.digimon.Digimon;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -31,6 +33,22 @@ public class PeopleController {
     @GetMapping("/people")
     public  HashMap<String,Person> getAllPersons() {
         return peopleList;
+    }
+
+    //Listing in alphabetical order (last names), get (New Endpoint)
+    @GetMapping("/people/az/last")
+    public List<Person> getAllPersonsAzL() {
+        List<Person> res = new ArrayList<>(peopleList.values());
+        res.sort(Comparator.comparing(Person::getLastName, String.CASE_INSENSITIVE_ORDER));
+        return res;
+    }
+
+    //Listing in alphabetical order (first names), get (New Endpoint)
+    @GetMapping("/people/az/first")
+    public List<Person> getAllPersonsAzF() {
+        List<Person> res = new ArrayList<>(peopleList.values());
+        res.sort(Comparator.comparing(Person::getFirstName, String.CASE_INSENSITIVE_ORDER));
+        return res;
     }
 
     // THIS IS THE CREATE OPERATION
@@ -65,11 +83,22 @@ public class PeopleController {
     // THIS IS A GET METHOD
     // RequestParam is expected from the request under the key "name"
     // returns coms309.all names that contains value passed to the key "name"
-    @GetMapping("/people/contains")
+    @GetMapping("/people/contains/n")
     public List<Person> getPersonByParam(@RequestParam("name") String name) {
         List<Person> res = new ArrayList<>(); 
         for (Person p : peopleList.values()) {
-            if (p.getFirstName().contains(name) || p.getLastName().contains(name))
+            if (p.getFirstName().toLowerCase().contains(name.toLowerCase()) || p.getLastName().toLowerCase().contains(name.toLowerCase()))
+                res.add(p);
+        }
+        return res;
+    }
+
+    //Search by telephone, get (New Endpoint)
+    @GetMapping("/people/contains/t")
+    public List<Person> getPersonByTel(@RequestParam("telephone") String telephone) {
+        List<Person> res = new ArrayList<>();
+        for (Person p : peopleList.values()) {
+            if (p.getTelephone().contains(telephone))
                 res.add(p);
         }
         return res;

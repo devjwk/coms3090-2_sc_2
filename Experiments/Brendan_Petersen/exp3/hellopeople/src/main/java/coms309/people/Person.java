@@ -81,5 +81,6 @@ public class Person {
     }
 }
 
-//Example person #1: { "firstName" : "Trent", "lastName" : "W", "address" : "817 SE 9th St", "telephone" : "5156647571" }
-//Example person #1: { "firstName" : "Carter", "lastName" : "N", "address" : "212 Cat St", "telephone" : "5155556212" }
+//Example person #1: { "firstName" : "Trent", "lastName" : "Warren", "address" : "817 SE 9th St", "telephone" : "5156647571" }
+//Example person #2: { "firstName" : "Carter", "lastName" : "Nat", "address" : "212 Cat St", "telephone" : "5155556212" }
+//Example person #3: { "firstName" : "Femi", "lastName" : "Ngene", "address" : "43 F Ct", "telephone" : "5155559401" }
