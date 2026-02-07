@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    tools:context=".MainActivity"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal">
+
+
+    <TextView
+        android:id="@+id/friend_name_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Friend: "
+        android:textSize="24sp"
+        android:textColor="#00008B"
+        android:layout_marginBottom="40dp"
+        android:textStyle="bold"/>
+
+    <Button
+        android:id="@+id/like_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Like"
+        android:backgroundTint="#4CAF50"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="16dp"/>
+
+
+    <Button
+        android:id="@+id/dislike_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Dislike"
+        android:backgroundTint="#F44336"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/next_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Next Friend"
+        android:backgroundTint="#2196F3"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/finish_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Finish"
+        android:backgroundTint="#9C27B0"
+        android:textColor="#FFFFFF"/>
+
+</LinearLayout>
