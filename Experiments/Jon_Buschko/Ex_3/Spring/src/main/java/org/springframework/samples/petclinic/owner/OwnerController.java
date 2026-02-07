@@ -73,4 +73,47 @@ class OwnerController {
         return results;
     }
 
+    @RequestMapping(method = RequestMethod.GET, path = "/owners/search")
+    public List<Owners> findOwnersByLastName(@RequestParam String lastName) {
+        logger.info("Searching for owners with last name: " + lastName);
+        return ownersRepository.findByLastName(lastName);
+    }
+
+    @PutMapping("/owners/{ownerId}")
+    public String updateOwner(@PathVariable int ownerId, @RequestBody Owners updatedOwner) {
+
+        Optional<Owners> optionalOwner = ownersRepository.findById(ownerId);
+
+        if (optionalOwner.isPresent()) {
+            Owners existingOwner = optionalOwner.get();
+
+            existingOwner.setFirstName(updatedOwner.getFirstName());
+            existingOwner.setLastName(updatedOwner.getLastName());
+            existingOwner.setAddress(updatedOwner.getAddress());
+            existingOwner.setTelephone(updatedOwner.getTelephone());
+
+            ownersRepository.save(existingOwner);
+
+            return "Owner updated successfully";
+        }
+
+        return "Owner not found";
+    }
+
+    @DeleteMapping("/owners/{ownerId}")
+    public String deleteOwner(@PathVariable int ownerId) {
+
+        if (ownersRepository.existsById(ownerId)) {
+            ownersRepository.deleteById(ownerId);
+            return "Owner deleted successfully";
+        }
+
+        return "Owner not found";
+    }
+
+    @DeleteMapping("/owners")
+    public String deleteAllOwner() {
+        ownersRepository.deleteAll();
+        return "Deleted all owners";
+    }
 }
