@@ -34,4 +34,5 @@ import java.util.Optional;
 @Repository
 public interface OwnerRepository extends JpaRepository<Owners, Integer> {
     List<Owners> findByLastName(String lastName);
+    List<Owners> findByTelephoneStartingWith(String prefix);
 }

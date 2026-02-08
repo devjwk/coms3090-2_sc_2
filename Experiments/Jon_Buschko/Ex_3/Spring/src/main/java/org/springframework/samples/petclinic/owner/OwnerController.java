@@ -116,4 +116,10 @@ class OwnerController {
         ownersRepository.deleteAll();
         return "Deleted all owners";
     }
+
+    @GetMapping("/owners/phone")
+    public List<Owners> findOwnersByPhonePrefix(@RequestParam String prefix) {
+        logger.info("Searching owners with phone prefix: " + prefix);
+        return ownersRepository.findByTelephoneStartingWith(prefix);
+    }
 }
