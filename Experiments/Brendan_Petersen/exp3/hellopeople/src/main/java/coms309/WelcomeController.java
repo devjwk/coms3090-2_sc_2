@@ -30,3 +30,22 @@ class WelcomeController {
  * -WelcomeController message changed to "Default page"
  * -Digimon search function, which was missing in exp2, added at /digimon/contains?name=
  */
+
+/**
+ * Updates from original demo1:
+ *
+ * Digimon:
+ * -Search by attribute /digimon/contains/a
+ * ---(name is now /digimon/contains/n)
+ * -List alphabetically (name) /digimon/az
+ *
+ * Person:
+ * -Search by telephone /people/contains/t
+ * ---(name is now /people/contains/n)
+ * -List alphabetically (first name) /people/az/first
+ * -List alphabetically (last name) /people/az/last
+ *
+ * All:
+ * -List alphabetically (results intermixed) /all/az
+ * ---This uses last name for humans
+ */

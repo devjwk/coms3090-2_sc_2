@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -44,5 +45,21 @@ public class AllController {
         }
 
         return new AllList(resp, resd);
+    }
+
+    @GetMapping("/all/az")
+    public List<Object> getAllCreaturesAz() {
+        List<Object> creatures = new ArrayList<>();
+        creatures.addAll(digiController.getAllMons().values());
+        creatures.addAll(peopleController.getAllPersons().values());
+
+        creatures.sort((o1, o2) -> {
+            //if o is a Digimon, cast to Digimon and get Name, else cast to person and get last name
+            String name1 = (o1 instanceof Digimon) ? ((Digimon) o1).getName() : ((Person) o1).getLastName();
+            String name2 = (o2 instanceof Digimon) ? ((Digimon) o2).getName() : ((Person) o2).getLastName();
+            return name1.compareTo(name2);
+        });
+
+        return creatures;
     }
 }
