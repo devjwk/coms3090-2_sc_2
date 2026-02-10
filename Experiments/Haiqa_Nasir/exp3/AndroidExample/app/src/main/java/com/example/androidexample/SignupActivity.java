@@ -3,90 +3,100 @@ package com.example.androidexample;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-import android.util.Patterns;
-
 
 public class SignupActivity extends AppCompatActivity {
 
-    private EditText usernameEditText;  // define username edittext variable
-    private EditText passwordEditText;  // define password edittext variable
-    private EditText confirmEditText;   // define confirm edittext variable
-    private Button loginButton;         // define login button variable
-    private Button signupButton;        // define signup button variable
+    private EditText usernameEditText;
+    private EditText passwordEditText;
+    private EditText confirmEditText;
+    private Button loginButton;
+    private Button signupButton;
+
+    private static final String name = "authprefs";
+    private static final String keyUsername = "savedusername";
+    private static final String keyPass = "savedpassword";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signup);
 
-        /* initialize UI elements */
-        usernameEditText = findViewById(R.id.signup_username_edt);  // link to username edtext in the Signup activity XML
-        passwordEditText = findViewById(R.id.signup_password_edt);  // link to password edtext in the Signup activity XML
-        confirmEditText = findViewById(R.id.signup_confirm_edt);    // link to confirm edtext in the Signup activity XML
-        loginButton = findViewById(R.id.signup_login_btn);    // link to login button in the Signup activity XML
-        signupButton = findViewById(R.id.signup_signup_btn);  // link to signup button in the Signup activity XML
+        usernameEditText = findViewById(R.id.signup_username_edt);
+        passwordEditText = findViewById(R.id.signup_password_edt);
+        confirmEditText = findViewById(R.id.signup_confirm_edt);
+        loginButton = findViewById(R.id.signup_login_btn);
+        signupButton = findViewById(R.id.signup_signup_btn);
 
-        /* click listener on login button pressed */
-        loginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                /* when login button is pressed, use intent to switch to Login Activity */
-                Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
-                startActivity(intent);  // go to LoginActivity
-            }
+        loginButton.setOnClickListener(v -> {
+            Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
+            startActivity(intent);
         });
 
-        /* click listener on signup button pressed */
-        signupButton.setOnClickListener(v-> {
+        signupButton.setOnClickListener(v -> {
+            String enteredUsername = usernameEditText.getText().toString().trim();
+            String enteredPassword = passwordEditText.getText().toString();
+            String confirm = confirmEditText.getText().toString();
 
-
-            Toast.makeText(SignupActivity.this,
-                    "Signup button clicked",
-                    Toast.LENGTH_SHORT).show();
-
-            String username = usernameEditText.getText().toString().trim();
-            String password = passwordEditText.getText().toString().trim();
-            String confirm = confirmEditText.getText().toString().trim();
-
-            if (username.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
-                Toast.makeText(this,
-                        "All fields are required",
-                        Toast.LENGTH_SHORT).show();
+            if (enteredUsername.isEmpty() || enteredPassword.isEmpty() || confirm.isEmpty()) {
+                Toast.makeText(this, "Please fill all fields.", Toast.LENGTH_LONG).show();
                 return;
             }
 
-            if (!Patterns.EMAIL_ADDRESS.matcher(username).matches()) {
-                Toast.makeText(this,
-                        "Enter a valid email address",
-                        Toast.LENGTH_SHORT).show();
+            if (containsDigit(enteredUsername)) {
+                Toast.makeText(this, "Username cannot contain numbers.", Toast.LENGTH_LONG).show();
                 return;
             }
 
-            if (password.length() < 6) {
-                Toast.makeText(this,
-                        "Password must be at least 6 characters",
-                        Toast.LENGTH_SHORT).show();
+            if (enteredPassword.length() < 6) {
+                Toast.makeText(this, "Password must be at least 6 characters.", Toast.LENGTH_LONG).show();
                 return;
             }
 
-            if (!password.equals(confirm)) {
-                Toast.makeText(this,
-                        "Passwords do not match",
-                        Toast.LENGTH_SHORT).show();
+            if (!containsUppercase(enteredPassword)) {
+                Toast.makeText(this, "Password must contain at least 1 uppercase letter.", Toast.LENGTH_LONG).show();
                 return;
             }
 
-            Toast.makeText(this,
-                    "Account created! Please log in.",
-            Toast.LENGTH_LONG).show();
+            if (!containsDigit(enteredPassword)) {
+                Toast.makeText(this, "Password must contain at least 1 digit.", Toast.LENGTH_LONG).show();
+                return;
+            }
 
-            startActivity(new Intent(SignupActivity.this, LoginActivity.class));
+            if (!enteredPassword.equals(confirm)) {
+                Toast.makeText(this, "Passwords don't match.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            SharedPreferences prefs = getSharedPreferences(name, MODE_PRIVATE);
+            prefs.edit()
+                    .putString(keyUsername, enteredUsername)
+                    .putString(keyPass, enteredPassword)
+                    .apply();
+
+            Toast.makeText(this, "Sign up successful. Please log in.", Toast.LENGTH_LONG).show();
+
+            Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
+            startActivity(intent);
+            finish();
         });
+    }
+
+    private boolean containsDigit(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.isDigit(s.charAt(i))) return true;
+        }
+        return false;
+    }
+
+    private boolean containsUppercase(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.isUpperCase(s.charAt(i))) return true;
+        }
+        return false;
     }
 }

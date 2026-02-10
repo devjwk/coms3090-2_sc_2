@@ -101,20 +101,20 @@
             android:id="@+id/signup_login_btn"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
-            android:text="login"
+            android:layout_marginRight="10dp"
+            android:text="Login"
             android:textSize="20sp"
-            android:textColor="#ffffff"
-            android:backgroundTint="#6200EE">
+            android:textColor="#ffffff">
         </Button>
 
         <Button
             android:id="@+id/signup_signup_btn"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
             android:text="Signup"
             android:textSize="20sp"
-            android:textColor="#ffffff"
-            android:backgroundTint="#6200EE">
+            android:textColor="#ffffff">
         </Button>
 
     </LinearLayout>
