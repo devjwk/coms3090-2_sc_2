@@ -32,7 +32,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Where the world meets you"
+            android:text="Where the world meets you!"
             android:textSize="72px"
             android:textColor="#00008B"
             android:layout_marginTop="12dp"/>
