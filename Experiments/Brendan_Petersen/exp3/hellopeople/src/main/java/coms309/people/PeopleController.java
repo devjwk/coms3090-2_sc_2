@@ -90,6 +90,7 @@ public class PeopleController {
             if (p.getFirstName().toLowerCase().contains(name.toLowerCase()) || p.getLastName().toLowerCase().contains(name.toLowerCase()))
                 res.add(p);
         }
+
         return res;
     }
 
