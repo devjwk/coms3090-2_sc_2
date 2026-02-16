@@ -43,6 +43,16 @@ public class PersonController {
         return PersonRepository.findById(id);
     }
 
+    @GetMapping(path = "/Persons/{name}")
+    List<Person> getPersonByName( @PathVariable String name){
+        return PersonRepository.findByNameContaining(name);
+    }
+
+    @GetMapping(path = "/Persons/Active")
+    List<Person> getPersonByActive( @PathVariable String name){
+        return PersonRepository.findByIfActive(true);
+    }
+
     @PostMapping(path = "/Persons")
     String createPerson(@RequestBody Person Person){
         if (Person == null)
@@ -88,9 +98,29 @@ public class PersonController {
         return success;
     }
 
+    @PutMapping("/persons/{personId}/assign/{laptopId}")
+    public String assignLaptop(@PathVariable int personId, @PathVariable int laptopId) {
+
+        Person p = PersonRepository.findById(personId);
+        Laptop l = laptopRepository.findById(laptopId);
+
+        if (p == null || l == null) return "Invalid IDs";
+
+        p.setLaptop(l);
+        PersonRepository.save(p);
+
+        return "Laptop assigned";
+    }
+
     @DeleteMapping(path = "/Persons/{id}")
     String deletePerson(@PathVariable int id){
         PersonRepository.deleteById(id);
+        return success;
+    }
+
+    @DeleteMapping(path = "/Persons")
+    String deleteAllPersons(){
+        PersonRepository.deleteAll();
         return success;
     }
 }

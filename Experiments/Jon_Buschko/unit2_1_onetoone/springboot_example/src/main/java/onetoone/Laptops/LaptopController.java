@@ -72,4 +72,14 @@ public class LaptopController {
         laptopRepository.deleteById(id);
         return success;
     }
+
+    @PutMapping("/persons/{id}/deactivate")
+    public String deactivatePerson(@PathVariable int id) {
+        Person p = personRepository.findById(id);
+        if (p == null) return "Person not found";
+
+        p.setIfActive(false);
+        personRepository.save(p);
+        return "Person deactivated";
+    }
 }

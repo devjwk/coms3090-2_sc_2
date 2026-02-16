@@ -15,17 +15,17 @@ import lombok.Setter;
 import onetoone.Laptops.Laptop;
 
 /**
- * 
+ *
  * @author Vivek Bengre
- * 
- */ 
+ *
+ */
 
 @Entity
 @Getter
 @Setter
 public class Person {
 
-     /* 
+    /*
      * The annotation @ID marks the field below as the primary key for the table created by springboot
      * The @GeneratedValue generates a value if not already present, The strategy in this case is to start from 1 and increment for each table
      */
@@ -33,7 +33,7 @@ public class Person {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String name;
-     /*
+    /*
      * Email annotation is part of the hibernate validator package that helps with validation of email
      * input. In which case, it currently is matching to the regexp that expresses any characters are allowed followed by an '@' except for '|' and '
      * as they are potential SQL injection risk. Flag here is used to discern that input is not case-sensitive.
@@ -103,5 +103,5 @@ public class Person {
     public void setLaptop(Laptop laptop){
         this.laptop = laptop;
     }
-    
+
 }
