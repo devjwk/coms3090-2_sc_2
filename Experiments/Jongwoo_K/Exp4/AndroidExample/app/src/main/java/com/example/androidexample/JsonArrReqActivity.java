@@ -2,30 +2,29 @@ package com.example.androidexample;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonArrayRequest;
+import com.google.android.material.button.MaterialButton;
 
 import org.json.JSONArray;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.json.JSONObject;
 
 public class JsonArrReqActivity extends AppCompatActivity {
 
-    // UI components
-    private Button btnJsonArrReq;
-    private TextView msgResponse;
+    private MaterialButton btnJsonArrReq;
+    private TextView tvStatus;
+    private LinearLayout containerUserList;
 
-    // API URL for fetching JSON data
     private static final String URL_JSON_ARRAY = "https://jsonplaceholder.typicode.com/users";
 
     @Override
@@ -33,70 +32,88 @@ public class JsonArrReqActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_json_arr_req);
 
-        // Initializing UI components
-        btnJsonArrReq = findViewById(R.id.btnJsonArr);
-        msgResponse = findViewById(R.id.msgResponse);
+        btnJsonArrReq = findViewById(R.id.btnJsonArrReq);
+        tvStatus = findViewById(R.id.tvStatus);
+        containerUserList = findViewById(R.id.containerUserList);
 
-        // Setting click listener on the button to make JSON array request
         btnJsonArrReq.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 makeJsonArrayReq();
             }
         });
+
+        MaterialButton btnBackToMain = findViewById(R.id.btnBackToMain);
+        btnBackToMain.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(JsonArrReqActivity.this, MainActivity.class);
+                startActivity(intent);
+                finish();
+            }
+        });
     }
 
-    /**
-     * Makes a JSON array request using Volley library
-     */
     private void makeJsonArrayReq() {
-        // Creating a new JSON array request
+        tvStatus.setVisibility(View.GONE);
+
         JsonArrayRequest jsonArrReq = new JsonArrayRequest(
-                Request.Method.GET, // HTTP method (GET request)
-                URL_JSON_ARRAY, // API URL
-                null, // Request body (null for GET request)
+                Request.Method.GET,
+                URL_JSON_ARRAY,
+                null,
                 new Response.Listener<JSONArray>() {
                     @Override
                     public void onResponse(JSONArray response) {
-                        // Log the response for debugging purposes
                         Log.d("Volley Response", response.toString());
 
-                        // Display response in the TextView
-                        msgResponse.setText(response.toString());
+                        if (response.length() > 0) {
+                            try {
+                                bindAllUsersBasic(response);
+                            } catch (Exception e) {
+                                Log.e("Volley Error", "JSON parse error", e);
+                                tvStatus.setText("Response parsing failed");
+                                tvStatus.setVisibility(View.VISIBLE);
+                            }
+                        } else {
+                            tvStatus.setText("No data available");
+                            tvStatus.setVisibility(View.VISIBLE);
+                        }
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        // Log the error details
                         Log.e("Volley Error", error.toString());
-
-                        // Show an error message in the UI
-                        msgResponse.setText("Failed to load data. Please try again.");
+                        tvStatus.setText("Failed to load data. Please try again.");
+                        tvStatus.setVisibility(View.VISIBLE);
                     }
-                }) {
-            @Override
-            public Map<String, String> getHeaders() {
-                // Headers for the request (if needed)
-                Map<String, String> headers = new HashMap<>();
-                // Example headers (uncomment if needed)
-                // headers.put("Authorization", "Bearer YOUR_ACCESS_TOKEN");
-                // headers.put("Content-Type", "application/json");
-                return headers;
-            }
+                }
+        );
 
-            @Override
-            protected Map<String, String> getParams() {
-                // Parameters for the request (if needed)
-                Map<String, String> params = new HashMap<>();
-                // Example parameters (uncomment if needed)
-                // params.put("param1", "value1");
-                // params.put("param2", "value2");
-                return params;
-            }
-        };
-
-        // Adding request to the Volley request queue
         VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsonArrReq);
+    }
+
+    private void bindAllUsersBasic(JSONArray array) {
+        containerUserList.removeAllViews();
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        for (int i = 0; i < array.length(); i++) {
+            JSONObject user = array.optJSONObject(i);
+            if (user == null) continue;
+
+            View card = inflater.inflate(R.layout.item_user_basic, containerUserList, false);
+
+            TextView tvId = card.findViewById(R.id.tvProfileId);
+            TextView tvName = card.findViewById(R.id.tvProfileName);
+            TextView tvUsername = card.findViewById(R.id.tvProfileUsername);
+
+            int id = user.optInt("id", Integer.MIN_VALUE);
+            tvId.setText(id == Integer.MIN_VALUE ? "-" : String.valueOf(id));
+            tvName.setText(user.optString("name", "-"));
+            tvUsername.setText(user.optString("username", "-"));
+
+            containerUserList.addView(card);
+        }
     }
 }

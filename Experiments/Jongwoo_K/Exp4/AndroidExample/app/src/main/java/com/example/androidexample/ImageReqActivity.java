@@ -2,26 +2,26 @@ package com.example.androidexample;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageRequest;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
 
 public class ImageReqActivity extends AppCompatActivity {
 
-    // Declare the Button and ImageView variables
-    private Button btnImageReq;
+    private MaterialButton btnImageReq;
     private ImageView imageView;
-
-    // Define the URL of the image to be requested
-    public static final String URL_IMAGE = "http://sharding.org/outgoing/temp/testimg3.jpg";
+    private TextInputEditText etImageUrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,27 +29,36 @@ public class ImageReqActivity extends AppCompatActivity {
         // Set the layout for this activity
         setContentView(R.layout.activity_image_req);
 
-        // Initialize the button and image view using findViewById
         btnImageReq = findViewById(R.id.btnImageReq);
         imageView = findViewById(R.id.imgView);
+        etImageUrl = findViewById(R.id.etImageUrl);
 
-        // Set an OnClickListener for the button to trigger the image request when clicked
         btnImageReq.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Call method to make image request when the button is clicked
                 makeImageRequest();
+            }
+        });
+
+        MaterialButton btnBackToMain = findViewById(R.id.btnBackToMain);
+        btnBackToMain.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(ImageReqActivity.this, MainActivity.class));
+                finish();
             }
         });
     }
 
-    /**
-     * Method to make an image request using Volley
-     */
     private void makeImageRequest() {
-        // Create a new ImageRequest object to request the image from the URL
+        String url = etImageUrl.getText() != null ? etImageUrl.getText().toString().trim() : "";
+        if (TextUtils.isEmpty(url)) {
+            Toast.makeText(this, "Please enter an image URL", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         ImageRequest imageRequest = new ImageRequest(
-                URL_IMAGE, // URL of the image to fetch
+                url,
                 new Response.Listener<Bitmap>() {
                     @Override
                     public void onResponse(Bitmap response) {
