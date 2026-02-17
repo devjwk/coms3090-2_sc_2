@@ -2,6 +2,7 @@ package com.example.androidexample;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -82,6 +83,17 @@ public class StringReqActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 makeStringReq();
+            }
+        });
+
+        // Back to Main button
+        MaterialButton btnBackToMain = findViewById(R.id.btnBackToMain);
+        btnBackToMain.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(StringReqActivity.this, MainActivity.class);
+                startActivity(intent);
+                finish();
             }
         });
     }
