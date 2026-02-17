@@ -14,4 +14,6 @@ public interface LaptopRepository extends JpaRepository<Laptop, Long> {
 
     @Transactional
     void deleteById(int id);
+
+    Laptop findByCost(int cost);
 }

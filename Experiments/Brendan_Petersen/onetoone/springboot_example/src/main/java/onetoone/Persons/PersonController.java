@@ -43,6 +43,11 @@ public class PersonController {
         return PersonRepository.findById(id);
     }
 
+    @GetMapping(path = "/Persons/{name}")
+    Person getPersonByName( @PathVariable String name){
+        return PersonRepository.findByName(name);
+    }
+
     @PostMapping(path = "/Persons")
     String createPerson(@RequestBody Person Person){
         if (Person == null)

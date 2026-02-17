@@ -43,6 +43,11 @@ public class LaptopController {
         return laptopRepository.findById(id);
     }
 
+    @GetMapping(path = "/laptops/{cost}")
+    Laptop getLaptopByCost(@PathVariable int cost){
+        return laptopRepository.findByCost(cost);
+    }
+
     @PostMapping(path = "/laptops")
     String createLaptop(@RequestBody Laptop Laptop){
         if (Laptop == null)
