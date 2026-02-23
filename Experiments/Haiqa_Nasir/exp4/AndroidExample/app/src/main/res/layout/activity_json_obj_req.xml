@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center_horizontal"
-    android:padding="20dp">  <!-- Add padding for better spacing -->
+    android:padding="20dp">
 
     <TextView
         android:layout_width="match_parent"
@@ -16,7 +16,7 @@
         android:textSize="30sp"
         android:text="Response: "
         android:textStyle="bold"
-        android:gravity="center" />  <!-- Center text inside TextView -->
+        android:gravity="center" />
 
     <TextView
         android:id="@+id/msgResponse"
@@ -25,13 +25,35 @@
         android:layout_marginTop="25dp"
         android:text=""
         android:textSize="16sp"
-        android:gravity="center" />  <!-- Center response text -->
+        android:gravity="center" />
 
     <Button
         android:id="@+id/btnJsonObj"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:text="Fetch Profile" />
+
+    <EditText
+        android:id="@+id/etName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:hint="Name" />
+
+    <EditText
+        android:id="@+id/etBio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="JSON Object Request" />
+        android:hint="Bio" />
+
+
+    <Button
+        android:id="@+id/btnUpdateProfile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:text="Save Profile" />
 
 </androidx.appcompat.widget.LinearLayoutCompat>
