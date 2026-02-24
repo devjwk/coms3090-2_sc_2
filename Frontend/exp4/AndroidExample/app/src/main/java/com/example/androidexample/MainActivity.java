@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         int id = v.getId(); // Get the ID of the clicked button
 
-        // Check which button was clicked and start the corresponding activity
         if (id == R.id.btnStringRequest) {
             startActivity(new Intent(MainActivity.this, StringReqActivity.class));
         } else if (id == R.id.btnJsonObjRequest) {

@@ -16,7 +16,6 @@ public class User {
     private String createdAt;
     private boolean isActive;
 
-    // ✅ Constructor (this is what your activity calls)
     public User(int userId,
                 String name,
                 String email,
@@ -42,7 +41,6 @@ public class User {
         this.isActive = isActive;
     }
 
-    // ✅ Getters (this is what msgResponse uses)
     public int getUserId() {
         return userId;
     }
@@ -81,6 +79,14 @@ public class User {
 
     public String getCreatedAt() {
         return createdAt;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
     }
 
     public boolean isActive() {
