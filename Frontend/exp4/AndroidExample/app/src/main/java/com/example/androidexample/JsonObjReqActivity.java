@@ -29,7 +29,6 @@ public class JsonObjReqActivity extends AppCompatActivity {
     private User user;
     private int userId;
 
-    // FIX 1: Base URL without hardcoded ID
     private static final String BASE_URL = "http://10.0.2.2:3002/users/";
 
     @Override

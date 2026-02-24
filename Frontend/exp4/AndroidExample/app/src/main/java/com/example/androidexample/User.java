@@ -42,18 +42,22 @@ public class User {
     }
 
     public int getUserId() {
+
         return userId;
     }
 
     public String getName() {
+
         return name;
     }
 
     public String getEmail() {
+
         return email;
     }
 
     public String getPasswordHash() {
+
         return passwordHash;
     }
 
@@ -62,34 +66,42 @@ public class User {
     }
 
     public List<String> getHobbies() {
+
         return hobbies;
     }
 
     public String getRole() {
+
         return role;
     }
 
     public double getLatitude() {
+
         return latitude;
     }
 
     public double getLongitude() {
+
         return longitude;
     }
 
     public String getCreatedAt() {
+
         return createdAt;
     }
 
     public void setName(String name) {
+
         this.name = name;
     }
 
     public void setBio(String bio) {
+
         this.bio = bio;
     }
 
     public boolean isActive() {
+
         return isActive;
     }
 }
