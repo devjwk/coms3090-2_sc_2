@@ -43,11 +43,6 @@ public class LaptopController {
         return laptopRepository.findById(id);
     }
 
-    @GetMapping(path = "/laptops/{cost}")
-    Laptop getLaptopByCost(@PathVariable int cost){
-        return laptopRepository.findByCost(cost);
-    }
-
     @PostMapping(path = "/laptops")
     String createLaptop(@RequestBody Laptop Laptop){
         if (Laptop == null)
@@ -76,5 +71,15 @@ public class LaptopController {
         // delete the laptop if the changes have not been reflected by the above statement
         laptopRepository.deleteById(id);
         return success;
+    }
+
+    @PutMapping("/persons/{id}/deactivate")
+    public String deactivatePerson(@PathVariable int id) {
+        Person p = personRepository.findById(id);
+        if (p == null) return "Person not found";
+
+        p.setIfActive(false);
+        personRepository.save(p);
+        return "Person deactivated";
     }
 }
