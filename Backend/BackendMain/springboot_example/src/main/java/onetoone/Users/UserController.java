@@ -24,7 +24,7 @@ public class UserController {
     private String success = "{\"message\":\"success\"}";
     private String failure = "{\"message\":\"failure\"}";
 
-    @PostMapping(path = "/Users")
+    @PostMapping(path = "/users")
     String createUser(@RequestBody User User){
         if (User == null)
             return failure;
@@ -32,9 +32,38 @@ public class UserController {
         return success;
     }
 
-    @DeleteMapping(path = "/Users/{id}")
+    @DeleteMapping(path = "/users/{id}")
     String deletePerson(@PathVariable Long id){
         UserRepository.deleteById(id);
+        return success;
+    }
+
+    //s4c
+    //Edit profile
+    @PutMapping(path = "/users/edit/{id}")
+    String editPerson(@PathVariable Long id){
+        //TODO
+        UserRepository.editPerson; //?
+    }
+
+    //s4c
+    //Logging in
+    @GetMapping(path = "/users/login")
+    String login(@RequestBody User userReq) {
+        //INCOMPLETE
+
+        //find the user through the email they inputed
+        Optional<User> userOptional = UserRepository.findByEmail(userReq.getEmail());
+        User user = userOptional.get();
+
+        //return failure if the password hashes do not match up
+        if (!user.getPasswordHash().equals(userReq.getPasswordHash())) {
+            return failure;
+        }
+
+        //x
+
+        //success if login was successful
         return success;
     }
 }
