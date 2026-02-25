@@ -1,5 +1,6 @@
 package onetoone.Users;
 import java.util.List;
+import java.util.Optional;
 
 import onetoone.Persons.Person;
 import onetoone.Persons.PersonRepository;
@@ -41,27 +42,60 @@ public class UserController {
     //s4c
     //Edit profile
     @PutMapping(path = "/users/edit/{id}")
-    String editPerson(@PathVariable Long id){
-        //TODO
-        UserRepository.editPerson; //?
+    String editPerson(@PathVariable Long id, @RequestBody User userReq){
+        //find the user being updated through ID
+        Optional<User> userOptional = UserRepository.findById(id);
+
+        //return a failure here if no user is found
+        if (userOptional.isEmpty()) {
+            return failure;
+        }
+
+        User user = userOptional.get();
+
+        //update any attributes that have been added to the request
+        if (userReq.getEmail() != null) {
+            user.setEmail(userReq.getEmail());
+        }
+        if (userReq.getPasswordHash() != null) {
+            user.setPasswordHash(userReq.getPasswordHash());
+        }
+        if (userReq.getDisplayName() != null) {
+            user.setDisplayName(userReq.getDisplayName());
+        }
+        if (userReq.getBio() != null) {
+            user.setBio(userReq.getBio());
+        }
+        if (userReq.getMajor() != null) {
+            user.setMajor(userReq.getMajor());
+        }
+        if (userReq.getAge() != null) {
+            user.setAge(userReq.getAge());
+        }
+
+        //save
+        UserRepository.save(user);
+        return success;
     }
 
     //s4c
     //Logging in
-    @GetMapping(path = "/users/login")
+    @GetMapping(path = "/login")
     String login(@RequestBody User userReq) {
-        //INCOMPLETE
-
-        //find the user through the email they inputed
+        //find the user through the email they inputted
         Optional<User> userOptional = UserRepository.findByEmail(userReq.getEmail());
+
+        //return a failure here if the findByEmail doesn't find anything
+        if (userOptional.isEmpty()) {
+            return failure;
+        }
+
         User user = userOptional.get();
 
         //return failure if the password hashes do not match up
         if (!user.getPasswordHash().equals(userReq.getPasswordHash())) {
             return failure;
         }
-
-        //x
 
         //success if login was successful
         return success;
