@@ -14,18 +14,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AndroidExample"
         tools:targetApi="31">
+
         <activity
-            android:name=".JsonArrReqActivity"
+            android:name=".Login"
             android:exported="false" />
         <activity
-            android:name=".JsonObjReqActivity"
+            android:name=".LoginActivity"
             android:exported="false" />
-        <activity
-            android:name=".ImageReqActivity"
-            android:exported="false" />
-        <activity
-            android:name=".StringReqActivity"
-            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

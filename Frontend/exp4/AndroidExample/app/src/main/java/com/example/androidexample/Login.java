@@ -19,10 +19,9 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JsonObjReqActivity extends AppCompatActivity {
+public class Login extends AppCompatActivity {
 
-    // UI Components
-    private Button btnJsonObjReq, btnUpdateProfile;
+    private Button btnUpdateProfile;
     private TextView msgResponse;
     private EditText etName, etBio;
 
@@ -38,29 +37,23 @@ public class JsonObjReqActivity extends AppCompatActivity {
 
         userId = getIntent().getIntExtra("USER_ID", 1);
 
-        btnJsonObjReq    = findViewById(R.id.btnJsonObj);
         btnUpdateProfile = findViewById(R.id.btnUpdateProfile);
         msgResponse      = findViewById(R.id.msgResponse);
         etName           = findViewById(R.id.etName);
         etBio            = findViewById(R.id.etBio);
 
-        btnJsonObjReq.setOnClickListener(v -> makeJsonObjReq());
+        makeJsonObjReq();
 
         btnUpdateProfile.setOnClickListener(v -> {
             if (user != null) {
                 updateUserProfile();
             } else {
-                Toast.makeText(this, "Fetch profile first!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Profile not loaded yet.", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     private void makeJsonObjReq() {
-        if (userId == -1) {
-            Toast.makeText(this, "Invalid user ID.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         String url = BASE_URL + userId;
 
         JsonObjectRequest jsonObjReq = new JsonObjectRequest(
@@ -93,7 +86,6 @@ public class JsonObjReqActivity extends AppCompatActivity {
 
                         refreshUI();
 
-                        // Pre-fill EditTexts for editing
                         etName.setText(user.getName());
                         etBio.setText(user.getBio());
 
@@ -163,12 +155,7 @@ public class JsonObjReqActivity extends AppCompatActivity {
     }
 
     private void refreshUI() {
-        msgResponse.setText(
-                "Name: "    + user.getName()               + "\n\n" +
-                        "Email: "   + user.getEmail()              + "\n\n" +
-                        "Bio: "     + user.getBio()                + "\n\n" +
-                        "Hobbies: " + user.getHobbies().toString() + "\n\n" +
-                        "Role: "    + user.getRole()
+        msgResponse.setText("Name: "+ user.getName()+ "\n\n" + "Email: "+ user.getEmail()+ "\n\n" + "Bio: "+ user.getBio()+ "\n\n" + "Hobbies: " + user.getHobbies().toString() + "\n\n" + "Role: "+ user.getRole()
         );
     }
 }
