@@ -28,7 +28,7 @@ public class Login extends AppCompatActivity {
     private User user;
     private int userId;
 
-    private static final String BASE_URL = "http://10.0.2.2:3002/users/";
+    private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/login";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
