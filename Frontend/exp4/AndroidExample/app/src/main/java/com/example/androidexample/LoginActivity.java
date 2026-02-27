@@ -8,18 +8,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.android.volley.Request;
-import com.android.volley.toolbox.JsonObjectRequest;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 public class LoginActivity extends AppCompatActivity {
 
     private EditText etUsername, etPassword;
-    private Button btnLogin;
-
-    private static final String LOGIN_URL = "http://10.0.2.2:3002/login";
+    private Button btnLogin, btnSignup, btnDeleteUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,8 +21,20 @@ public class LoginActivity extends AppCompatActivity {
         etUsername = findViewById(R.id.login_username_edt);
         etPassword = findViewById(R.id.login_password_edt);
         btnLogin   = findViewById(R.id.login_login_btn);
+        btnSignup  = findViewById(R.id.login_signup_btn);
+        btnDeleteUser = findViewById(R.id.login_delete_user_btn);
 
         btnLogin.setOnClickListener(v -> loginUser());
+
+        btnSignup.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
+            startActivity(intent);
+        });
+
+        btnDeleteUser.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, DeleteUserActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void loginUser() {
@@ -45,6 +49,6 @@ public class LoginActivity extends AppCompatActivity {
         Intent intent = new Intent(LoginActivity.this, Login.class);
         intent.putExtra("USER_ID", 1);
         startActivity(intent);
-        finish();
+        // finish(); // This line is removed to keep LoginActivity in the back stack
     }
 }

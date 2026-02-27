@@ -21,7 +21,7 @@ import java.util.List;
 
 public class Login extends AppCompatActivity {
 
-    private Button btnUpdateProfile;
+    private Button btnUpdateProfile, btnBack;
     private TextView msgResponse;
     private EditText etName, etBio;
 
@@ -38,6 +38,7 @@ public class Login extends AppCompatActivity {
         userId = getIntent().getIntExtra("USER_ID", 1);
 
         btnUpdateProfile = findViewById(R.id.btnUpdateProfile);
+        btnBack          = findViewById(R.id.btnBack);
         msgResponse      = findViewById(R.id.msgResponse);
         etName           = findViewById(R.id.etName);
         etBio            = findViewById(R.id.etBio);
@@ -50,6 +51,10 @@ public class Login extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "Profile not loaded yet.", Toast.LENGTH_SHORT).show();
             }
+        });
+
+        btnBack.setOnClickListener(v -> {
+            finish(); // Finishes the current activity and returns to the previous one
         });
     }
 
@@ -104,7 +109,7 @@ public class Login extends AppCompatActivity {
     }
 
     private void updateUserProfile() {
-        String url = BASE_URL + user.getUserId();
+        String url = "http://10.0.2.2:3002/users/" + user.getUserId();
 
         String updatedName = etName.getText().toString().trim();
         String updatedBio  = etBio.getText().toString().trim();
