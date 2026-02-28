@@ -1,4 +1,5 @@
 package onetoone.Users;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -6,14 +7,9 @@ import onetoone.Persons.Person;
 import onetoone.Persons.PersonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -24,6 +20,8 @@ public class UserController {
 
     private String success = "{\"message\":\"success\"}";
     private String failure = "{\"message\":\"failure\"}";
+
+
 
     @PostMapping(path = "/users")
     String createUser(@RequestBody User User){
@@ -79,25 +77,25 @@ public class UserController {
     }
 
     //s4c
-    //Logging in
     @GetMapping(path = "/login")
-    String login(@RequestBody User userReq) {
-        //find the user through the email they inputted
-        Optional<User> userOptional = UserRepository.findByEmail(userReq.getEmail());
+    ResponseEntity<?> login(@RequestParam String email, @RequestParam String passwordHash) {
+        if (email == null || email.isEmpty()) {
+            return ResponseEntity.status(401).body(failure);
+        }
 
-        //return a failure here if the findByEmail doesn't find anything
+        Optional<User> userOptional = UserRepository.findByEmail(email);
+
         if (userOptional.isEmpty()) {
-            return failure;
+            return ResponseEntity.status(401).body(failure);
         }
 
         User user = userOptional.get();
 
         //return failure if the password hashes do not match up
-        if (!user.getPasswordHash().equals(userReq.getPasswordHash())) {
-            return failure;
+        if (!user.getPasswordHash().equals(passwordHash)) {
+            return ResponseEntity.status(401).body(failure);
         }
 
-        //success if login was successful
-        return success;
+        return ResponseEntity.ok(user);
     }
 }
