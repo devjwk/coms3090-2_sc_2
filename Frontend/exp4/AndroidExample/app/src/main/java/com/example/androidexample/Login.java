@@ -2,11 +2,11 @@ package com.example.androidexample;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.NetworkResponse;
@@ -14,12 +14,11 @@ import com.android.volley.Request;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Login extends AppCompatActivity {
 
@@ -36,9 +35,12 @@ public class Login extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_json_obj_req);
+        setContentView(R.layout.activity_login);
 
-        userId = getIntent().getIntExtra("USER_ID", 1);
+        etUsername = findViewById(R.id.login_username_edt);
+        etPassword = findViewById(R.id.login_password_edt);
+        btnLogin   = findViewById(R.id.login_login_btn);
+        btnToSignup  = findViewById(R.id.login_signup_btn);
 
         btnFetchProfile  = findViewById(R.id.btnFetchProfile);
         btnUpdateProfile = findViewById(R.id.btnUpdateProfile);
