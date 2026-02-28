@@ -2,7 +2,7 @@
 <androidx.appcompat.widget.LinearLayoutCompat
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:android="http://schemas.android.com/apk/res/android"
-    tools:context=".MainActivity"
+    tools:context=".Login"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:textSize="30sp"
-        android:text="Response: "
+        android:text="Profile"
         android:textStyle="bold"
         android:gravity="center" />
 
@@ -26,13 +26,6 @@
         android:text=""
         android:textSize="16sp"
         android:gravity="center" />
-
-    <Button
-        android:id="@+id/btnJsonObj"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
-        android:text="Fetch Profile" />
 
     <EditText
         android:id="@+id/etName"
@@ -48,12 +41,35 @@
         android:layout_marginTop="10dp"
         android:hint="Bio" />
 
-
     <Button
-        android:id="@+id/btnUpdateProfile"
+        android:id="@+id/btnFetchProfile"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="15dp"
-        android:text="Save Profile" />
+        android:text="Fetch Profile" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="15dp">
+
+        <Button
+            android:id="@+id/btnUpdateProfile"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Save Profile" />
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Back" />
+
+    </LinearLayout>
 
 </androidx.appcompat.widget.LinearLayoutCompat>
