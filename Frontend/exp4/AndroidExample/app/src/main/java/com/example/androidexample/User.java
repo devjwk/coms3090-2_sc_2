@@ -15,6 +15,8 @@ public class User {
     private double longitude;
     private String createdAt;
     private boolean isActive;
+    private String major;
+    private Integer age;
 
     public User(int userId,
                 String name,
@@ -27,18 +29,35 @@ public class User {
                 double longitude,
                 String createdAt,
                 boolean isActive) {
+        this(userId, name, email, passwordHash, bio, hobbies, role, latitude, longitude, createdAt, isActive, null, null);
+    }
 
+    public User(int userId,
+                String name,
+                String email,
+                String passwordHash,
+                String bio,
+                List<String> hobbies,
+                String role,
+                double latitude,
+                double longitude,
+                String createdAt,
+                boolean isActive,
+                String major,
+                Integer age) {
         this.userId = userId;
         this.name = name;
         this.email = email;
         this.passwordHash = passwordHash;
         this.bio = bio;
-        this.hobbies = hobbies;
+        this.hobbies = hobbies != null ? hobbies : new java.util.ArrayList<>();
         this.role = role;
         this.latitude = latitude;
         this.longitude = longitude;
         this.createdAt = createdAt;
         this.isActive = isActive;
+        this.major = major != null ? major : "";
+        this.age = age != null ? age : 0;
     }
 
     public int getUserId() {
@@ -101,7 +120,14 @@ public class User {
     }
 
     public boolean isActive() {
-
         return isActive;
+    }
+
+    public String getMajor() {
+        return major != null ? major : "";
+    }
+
+    public Integer getAge() {
+        return age != null ? age : 0;
     }
 }
