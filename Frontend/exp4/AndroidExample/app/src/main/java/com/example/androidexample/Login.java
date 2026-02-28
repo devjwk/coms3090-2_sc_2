@@ -13,7 +13,6 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,6 +25,7 @@ public class Login extends AppCompatActivity {
     private EditText etUsername, etPassword;
     private Button btnLogin, btnToSignup;
 
+    // Accepting the changes from 'main' which are more descriptive and complete.
     private static final String LOGIN_URL = "http://coms-3090-015.class.las.iastate.edu:8080/login";
     private static final String EDIT_URL = "http://coms-3090-015.class.las.iastate.edu:8080/users/edit/";
 
@@ -58,7 +58,7 @@ public class Login extends AppCompatActivity {
 
         JsonObjectRequest request = new JsonObjectRequest(
                 Request.Method.POST,
-                LOGIN_URL,
+                LOGIN_URL, // Using the resolved constant
                 jsonObject,
                 new Response.Listener<JSONObject>() {
                     @Override
