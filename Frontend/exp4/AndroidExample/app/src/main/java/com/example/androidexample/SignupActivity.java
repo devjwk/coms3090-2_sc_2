@@ -28,7 +28,7 @@ public class SignupActivity extends AppCompatActivity {
     private EditText etEmail, etPassword, etDisplayName, etBio, etMajor, etAge, etInterests;
     private Button btnSignup, btnBackToMain;
 
-    private static final String URL_SIGNUP = "http://10.0.2.2:3002/users";
+    private static final String URL_SIGNUP = "http://coms-3090-015.class.las.iastate.edu:8080/users";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,8 +39,7 @@ public class SignupActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         etDisplayName = findViewById(R.id.etDisplayName);
-        etBio = findViewById(R.id.etBio);
-        etMajor = findViewById(R.id.etMajor);
+        etBio = findViewById(R.id.etBio);etMajor = findViewById(R.id.etMajor);
         etAge = findViewById(R.id.etAge);
         etInterests = findViewById(R.id.etInterests);
         btnSignup = findViewById(R.id.btnSignup);
@@ -57,7 +56,7 @@ public class SignupActivity extends AppCompatActivity {
     private void performSignup() {
         final Map<String, String> params = new HashMap<>();
         params.put("email", etEmail.getText().toString());
-        params.put("password", etPassword.getText().toString());
+        params.put("passwordHash", etPassword.getText().toString());
         params.put("displayName", etDisplayName.getText().toString());
         params.put("bio", etBio.getText().toString());
         params.put("major", etMajor.getText().toString());
