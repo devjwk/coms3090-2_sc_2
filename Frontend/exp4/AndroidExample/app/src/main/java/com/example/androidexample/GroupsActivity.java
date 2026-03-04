@@ -71,6 +71,9 @@ public class GroupsActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
 
         btnCreateGroup.setOnClickListener(v -> createGroup());
+        btnGetAllGroups.setOnClickListener(v -> getAllGroups());
+        btnGetGroupById.setOnClickListener(v -> getGroupById());
+
 
     }
 
@@ -110,6 +113,96 @@ public class GroupsActivity extends AppCompatActivity {
 
         VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
     }
+
+    private void getAllGroups() {
+        msgResponse.setText("Loading all groups...");
+
+
+        JsonArrayRequest request = new JsonArrayRequest(
+                Request.Method.GET,
+                BASE_URL,
+                null,
+                response -> {
+                    try {
+                        List<Group> groups = new ArrayList<>();
+                        for (int i = 0; i < response.length(); i++) {
+                            JSONObject obj = response.getJSONObject(i);
+                            groups.add(new Group(
+                                    obj.optInt("group_id"),
+                                    obj.optString("name", ""),
+                                    obj.optString("description", ""),
+                                    obj.optInt("created_by"),
+                                    obj.optString("created_at", "")
+                            ));
+                        }
+
+
+                        StringBuilder sb = new StringBuilder("All Groups:\n\n");
+                        for (Group g : groups) {
+                            sb.append("ID: ").append(g.getGroupId()).append("\n");
+                            sb.append("Name: ").append(g.getName()).append("\n");
+                            sb.append("Description: ").append(g.getDescription()).append("\n");
+                            sb.append("Created By: ").append(g.getCreatedBy()).append("\n");
+                            sb.append("Created At: ").append(g.getCreatedAt()).append("\n\n");
+                        }
+
+
+                        msgResponse.setText(sb.toString());
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        msgResponse.setText("Error parsing groups.");
+                    }
+                },
+                error -> {
+                    Log.e("Get Groups Error", error.toString());
+                    msgResponse.setText("Failed to load groups.");
+                }
+        );
+
+
+        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
+    }
+
+    private void getGroupById() {
+        String idStr = etGetGroupId.getText().toString().trim();
+        if (idStr.isEmpty()) {
+            Toast.makeText(this, "Enter a group ID.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+
+        String url = BASE_URL + "/" + idStr;
+        msgResponse.setText("Loading group...");
+
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.GET,
+                url,
+                null,
+                response -> {
+                    try {
+                        msgResponse.setText(
+                                "ID: "          + response.optInt("group_id")          + "\n\n" +
+                                        "Name: "        + response.optString("name", "")       + "\n\n" +
+                                        "Description: " + response.optString("description", "") + "\n\n" +
+                                        "Created By: "  + response.optInt("created_by")        + "\n\n" +
+                                        "Created At: "  + response.optString("created_at", "")
+                        );
+                    } catch (Exception e) {
+                        msgResponse.setText("Error parsing group.");
+                    }
+                },
+                error -> {
+                    Log.e("Get Group Error", error.toString());
+                    msgResponse.setText("Failed to load group.");
+                }
+        );
+
+
+        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
+    }
+
+
 
 
 }
