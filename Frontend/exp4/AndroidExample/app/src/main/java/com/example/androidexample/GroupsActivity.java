@@ -40,8 +40,8 @@ public class GroupsActivity extends AppCompatActivity {
 
     private int currentUserId;
 
-   // private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/groups";
-       private static final String BASE_URL = "http://10.0.2.2:3002/groups/";
+   private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/groups";
+       //private static final String BASE_URL = "http://10.0.2.2:3002/groups/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +73,7 @@ public class GroupsActivity extends AppCompatActivity {
         btnCreateGroup.setOnClickListener(v -> createGroup());
         btnGetAllGroups.setOnClickListener(v -> getAllGroups());
         btnGetGroupById.setOnClickListener(v -> getGroupById());
+        btnEditGroup.setOnClickListener(v -> editGroup());
 
 
     }
@@ -201,6 +202,55 @@ public class GroupsActivity extends AppCompatActivity {
 
         VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
     }
+
+    private void editGroup() {
+        String idStr = etEditGroupId.getText().toString().trim();
+        String name  = etEditGroupName.getText().toString().trim();
+        String desc  = etEditGroupDesc.getText().toString().trim();
+
+
+        if (idStr.isEmpty()) {
+            Toast.makeText(this, "Enter a group ID to edit.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (name.isEmpty()) {
+            Toast.makeText(this, "Group name cannot be empty.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+
+        String url = BASE_URL + "/" + idStr;
+
+
+        JSONObject body = new JSONObject();
+        try {
+            body.put("name",        name);
+            body.put("description", desc);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.PUT,
+                url,
+                body,
+                response -> {
+                    Log.d("Edit Group", response.toString());
+                    msgResponse.setText("Group updated!\n\n" + response.toString());
+                    Toast.makeText(this, "Group updated!", Toast.LENGTH_SHORT).show();
+                },
+                error -> {
+                    Log.e("Edit Group Error", error.toString());
+                    Toast.makeText(this, "Failed to update group.", Toast.LENGTH_SHORT).show();
+                }
+        );
+
+
+        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
+    }
+
 
 
 
