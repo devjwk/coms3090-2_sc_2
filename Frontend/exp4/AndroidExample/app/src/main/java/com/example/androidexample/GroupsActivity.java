@@ -183,11 +183,7 @@ public class GroupsActivity extends AppCompatActivity {
                 response -> {
                     try {
                         msgResponse.setText(
-                                "ID: "          + response.optInt("group_id")          + "\n\n" +
-                                        "Name: "        + response.optString("name", "")       + "\n\n" +
-                                        "Description: " + response.optString("description", "") + "\n\n" +
-                                        "Created By: "  + response.optInt("created_by")        + "\n\n" +
-                                        "Created At: "  + response.optString("created_at", "")
+                                "ID: " + response.optInt("group_id") + "\n\n" + "Name: " + response.optString("name", "")  + "\n\n" + "Description: " + response.optString("description", "") + "\n\n" + "Created By: "  + response.optInt("created_by") + "\n\n" + "Created At: "  + response.optString("created_at", "")
                         );
                     } catch (Exception e) {
                         msgResponse.setText("Error parsing group.");

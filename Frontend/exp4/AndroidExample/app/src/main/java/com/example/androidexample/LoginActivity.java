@@ -23,7 +23,7 @@ public class LoginActivity extends AppCompatActivity {
     private Button btnLogin, btnSignup, btnDeleteUser;
 
     private static final String LOGIN_URL = "http://coms-3090-015.class.las.iastate.edu:8080/login";
-   // private static final String LOGIN_URL = "http://10.0.2.2:3002/login";
+    //private static final String LOGIN_URL = "http://10.0.2.2:3002/login";
 
 
 
@@ -39,8 +39,6 @@ public class LoginActivity extends AppCompatActivity {
         btnDeleteUser = findViewById(R.id.login_delete_user_btn);
 
         btnLogin.setOnClickListener(v -> loginUser());
-
-
 
         btnSignup.setOnClickListener(v ->
                 startActivity(new Intent(LoginActivity.this, SignupActivity.class)));
@@ -77,9 +75,10 @@ public class LoginActivity extends AppCompatActivity {
                             Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+                        Intent intent = new Intent(LoginActivity.this, Login.class);
                         int uid = response.optInt("userId", response.optInt("user_id", 1));
                         intent.putExtra("USER_ID", uid);
+                        // Pass full profile so profile screen can show it without a second request
                         if (response.has("email") || response.has("bio")) {
                             intent.putExtra("USER_JSON", response.toString());
                         }
