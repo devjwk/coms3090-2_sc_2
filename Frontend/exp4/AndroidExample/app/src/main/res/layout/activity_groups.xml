@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Groups"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:layout_gravity="center"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:id="@+id/msgResponse"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="14sp"
+            android:layout_marginBottom="20dp"
+            android:background="#f0f0f0"
+            android:padding="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create Group"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etGroupName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Group Name"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etGroupDesc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btnCreateGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Create Group"
+            android:layout_marginBottom="20dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Get Groups"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btnGetAllGroups"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Get All Groups"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etGetGroupId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Group ID"
+            android:inputType="number"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btnGetGroupById"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Get Group By ID"
+            android:layout_marginBottom="20dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Edit Group"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etEditGroupId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Group ID to Edit"
+            android:inputType="number"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etEditGroupName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="New Group Name"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etEditGroupDesc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="New Description"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btnEditGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Edit Group"
+            android:layout_marginBottom="20dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Delete Group"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etDeleteGroupId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Group ID to Delete"
+            android:inputType="number"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btnDeleteGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Delete Group"
+            android:layout_marginBottom="20dp"/>
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Back"/>
+
+    </LinearLayout>
+</ScrollView>
