@@ -20,7 +20,7 @@ public class DeleteUserActivity extends AppCompatActivity {
     private EditText etUserId;
     private Button btnDelete, btnBackToMain;
 
-    private static final String URL_DELETE_USER = "http://coms-3090-015.class.las.iastate.edu:8080/users/";
+    private static final String URL_DELETE_USER = "http://10.0.2.2:3002/users/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
