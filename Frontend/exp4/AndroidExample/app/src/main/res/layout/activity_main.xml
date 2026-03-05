@@ -4,27 +4,44 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="32dp">
+    android:padding="32dp"
+    android:background="#0F0F1A">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Welcome"
-        android:textSize="28sp"
+        android:text="AntiSocial"
+        android:textColor="#7B6FFF"
+        android:textSize="48sp"
         android:textStyle="bold"
-        android:layout_marginBottom="48dp"/>
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="connect differently."
+        android:textColor="#9B9BB4"
+        android:textSize="16sp"
+        android:layout_marginBottom="72dp"/>
 
     <Button
         android:id="@+id/btnLogin"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="52dp"
         android:text="Login"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:backgroundTint="#7B6FFF"
         android:layout_marginBottom="16dp"/>
 
     <Button
         android:id="@+id/btnSignup"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Sign Up"/>
+        android:layout_height="52dp"
+        android:text="Sign Up"
+        android:textColor="#7B6FFF"
+        android:textSize="16sp"
+        android:backgroundTint="#1E1E30"/>
 
 </LinearLayout>

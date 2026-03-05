@@ -40,8 +40,8 @@ public class GroupsActivity extends AppCompatActivity {
 
     private int currentUserId;
 
-   // private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/groups";
-       private static final String BASE_URL = "http://10.0.2.2:3002/groups/";
+    private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/groups";
+    //private static final String BASE_URL = "http://10.0.2.2:3002/groups/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,27 +52,28 @@ public class GroupsActivity extends AppCompatActivity {
 
         msgResponse = findViewById(R.id.msgResponse);
 
-        etGroupName   = findViewById(R.id.etGroupName);
-        etGroupDesc   = findViewById(R.id.etGroupDesc);
+        etGroupName = findViewById(R.id.etGroupName);
+        etGroupDesc = findViewById(R.id.etGroupDesc);
         btnCreateGroup = findViewById(R.id.btnCreateGroup);
 
-        etGetGroupId    = findViewById(R.id.etGetGroupId);
+        etGetGroupId = findViewById(R.id.etGetGroupId);
         btnGetAllGroups = findViewById(R.id.btnGetAllGroups);
         btnGetGroupById = findViewById(R.id.btnGetGroupById);
 
-        etEditGroupId   = findViewById(R.id.etEditGroupId);
+        etEditGroupId = findViewById(R.id.etEditGroupId);
         etEditGroupName = findViewById(R.id.etEditGroupName);
         etEditGroupDesc = findViewById(R.id.etEditGroupDesc);
-        btnEditGroup    = findViewById(R.id.btnEditGroup);
+        btnEditGroup = findViewById(R.id.btnEditGroup);
 
         etDeleteGroupId = findViewById(R.id.etDeleteGroupId);
-        btnDeleteGroup  = findViewById(R.id.btnDeleteGroup);
+        btnDeleteGroup = findViewById(R.id.btnDeleteGroup);
 
         btnBack = findViewById(R.id.btnBack);
 
         btnCreateGroup.setOnClickListener(v -> createGroup());
         btnGetAllGroups.setOnClickListener(v -> getAllGroups());
         btnGetGroupById.setOnClickListener(v -> getGroupById());
+        btnEditGroup.setOnClickListener(v -> editGroup());
 
 
     }
@@ -88,9 +89,9 @@ public class GroupsActivity extends AppCompatActivity {
 
         JSONObject body = new JSONObject();
         try {
-            body.put("name",        name);
+            body.put("groupName", name);
             body.put("description", desc);
-            body.put("created_by",  currentUserId);
+            body.put("createdBy", currentUserId);
         } catch (JSONException e) {
             e.printStackTrace();
             return;
@@ -128,10 +129,10 @@ public class GroupsActivity extends AppCompatActivity {
                         for (int i = 0; i < response.length(); i++) {
                             JSONObject obj = response.getJSONObject(i);
                             groups.add(new Group(
-                                    obj.optInt("group_id"),
-                                    obj.optString("name", ""),
+                                    obj.optInt("groupId"),
+                                    obj.optString("groupName", ""),
                                     obj.optString("description", ""),
-                                    obj.optInt("created_by"),
+                                    obj.optInt("createdBy"),
                                     obj.optString("created_at", "")
                             ));
                         }
@@ -182,11 +183,11 @@ public class GroupsActivity extends AppCompatActivity {
                 response -> {
                     try {
                         msgResponse.setText(
-                                "ID: "          + response.optInt("group_id")          + "\n\n" +
-                                        "Name: "        + response.optString("name", "")       + "\n\n" +
+                                "ID: " + response.optInt("groupId") + "\n\n" +
+                                        "Name: " + response.optString("groupName", "") + "\n\n" +
                                         "Description: " + response.optString("description", "") + "\n\n" +
-                                        "Created By: "  + response.optInt("created_by")        + "\n\n" +
-                                        "Created At: "  + response.optString("created_at", "")
+                                        "Created By: " + response.optInt("createdBy") + "\n\n" +
+                                        "Created At: " + response.optString("created_at", "")
                         );
                     } catch (Exception e) {
                         msgResponse.setText("Error parsing group.");
@@ -203,6 +204,52 @@ public class GroupsActivity extends AppCompatActivity {
     }
 
 
+    private void editGroup() {
+        String idStr = etEditGroupId.getText().toString().trim();
+        String name = etEditGroupName.getText().toString().trim();
+        String desc = etEditGroupDesc.getText().toString().trim();
 
 
+        if (idStr.isEmpty()) {
+            Toast.makeText(this, "Enter a group ID to edit.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (name.isEmpty()) {
+            Toast.makeText(this, "Group name cannot be empty.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+
+        String url = BASE_URL + "/edit/" + idStr;
+
+        JSONObject body = new JSONObject();
+        try {
+            body.put("groupName", name);
+            body.put("description", desc);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.PUT,
+                url,
+                body,
+                response -> {
+                    Log.d("Edit Group", response.toString());
+                    msgResponse.setText("Group updated!\n\n" + response.toString());
+                    Toast.makeText(this, "Group updated!", Toast.LENGTH_SHORT).show();
+                },
+                error -> {
+                    Log.e("Edit Group Error", error.toString());
+                    Toast.makeText(this, "Failed to update group.", Toast.LENGTH_SHORT).show();
+                }
+        );
+
+
+        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
+
+
+    }
 }
