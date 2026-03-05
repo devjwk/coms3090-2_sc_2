@@ -74,6 +74,8 @@ public class GroupsActivity extends AppCompatActivity {
         btnGetAllGroups.setOnClickListener(v -> getAllGroups());
         btnGetGroupById.setOnClickListener(v -> getGroupById());
         btnEditGroup.setOnClickListener(v -> editGroup());
+        btnDeleteGroup.setOnClickListener(v -> deleteGroup());
+
 
 
     }
@@ -252,4 +254,34 @@ public class GroupsActivity extends AppCompatActivity {
 
 
     }
+
+    private void deleteGroup() {
+        String idStr = etDeleteGroupId.getText().toString().trim();
+        if (idStr.isEmpty()) {
+            Toast.makeText(this, "Enter a group ID to delete.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+
+        String url = BASE_URL + "/" + idStr;
+
+
+        StringRequest request = new StringRequest(
+                Request.Method.DELETE,
+                url,
+                response -> {
+                    Log.d("Delete Group", response);
+                    msgResponse.setText("Group deleted!");
+                    Toast.makeText(this, "Group deleted!", Toast.LENGTH_SHORT).show();
+                },
+                error -> {
+                    Log.e("Delete Group Error", error.toString());
+                    Toast.makeText(this, "Failed to delete group.", Toast.LENGTH_SHORT).show();
+                }
+        );
+
+
+        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
+    }
+
 }
