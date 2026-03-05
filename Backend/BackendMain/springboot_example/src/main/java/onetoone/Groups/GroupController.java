@@ -42,7 +42,7 @@ public class GroupController {
         return success;
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/groups/edit/{id}")
     public ResponseEntity<Group> editGroup(@PathVariable Long id, @RequestBody Group req) {
 
         Optional<Group> groupOptional = GroupRepository.findById(id);
@@ -61,7 +61,7 @@ public class GroupController {
     }
 
     // DELETE group
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/groups/{id}")
     public ResponseEntity<String> deleteGroup(@PathVariable Long id) {
 
         if(!GroupRepository.existsById(id)){
