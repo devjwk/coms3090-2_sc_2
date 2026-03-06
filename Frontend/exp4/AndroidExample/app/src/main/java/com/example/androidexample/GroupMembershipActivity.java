@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.Request;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,12 +22,12 @@ import java.util.Map;
 
 /**
  * Activity for managing group memberships.
- * Updated to use /gm/glist/{groupId} to correctly fetch userId and displayName.
+ * Aligned with backend requirements: Join, List, Update, and Leave group.
  */
 public class GroupMembershipActivity extends AppCompatActivity {
 
     private EditText etGroupId, etTargetUserId;
-    private Button btnJoinGroup, btnCheckMembership, btnApprove, btnBan, btnToggleMod, btnBack;
+    private Button btnJoinGroup, btnCheckMembership, btnApprove, btnBan, btnToggleMod, btnLeaveGroup, btnBack;
     private TextView tvMembershipInfo;
 
     private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/gm";
@@ -46,6 +47,7 @@ public class GroupMembershipActivity extends AppCompatActivity {
         btnApprove = findViewById(R.id.btnApprove);
         btnBan = findViewById(R.id.btnBan);
         btnToggleMod = findViewById(R.id.btnToggleMod);
+        btnLeaveGroup = findViewById(R.id.btnLeaveGroup);
         btnBack = findViewById(R.id.btnBack);
         tvMembershipInfo = findViewById(R.id.tvMembershipInfo);
 
@@ -62,6 +64,7 @@ public class GroupMembershipActivity extends AppCompatActivity {
         btnApprove.setOnClickListener(v -> updateStatus("active"));
         btnBan.setOnClickListener(v -> updateStatus("banned"));
         btnToggleMod.setOnClickListener(v -> toggleModerator());
+        btnLeaveGroup.setOnClickListener(v -> leaveGroup());
         btnBack.setOnClickListener(v -> finish());
     }
 
@@ -92,7 +95,7 @@ public class GroupMembershipActivity extends AppCompatActivity {
         }
         long targetGid = Long.parseLong(gidStr);
 
-        // API 변경: /gm/glist/{groupId} 를 호출하여 UserInfo(userId, displayName, ...) 목록을 가져옴
+        // Updated to use /gm/glist/{groupId} which returns UserInfo records
         String url = BASE_URL + "/glist/" + targetGid;
 
         JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
@@ -102,13 +105,13 @@ public class GroupMembershipActivity extends AppCompatActivity {
                         for (int i = 0; i < response.length(); i++) {
                             JSONObject obj = response.getJSONObject(i);
                             
-                            // 백엔드 UserInfo 레코드의 필드명: userId, displayName
-                            long uid = obj.optLong("userId", -1);
+                            // Robust parsing for UserInfo record fields: userId, displayName, groupName, groupId
+                            long uid = obj.optLong("userId", obj.optLong("userid", -1));
 
                             if (uid == userIdToFind) {
-                                String dName = obj.optString("displayName", "N/A");
-                                String gName = obj.optString("groupName", "N/A");
-                                long gid = obj.optLong("groupId", targetGid);
+                                String dName = obj.optString("displayName", obj.optString("displayname", "N/A"));
+                                String gName = obj.optString("groupName", obj.optString("groupname", "N/A"));
+                                long gid = obj.optLong("groupId", obj.optLong("groupid", targetGid));
 
                                 tvMembershipInfo.setText("RECORD FOUND!\n" +
                                         "User ID: " + uid + "\n" +
@@ -137,7 +140,7 @@ public class GroupMembershipActivity extends AppCompatActivity {
     private void updateStatus(String newStatus) {
         String membershipId = etTargetUserId.getText().toString().trim();
         if (membershipId.isEmpty()) {
-            Toast.makeText(this, "Enter Target User ID (as record ID for demo)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Enter Membership ID in 'Target ID' field", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -155,7 +158,7 @@ public class GroupMembershipActivity extends AppCompatActivity {
     private void toggleModerator() {
         String membershipId = etTargetUserId.getText().toString().trim();
         if (membershipId.isEmpty()) {
-            Toast.makeText(this, "Enter Target User ID (as record ID for demo)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Enter Membership ID in 'Target ID' field", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -169,6 +172,25 @@ public class GroupMembershipActivity extends AppCompatActivity {
                     Toast.makeText(this, "Moderator status toggled!", Toast.LENGTH_SHORT).show();
                 },
                 error -> Toast.makeText(this, "Toggle failed", Toast.LENGTH_SHORT).show());
+
+        VolleySingleton.getInstance(this).addToRequestQueue(request);
+    }
+
+    private void leaveGroup() {
+        String gidStr = etGroupId.getText().toString().trim();
+        if (gidStr.isEmpty()) {
+            Toast.makeText(this, "Enter Group ID to leave", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String url = BASE_URL + "/leave/" + gidStr;
+
+        StringRequest request = new StringRequest(Request.Method.DELETE, url,
+                response -> {
+                    Toast.makeText(this, "Successfully left group", Toast.LENGTH_SHORT).show();
+                    tvMembershipInfo.setText("Group left successfully.");
+                },
+                error -> Toast.makeText(this, "Failed to leave group", Toast.LENGTH_SHORT).show());
 
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }

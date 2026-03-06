@@ -22,7 +22,7 @@
             android:textColor="#7B6FFF"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:layout_marginTop="24dp"/>
+            android:layout_marginTop="16dp"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -62,7 +62,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
+            android:layout_marginBottom="12dp">
 
             <Button
                 android:id="@+id/btnJoinGroup"
@@ -88,6 +88,17 @@
                 android:backgroundTint="#2A2A42"
                 android:layout_marginStart="8dp"/>
         </LinearLayout>
+
+        <Button
+            android:id="@+id/btnLeaveGroup"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Leave Group"
+            android:textColor="#FF4B4B"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:backgroundTint="#1E1E30"
+            android:layout_marginBottom="24dp"/>
 
         <!-- Membership Info Display Card -->
         <LinearLayout
@@ -129,7 +140,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="TARGET USER ID"
+            android:text="TARGET USER ID / MEMBERSHIP ID"
             android:textColor="#9B9BB4"
             android:textSize="11sp"
             android:layout_marginBottom="8dp"/>
@@ -138,7 +149,7 @@
             android:id="@+id/etTargetUserId"
             android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:hint="User ID to manage"
+            android:hint="ID to manage"
             android:textColor="#FFFFFF"
             android:textColorHint="#555570"
             android:textSize="15sp"
