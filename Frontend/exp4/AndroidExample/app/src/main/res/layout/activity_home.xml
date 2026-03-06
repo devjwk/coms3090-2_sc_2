@@ -443,6 +443,30 @@
                         android:layout_marginTop="2dp"/>
 
                 </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/navMatches"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💞"
+                        android:textSize="22sp"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Matches"
+                        android:textColor="#9B9BB4"
+                        android:textSize="11sp"
+                        android:layout_marginTop="2dp"/>
+
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/navMembers"

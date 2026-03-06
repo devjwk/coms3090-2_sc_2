@@ -39,6 +39,8 @@ public class HomeActivity extends AppCompatActivity {
         navProfile     = findViewById(R.id.navProfile);
         navGroups      = findViewById(R.id.navGroups);
         navMembers     = findViewById(R.id.navMembers);
+        LinearLayout navMatches = findViewById(R.id.navMatches);
+
 
         if (userJson != null && !userJson.isEmpty()) {
             try {
@@ -92,6 +94,14 @@ public class HomeActivity extends AppCompatActivity {
             intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
+
+        navMatches.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, MatchActivity.class);
+            intent.putExtra("USER_ID", userId);
+            startActivity(intent);
+        });
+
+
 
         navMembers.setOnClickListener(v -> {
         });

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F0F1A">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="28dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AntiSocial"
+            android:textColor="#7B6FFF"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Matches"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="20dp"/>
+
+        <TextView
+            android:id="@+id/msgResponse"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#C4C4D4"
+            android:textSize="14sp"
+            android:background="#1E1E30"
+            android:padding="16dp"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="28dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CREATE MATCH"
+            android:textColor="#9B9BB4"
+            android:textSize="11sp"
+            android:layout_marginBottom="10dp"/>
+
+        <EditText
+            android:id="@+id/etUser2Id"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="User ID to match with"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555570"
+            android:textSize="15sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:inputType="number"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="12dp"/>
+
+        <Button
+            android:id="@+id/btnCreateMatch"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Create Match"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="32dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="UNMATCH"
+            android:textColor="#9B9BB4"
+            android:textSize="11sp"
+            android:layout_marginBottom="10dp"/>
+
+        <EditText
+            android:id="@+id/etDeleteMatchId"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="Match ID to delete"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555570"
+            android:textSize="15sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:inputType="number"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="12dp"/>
+
+        <Button
+            android:id="@+id/btnUnmatch"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Unmatch"
+            android:textColor="#FF5C5C"
+            android:textSize="15sp"
+            android:backgroundTint="#1E1E30"
+            android:layout_marginBottom="32dp"/>
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Back"
+            android:textColor="#9B9BB4"
+            android:textSize="15sp"
+            android:backgroundTint="#1E1E30"/>
+
+    </LinearLayout>
+
+</ScrollView>
