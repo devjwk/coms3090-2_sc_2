@@ -20,7 +20,7 @@ public class DeleteUserActivity extends AppCompatActivity {
     private EditText etUserId;
     private Button btnDelete, btnBackToMain;
 
-    private static final String URL_DELETE_USER = "http://10.0.2.2:3002/users/";
+    private static final String URL_DELETE_USER = "http://coms-3090-015.class.las.iastate.edu:8080/users/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,14 +41,17 @@ public class DeleteUserActivity extends AppCompatActivity {
         btnBackToMain.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(DeleteUserActivity.this, MainActivity.class);
-                startActivity(intent);
+                finish();
             }
         });
     }
 
     private void performDelete() {
-        String userId = etUserId.getText().toString();
+        String userId = etUserId.getText().toString().trim();
+        if (userId.isEmpty()) {
+            Toast.makeText(this, "Enter User ID", Toast.LENGTH_SHORT).show();
+            return;
+        }
         String url = URL_DELETE_USER + userId;
 
         StringRequest stringRequest = new StringRequest(
@@ -59,6 +62,7 @@ public class DeleteUserActivity extends AppCompatActivity {
                     public void onResponse(String response) {
                         Log.d("Volley Delete Rsp", response);
                         Toast.makeText(getApplicationContext(), "User Deleted!", Toast.LENGTH_SHORT).show();
+                        finish();
                     }
                 },
                 new Response.ErrorListener() {
