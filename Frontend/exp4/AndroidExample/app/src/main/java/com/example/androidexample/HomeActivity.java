@@ -93,7 +93,11 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // 🤝 멤버십 버튼을 GroupMembershipActivity로 연결
         navMembers.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, GroupMembershipActivity.class);
+            intent.putExtra("USER_ID", userId);
+            startActivity(intent);
         });
     }
 }

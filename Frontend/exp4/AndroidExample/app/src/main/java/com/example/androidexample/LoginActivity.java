@@ -23,9 +23,6 @@ public class LoginActivity extends AppCompatActivity {
     private Button btnLogin, btnSignup, btnDeleteUser;
 
     private static final String LOGIN_URL = "http://coms-3090-015.class.las.iastate.edu:8080/login";
-    //private static final String LOGIN_URL = "http://10.0.2.2:3002/login";
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,8 +36,6 @@ public class LoginActivity extends AppCompatActivity {
         btnDeleteUser = findViewById(R.id.login_delete_user_btn);
 
         btnLogin.setOnClickListener(v -> loginUser());
-
-
 
         btnSignup.setOnClickListener(v ->
                 startActivity(new Intent(LoginActivity.this, SignupActivity.class)));
