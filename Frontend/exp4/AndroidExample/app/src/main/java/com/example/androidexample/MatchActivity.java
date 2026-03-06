@@ -45,6 +45,8 @@ public class MatchActivity extends AppCompatActivity {
         etDeleteMatchId = findViewById(R.id.etDeleteMatchId);
         btnUnmatch      = findViewById(R.id.btnUnmatch);
         btnBack         = findViewById(R.id.btnBack);
+        btnUnmatch.setOnClickListener(v -> unmatch());
+
 
         btnCreateMatch.setOnClickListener(v -> createMatch());
         btnBack.setOnClickListener(v -> finish());
@@ -87,6 +89,38 @@ public class MatchActivity extends AppCompatActivity {
 
         VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
     }
+
+    private void unmatch() {
+        String matchIdStr = etDeleteMatchId.getText().toString().trim();
+
+
+        if (matchIdStr.isEmpty()) {
+            Toast.makeText(this, "Enter a match ID to unmatch.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+
+        String url = BASE_URL + "/" + matchIdStr;
+
+
+        StringRequest request = new StringRequest(
+                Request.Method.DELETE,
+                url,
+                response -> {
+                    Log.d("Unmatch", response);
+                    msgResponse.setText("Unmatched successfully!");
+                    Toast.makeText(this, "Unmatched!", Toast.LENGTH_SHORT).show();
+                },
+                error -> {
+                    Log.e("Unmatch Error", error.toString());
+                    Toast.makeText(this, "Failed to unmatch.", Toast.LENGTH_SHORT).show();
+                }
+        );
+
+
+        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
+    }
+
 
 
 }
