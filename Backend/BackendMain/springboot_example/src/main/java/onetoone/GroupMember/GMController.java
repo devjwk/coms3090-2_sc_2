@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -24,6 +25,9 @@ public class GMController {
 
     @Autowired
     private GroupRepository groupRepository;
+
+    record GroupInfo(Long groupId, String groupName) {}
+    record UserInfo(Long userId, String displayName) {}
 
     // post - join group (req: group id, user id)
     // /gm/glist/{id}
@@ -55,25 +59,41 @@ public class GMController {
     // get - list group members (req: group id)
     // /gm/glist/{id}
     @GetMapping(path = "/gm/glist/{id}")
-    ResponseEntity<List<GroupMember>> listGroupMembers(@PathVariable Long id) {
+    ResponseEntity<List<UserInfo>> listGroupMembers(@PathVariable Long id) {
         List<GroupMember> members = gmRepository.findByGroupId_groupId(id);
 
         if (members.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(members);
+
+        List<UserInfo> users = members.stream()
+                .map(luxray -> new UserInfo(
+                        luxray.getUserId().getUserId(),
+                        luxray.getUserId().getDisplayName()
+                ))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(users);
     }
 
     // get - list groups a user is in (req: user id)
     // /gm/ulist/{id}
     @GetMapping(path = "/gm/ulist/{id}")
-    ResponseEntity<List<GroupMember>> listUserGroups(@PathVariable Long id) {
+    ResponseEntity<List<GroupInfo>> listUserGroups(@PathVariable Long id) {
         List<GroupMember> memberships = gmRepository.findByUserId_userId(id);
 
         if (memberships.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(memberships);
+
+        List<GroupInfo> groups = memberships.stream()
+                .map(hawkmon -> new GroupInfo(
+                        hawkmon.getGroupId().getGroupId(),
+                        hawkmon.getGroupId().getGroupName()
+                ))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(groups);
     }
 
     // put - update membership status (req: membership id)
