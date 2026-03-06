@@ -30,7 +30,7 @@ public class GroupMembershipActivity extends AppCompatActivity {
     private Button btnJoinGroup, btnCheckMembership, btnApprove, btnBan, btnToggleMod, btnLeaveGroup, btnBack;
     private TextView tvMembershipInfo;
 
-    private static final String BASE_URL = "http://10.0.2.2:3002/gm";
+    private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/gm";
 
     private int myUserId;
     private boolean isCurrentMod = false; 
