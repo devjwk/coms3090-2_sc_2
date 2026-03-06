@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * Activity for managing group memberships.
- * Connected to the production backend GMController.
+ * Updated to use /gm/glist/{groupId} to correctly fetch userId and displayName.
  */
 public class GroupMembershipActivity extends AppCompatActivity {
 
@@ -29,12 +29,10 @@ public class GroupMembershipActivity extends AppCompatActivity {
     private Button btnJoinGroup, btnCheckMembership, btnApprove, btnBan, btnToggleMod, btnBack;
     private TextView tvMembershipInfo;
 
-    // Production BASE_URL for GMController
     private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/gm";
 
     private int myUserId;
-    private long currentMembershipId = -1;
-    private boolean isCurrentMod = false;
+    private boolean isCurrentMod = false; 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,21 +78,22 @@ public class GroupMembershipActivity extends AppCompatActivity {
         params.put("is_moderator", false);
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, BASE_URL + "/join", new JSONObject(params),
-                response -> Toast.makeText(this, "Join Request Success!", Toast.LENGTH_SHORT).show(),
-                error -> Toast.makeText(this, "Join Request Failed", Toast.LENGTH_SHORT).show());
+                response -> Toast.makeText(this, "Join success!", Toast.LENGTH_SHORT).show(),
+                error -> Toast.makeText(this, "Join failed", Toast.LENGTH_SHORT).show());
 
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
-    private void checkMembership(int userId) {
+    private void checkMembership(int userIdToFind) {
         String gidStr = etGroupId.getText().toString().trim();
         if (gidStr.isEmpty()) {
-            Toast.makeText(this, "Enter Group ID", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Enter Group ID to check", Toast.LENGTH_SHORT).show();
             return;
         }
         long targetGid = Long.parseLong(gidStr);
 
-        String url = BASE_URL + "/ulist/" + userId;
+        // API 변경: /gm/glist/{groupId} 를 호출하여 UserInfo(userId, displayName, ...) 목록을 가져옴
+        String url = BASE_URL + "/glist/" + targetGid;
 
         JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
                 response -> {
@@ -102,71 +101,72 @@ public class GroupMembershipActivity extends AppCompatActivity {
                         boolean found = false;
                         for (int i = 0; i < response.length(); i++) {
                             JSONObject obj = response.getJSONObject(i);
-                            // Assuming backend nests Group object as "groupId"
-                            JSONObject groupObj = obj.optJSONObject("groupId");
-                            long gid = (groupObj != null) ? groupObj.optLong("groupId") : obj.optLong("group_id");
+                            
+                            // 백엔드 UserInfo 레코드의 필드명: userId, displayName
+                            long uid = obj.optLong("userId", -1);
 
-                            if (gid == targetGid) {
-                                currentMembershipId = obj.optLong("id");
-                                String status = obj.optString("status", "unknown");
-                                isCurrentMod = obj.optBoolean("is_moderator", false);
+                            if (uid == userIdToFind) {
+                                String dName = obj.optString("displayName", "N/A");
+                                String gName = obj.optString("groupName", "N/A");
+                                long gid = obj.optLong("groupId", targetGid);
 
-                                tvMembershipInfo.setText("Membership ID: " + currentMembershipId +
-                                        "\nStatus: " + status.toUpperCase() +
-                                        "\nModerator: " + (isCurrentMod ? "YES" : "NO"));
-                                tvMembershipInfo.setTextColor(status.equalsIgnoreCase("banned") ? 0xFFFF4B4B : 0xFF7B6FFF);
+                                tvMembershipInfo.setText("RECORD FOUND!\n" +
+                                        "User ID: " + uid + "\n" +
+                                        "Display Name: " + dName + "\n" +
+                                        "Group Name: " + gName + "\n" +
+                                        "Group ID: " + gid);
+                                
+                                tvMembershipInfo.setTextColor(0xFF7B6FFF);
                                 found = true;
                                 break;
                             }
                         }
                         if (!found) {
-                            currentMembershipId = -1;
-                            tvMembershipInfo.setText("No membership record found.");
+                            tvMembershipInfo.setText("User " + userIdToFind + " is not in Group " + targetGid);
+                            tvMembershipInfo.setTextColor(0xFFFF4B4B);
                         }
                     } catch (JSONException e) {
-                        tvMembershipInfo.setText("Error parsing data.");
+                        tvMembershipInfo.setText("Error parsing server data.");
                     }
                 },
-                error -> tvMembershipInfo.setText("User has no group memberships."));
+                error -> tvMembershipInfo.setText("Group not found or No members."));
 
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
     private void updateStatus(String newStatus) {
-        if (currentMembershipId == -1) {
-            Toast.makeText(this, "Check membership first", Toast.LENGTH_SHORT).show();
+        String membershipId = etTargetUserId.getText().toString().trim();
+        if (membershipId.isEmpty()) {
+            Toast.makeText(this, "Enter Target User ID (as record ID for demo)", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String url = BASE_URL + "/memstat/" + currentMembershipId;
+        String url = BASE_URL + "/memstat/" + membershipId;
         Map<String, String> params = new HashMap<>();
         params.put("status", newStatus);
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, url, new JSONObject(params),
-                response -> {
-                    Toast.makeText(this, "Status updated to " + newStatus, Toast.LENGTH_SHORT).show();
-                    // Optional: refresh UI
-                },
-                error -> Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show());
+                response -> Toast.makeText(this, "Status updated to " + newStatus, Toast.LENGTH_SHORT).show(),
+                error -> Toast.makeText(this, "Update failed. Check ID.", Toast.LENGTH_SHORT).show());
 
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
     private void toggleModerator() {
-        if (currentMembershipId == -1) {
-            Toast.makeText(this, "Check membership first", Toast.LENGTH_SHORT).show();
+        String membershipId = etTargetUserId.getText().toString().trim();
+        if (membershipId.isEmpty()) {
+            Toast.makeText(this, "Enter Target User ID (as record ID for demo)", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String url = BASE_URL + "/modstat/" + currentMembershipId;
+        String url = BASE_URL + "/modstat/" + membershipId;
         Map<String, Boolean> params = new HashMap<>();
-        params.put("is_moderator", !isCurrentMod);
+        params.put("is_moderator", !isCurrentMod); 
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, url, new JSONObject(params),
                 response -> {
                     isCurrentMod = !isCurrentMod;
-                    Toast.makeText(this, "Moderator status toggled", Toast.LENGTH_SHORT).show();
-                    tvMembershipInfo.setText(tvMembershipInfo.getText().toString().replaceAll("Moderator: .*", "Moderator: " + (isCurrentMod ? "YES" : "NO")));
+                    Toast.makeText(this, "Moderator status toggled!", Toast.LENGTH_SHORT).show();
                 },
                 error -> Toast.makeText(this, "Toggle failed", Toast.LENGTH_SHORT).show());
 
