@@ -2,9 +2,11 @@ package onetoone.GroupMember;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import javax.swing.*;
+import java.util.List;
 import java.util.Optional;
 
 public interface GMRepository extends JpaRepository<GroupMember, Long> {
-    Optional<GroupMember> findByUser_id(String User_id);
-    boolean existsByEmail(String email);
+    List<GroupMember> findByGroupId_groupId(Long groupId);
+    List<GroupMember> findByUserId_userId(Long userId);
 }

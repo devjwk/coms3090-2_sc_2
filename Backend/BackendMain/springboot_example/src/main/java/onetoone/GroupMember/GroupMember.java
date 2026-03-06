@@ -3,6 +3,7 @@ package onetoone.GroupMember;
 import lombok.Getter;
 import lombok.Setter;
 import jakarta.persistence.*;
+import onetoone.Groups.Group;
 import onetoone.Users.User;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -16,17 +17,17 @@ public class GroupMember {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "membership_id")
-    private Long membership_id;
+    private Long membershipId;
 
     //user_id FK
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_id", referencedColumnName = "user_id")
-    private User user_id;
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "userId")
+    private User userId;
 
     //group_id FK
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "group_id", referencedColumnName = "group_id")
-    private Group group_id;
+    @ManyToOne
+    @JoinColumn(name = "group_id", referencedColumnName = "groupId")
+    private Group groupId;
 
     //joined_at timestamp
     @CreationTimestamp
@@ -41,13 +42,14 @@ public class GroupMember {
 
     // =============================== Getters and Setters for each field ================================== //
 
-    public Long getMembershipId() { return membership_id; }
-    public void setMembershipId(Long MembershipId) { MembershipId = membership_id; }
+    public Long getMembershipId() { return membershipId; }
+    public void setMembershipId(Long MembershipId) { this.membershipId = MembershipId; }
 
-    public User getUserId() { return user_id; }
-    public void setUserId(User userId) { userId = user_id; }
+    public User getUserId() { return userId; }
+    public void setUserId(User userId) { this.userId = userId; }
 
-    //get/set group id
+    public Group getGroupId() { return groupId; }
+    public void setGroupId(Group groupId) { this.groupId = groupId; }
 
     public Instant getJoinedAt() { return joined_at; }
 
@@ -55,5 +57,5 @@ public class GroupMember {
     public void setStatus(String status) { this.status = status; }
 
     public Boolean getModStatus() { return is_moderator; }
-    public void setModStatus(Boolean modStatus) { modStatus = is_moderator; }
+    public void setModStatus(Boolean modStatus) { is_moderator = modStatus; }
 }
