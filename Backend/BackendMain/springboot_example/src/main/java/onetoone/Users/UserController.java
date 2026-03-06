@@ -2,8 +2,6 @@ package onetoone.Users;
 import java.util.List;
 import java.util.Optional;
 
-import onetoone.Persons.Person;
-import onetoone.Persons.PersonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.transaction.annotation.Transactional;
