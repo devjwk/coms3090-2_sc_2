@@ -27,7 +27,7 @@ public class GMController {
     private GroupRepository groupRepository;
 
     record GroupInfo(Long groupId, String groupName) {}
-    record UserInfo(Long userId, String displayName) {}
+    record UserInfo(Long userId, String displayName, String groupName, Long groupId) {}
 
     // post - join group (req: group id, user id)
     // /gm/glist/{id}
@@ -69,7 +69,9 @@ public class GMController {
         List<UserInfo> users = members.stream()
                 .map(luxray -> new UserInfo(
                         luxray.getUserId().getUserId(),
-                        luxray.getUserId().getDisplayName()
+                        luxray.getUserId().getDisplayName(),
+                        luxray.getGroupId().getGroupName(),
+                        luxray.getGroupId().getGroupId()
                 ))
                 .collect(Collectors.toList());
 
