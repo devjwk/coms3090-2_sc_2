@@ -40,8 +40,8 @@ public class GroupsActivity extends AppCompatActivity {
 
     private int currentUserId;
 
-    //private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/groups";
-    private static final String BASE_URL = "http://10.0.2.2:3002/groups/";
+    private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/groups";
+    //private static final String BASE_URL = "http://10.0.2.2:3002/groups/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
