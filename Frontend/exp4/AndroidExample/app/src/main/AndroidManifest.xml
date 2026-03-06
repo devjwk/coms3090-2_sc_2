@@ -30,6 +30,9 @@
         <activity
             android:name=".GroupMembershipActivity"
             android:exported="false" />
+        <activity
+            android:name=".MatchesActivity"
+            android:exported="false" />
 
         <activity android:name=".GroupsActivity" />
         <activity android:name=".HomeActivity" />
