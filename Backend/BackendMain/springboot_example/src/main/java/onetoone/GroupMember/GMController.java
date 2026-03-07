@@ -143,4 +143,6 @@ public class GMController {
         gmRepository.deleteById(id);
         return "{\"message\":\"success\"}";
     }
+
+    // Comment for merge rq
 }
