@@ -1,4 +1,4 @@
-package onetoone.Users;
+package onetoone.Matches;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-public interface UserRepository extends JpaRepository<User, Long> {
-    Optional<User> findByEmail(String email);
-    boolean existsByEmail(String email);
+public interface MatchRepository extends JpaRepository<Match, Long> {
+    List<Match> findByUser1IdOrUser2Id(Long user1Id, Long user2Id);
 }

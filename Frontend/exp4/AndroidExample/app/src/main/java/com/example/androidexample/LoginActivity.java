@@ -70,10 +70,9 @@ public class LoginActivity extends AppCompatActivity {
                             Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        Intent intent = new Intent(LoginActivity.this, Login.class);
+                        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
                         int uid = response.optInt("userId", response.optInt("user_id", 1));
                         intent.putExtra("USER_ID", uid);
-                        // Pass full profile so profile screen can show it without a second request
                         if (response.has("email") || response.has("bio")) {
                             intent.putExtra("USER_JSON", response.toString());
                         }
