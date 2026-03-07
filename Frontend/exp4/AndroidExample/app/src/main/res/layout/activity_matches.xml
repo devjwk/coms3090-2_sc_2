@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F0F1A">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="28dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AntiSocial"
+            android:textColor="#7B6FFF"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Match Management"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- CREATE SECTION -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CREATE NEW MATCH"
+            android:textColor="#9B9BB4"
+            android:textSize="11sp"
+            android:layout_marginBottom="10dp"/>
+
+        <EditText
+            android:id="@+id/etUser2Id"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="Partner User ID"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555570"
+            android:textSize="15sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:inputType="number"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="12dp"/>
+
+        <Button
+            android:id="@+id/btnCreateMatch"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Send Match Request"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="32dp"/>
+
+        <!-- LIST SECTION -->
+        <TextView
+            android:id="@+id/tvMatchData"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Loading matches..."
+            android:textColor="#C4C4D4"
+            android:textSize="14sp"
+            android:background="#1E1E30"
+            android:padding="16dp"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="16dp"/>
+
+        <Button
+            android:id="@+id/btnRefreshMatches"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Refresh Match List"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="32dp"/>
+
+        <!-- UPDATE STATUS SECTION (ENUM 5) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="UPDATE STATUS (BY MATCH ID)"
+            android:textColor="#9B9BB4"
+            android:textSize="11sp"
+            android:layout_marginBottom="10dp"/>
+
+        <EditText
+            android:id="@+id/etMatchId"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="Enter Match ID"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555570"
+            android:textSize="15sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="16dp"
+            android:inputType="number"/>
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
+            android:alignmentMode="alignMargins">
+
+            <Button
+                android:id="@+id/btnAcceptMatch"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_columnWeight="1"
+                android:text="Accept"
+                android:backgroundTint="#4CAF50"
+                android:layout_margin="4dp"/>
+
+            <Button
+                android:id="@+id/btnRejectMatch"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_columnWeight="1"
+                android:text="Decline"
+                android:backgroundTint="#F44336"
+                android:layout_margin="4dp"/>
+
+            <Button
+                android:id="@+id/btnBlockMatch"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_columnWeight="1"
+                android:text="Block"
+                android:backgroundTint="#2A2A42"
+                android:textColor="#FF4B4B"
+                android:layout_margin="4dp"/>
+
+            <Button
+                android:id="@+id/btnUnmatchMatch"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_columnWeight="1"
+                android:text="Unmatch"
+                android:backgroundTint="#2A2A42"
+                android:textColor="#9B9BB4"
+                android:layout_margin="4dp"/>
+
+            <Button
+                android:id="@+id/btnPendingMatch"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_columnSpan="2"
+                android:text="Set to Pending"
+                android:backgroundTint="#1E1E30"
+                android:layout_margin="4dp"/>
+        </GridLayout>
+
+        <!-- DELETE SECTION -->
+        <Button
+            android:id="@+id/btnUnmatch"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Permanently Delete Match"
+            android:textColor="#FF5C5C"
+            android:textStyle="bold"
+            android:backgroundTint="#1E1E30"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="32dp"/>
+
+        <Button
+            android:id="@+id/btnBackToHome"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Back to Dashboard"
+            android:textColor="#9B9BB4"
+            android:textSize="15sp"
+            android:backgroundTint="#1E1E30"/>
+
+    </LinearLayout>
+</ScrollView>

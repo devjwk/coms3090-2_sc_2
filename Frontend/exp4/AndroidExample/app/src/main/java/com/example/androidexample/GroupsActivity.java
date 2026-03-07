@@ -2,6 +2,7 @@ package com.example.androidexample;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -14,6 +15,7 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -36,12 +38,12 @@ public class GroupsActivity extends AppCompatActivity {
     private EditText etDeleteGroupId;
     private Button btnDeleteGroup;
 
+    private Button btnManageMembers;
     private Button btnBack;
 
     private int currentUserId;
 
     private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/groups";
-    //private static final String BASE_URL = "http://10.0.2.2:3002/groups/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +70,7 @@ public class GroupsActivity extends AppCompatActivity {
         etDeleteGroupId = findViewById(R.id.etDeleteGroupId);
         btnDeleteGroup = findViewById(R.id.btnDeleteGroup);
 
+        btnManageMembers = findViewById(R.id.btnManageMembers);
         btnBack = findViewById(R.id.btnBack);
 
         btnCreateGroup.setOnClickListener(v -> createGroup());
@@ -76,8 +79,13 @@ public class GroupsActivity extends AppCompatActivity {
         btnEditGroup.setOnClickListener(v -> editGroup());
         btnDeleteGroup.setOnClickListener(v -> deleteGroup());
 
+        btnManageMembers.setOnClickListener(v -> {
+            Intent intent = new Intent(GroupsActivity.this, GroupMembershipActivity.class);
+            intent.putExtra("USER_ID", currentUserId);
+            startActivity(intent);
+        });
 
-
+        btnBack.setOnClickListener(v -> finish());
     }
 
     private void createGroup() {
@@ -120,7 +128,6 @@ public class GroupsActivity extends AppCompatActivity {
     private void getAllGroups() {
         msgResponse.setText("Loading all groups...");
 
-
         JsonArrayRequest request = new JsonArrayRequest(
                 Request.Method.GET,
                 BASE_URL,
@@ -135,10 +142,9 @@ public class GroupsActivity extends AppCompatActivity {
                                     obj.optString("groupName", ""),
                                     obj.optString("description", ""),
                                     obj.optInt("createdBy"),
-                                    obj.optString("created_at", "")
+                                    obj.optString("createdAt", "")
                             ));
                         }
-
 
                         StringBuilder sb = new StringBuilder("All Groups:\n\n");
                         for (Group g : groups) {
@@ -148,7 +154,6 @@ public class GroupsActivity extends AppCompatActivity {
                             sb.append("Created By: ").append(g.getCreatedBy()).append("\n");
                             sb.append("Created At: ").append(g.getCreatedAt()).append("\n\n");
                         }
-
 
                         msgResponse.setText(sb.toString());
                     } catch (JSONException e) {
@@ -162,7 +167,6 @@ public class GroupsActivity extends AppCompatActivity {
                 }
         );
 
-
         VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
     }
 
@@ -173,27 +177,21 @@ public class GroupsActivity extends AppCompatActivity {
             return;
         }
 
-
         String url = BASE_URL + "/" + idStr;
         msgResponse.setText("Loading group...");
-
 
         JsonObjectRequest request = new JsonObjectRequest(
                 Request.Method.GET,
                 url,
                 null,
                 response -> {
-                    try {
-                        msgResponse.setText(
-                                "ID: " + response.optInt("groupId") + "\n\n" +
-                                        "Name: " + response.optString("groupName", "") + "\n\n" +
-                                        "Description: " + response.optString("description", "") + "\n\n" +
-                                        "Created By: " + response.optInt("createdBy") + "\n\n" +
-                                        "Created At: " + response.optString("created_at", "")
-                        );
-                    } catch (Exception e) {
-                        msgResponse.setText("Error parsing group.");
-                    }
+                    msgResponse.setText(
+                            "ID: " + response.optInt("groupId") + "\n\n" +
+                                    "Name: " + response.optString("groupName", "") + "\n\n" +
+                                    "Description: " + response.optString("description", "") + "\n\n" +
+                                    "Created By: " + response.optInt("createdBy") + "\n\n" +
+                                    "Created At: " + response.optString("createdAt", "")
+                    );
                 },
                 error -> {
                     Log.e("Get Group Error", error.toString());
@@ -201,16 +199,13 @@ public class GroupsActivity extends AppCompatActivity {
                 }
         );
 
-
         VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
     }
-
 
     private void editGroup() {
         String idStr = etEditGroupId.getText().toString().trim();
         String name = etEditGroupName.getText().toString().trim();
         String desc = etEditGroupDesc.getText().toString().trim();
-
 
         if (idStr.isEmpty()) {
             Toast.makeText(this, "Enter a group ID to edit.", Toast.LENGTH_SHORT).show();
@@ -220,7 +215,6 @@ public class GroupsActivity extends AppCompatActivity {
             Toast.makeText(this, "Group name cannot be empty.", Toast.LENGTH_SHORT).show();
             return;
         }
-
 
         String url = BASE_URL + "/edit/" + idStr;
 
@@ -232,7 +226,6 @@ public class GroupsActivity extends AppCompatActivity {
             e.printStackTrace();
             return;
         }
-
 
         JsonObjectRequest request = new JsonObjectRequest(
                 Request.Method.PUT,
@@ -249,10 +242,7 @@ public class GroupsActivity extends AppCompatActivity {
                 }
         );
 
-
         VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
-
-
     }
 
     private void deleteGroup() {
@@ -262,9 +252,7 @@ public class GroupsActivity extends AppCompatActivity {
             return;
         }
 
-
         String url = BASE_URL + "/" + idStr;
-
 
         StringRequest request = new StringRequest(
                 Request.Method.DELETE,
@@ -279,7 +267,6 @@ public class GroupsActivity extends AppCompatActivity {
                     Toast.makeText(this, "Failed to delete group.", Toast.LENGTH_SHORT).show();
                 }
         );
-
 
         VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
     }

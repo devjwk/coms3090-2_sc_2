@@ -13,7 +13,7 @@ public class HomeActivity extends AppCompatActivity {
     private TextView tvProfileName, tvProfileEmail, tvProfileBio;
     private TextView tvHobby1, tvHobby2;
     private TextView btnEditProfile, btnSeeAllGroups;
-    private LinearLayout navProfile, navGroups, navMembers;
+    private LinearLayout navProfile, navGroups, navMembers, navMatches;
 
     private int userId;
     private String userJson;
@@ -39,6 +39,7 @@ public class HomeActivity extends AppCompatActivity {
         navProfile     = findViewById(R.id.navProfile);
         navGroups      = findViewById(R.id.navGroups);
         navMembers     = findViewById(R.id.navMembers);
+        navMatches     = findViewById(R.id.navMatches);
 
         if (userJson != null && !userJson.isEmpty()) {
             try {
@@ -93,7 +94,18 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // 🤝 connect navMembers to GroupMembershipActivity
         navMembers.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, GroupMembershipActivity.class);
+            intent.putExtra("USER_ID", userId);
+            startActivity(intent);
+        });
+
+        // 🔥 connect match button to  MatchesActivity
+        navMatches.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, MatchesActivity.class);
+            intent.putExtra("USER_ID", userId);
+            startActivity(intent);
         });
     }
 }

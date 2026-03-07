@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F0F1A"
+    tools:context=".GroupMembershipActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="28dp">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AntiSocial"
+            android:textColor="#7B6FFF"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Group Management"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Section 1: My Actions -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="GROUP ID"
+            android:textColor="#9B9BB4"
+            android:textSize="11sp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etGroupId"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="Enter Group ID"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555570"
+            android:textSize="15sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="16dp"
+            android:inputType="number"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <Button
+                android:id="@+id/btnJoinGroup"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="Join"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:backgroundTint="#7B6FFF"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btnCheckMembership"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="Check Status"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:backgroundTint="#2A2A42"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnLeaveGroup"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Leave Group"
+            android:textColor="#FF4B4B"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:backgroundTint="#1E1E30"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- Membership Info Display Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#1E1E30"
+            android:padding="16dp"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="MEMBERSHIP INFO"
+                android:textColor="#9B9BB4"
+                android:textSize="11sp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvMembershipInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Search for a group to see status"
+                android:textColor="#C4C4D4"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"/>
+        </LinearLayout>
+
+        <!-- Section 2: Admin/Moderator Actions -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ADMINISTRATION"
+            android:textColor="#7B6FFF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TARGET USER ID / MEMBERSHIP ID"
+            android:textColor="#9B9BB4"
+            android:textSize="11sp"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etTargetUserId"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="ID to manage"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555570"
+            android:textSize="15sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="16dp"
+            android:inputType="number"/>
+
+        <Button
+            android:id="@+id/btnApprove"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Approve Member"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="12dp"/>
+
+        <Button
+            android:id="@+id/btnToggleMod"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Toggle Moderator"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="12dp"/>
+
+        <Button
+            android:id="@+id/btnBan"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Ban User"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:backgroundTint="#FF4B4B"
+            android:layout_marginBottom="32dp"/>
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Back to Main"
+            android:textColor="#9B9BB4"
+            android:textSize="16sp"
+            android:backgroundTint="#1E1E30"/>
+
+    </LinearLayout>
+
+</ScrollView>
