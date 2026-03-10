@@ -48,4 +48,21 @@ public class MatchController {
 
         return ResponseEntity.ok(match);
     }
+
+    //s4c
+    @PostMapping("/matches")
+    public ResponseEntity<String> createMatch (@RequestBody Match match) {
+        MatchRepository.save(match);
+        return ResponseEntity.ok("Match created");
+    }
+
+    //s4c
+    @DeleteMapping("/matches/del/{id}")
+    public ResponseEntity<String> deleteMatch (@PathVariable Long id) {
+        if(!MatchRepository.existsById(id)) {
+            return ResponseEntity.status(404).body("Match not found");
+        }
+        MatchRepository.deleteById(id);
+        return ResponseEntity.ok("Match deleted");
+    }
 }
