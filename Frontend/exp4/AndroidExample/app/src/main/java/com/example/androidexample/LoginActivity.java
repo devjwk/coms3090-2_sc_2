@@ -23,7 +23,6 @@ public class LoginActivity extends AppCompatActivity {
     private Button btnLogin, btnSignup, btnDeleteUser;
 
     private static final String LOGIN_URL = "http://coms-3090-015.class.las.iastate.edu:8080/login";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

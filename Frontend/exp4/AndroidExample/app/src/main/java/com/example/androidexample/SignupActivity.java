@@ -1,7 +1,6 @@
 package com.example.androidexample;
 
 import androidx.appcompat.app.AppCompatActivity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -30,6 +29,7 @@ public class SignupActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signup);
 
+        // Initialize UI components
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         etDisplayName = findViewById(R.id.etDisplayName);
@@ -45,26 +45,55 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     private void performSignup() {
+        String email = etEmail.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Email and Password are required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         final Map<String, Object> params = new HashMap<>();
-        params.put("email", etEmail.getText().toString().trim());
-        params.put("passwordHash", etPassword.getText().toString().trim()); // Match backend field
+        params.put("email", email);
+        params.put("passwordHash", password); // Matches backend User entity field
         params.put("displayName", etDisplayName.getText().toString().trim());
         params.put("bio", etBio.getText().toString().trim());
         params.put("major", etMajor.getText().toString().trim());
         
         try {
-            params.put("age", Integer.parseInt(etAge.getText().toString().trim()));
+            String ageStr = etAge.getText().toString().trim();
+            params.put("age", ageStr.isEmpty() ? 0 : Integer.parseInt(ageStr));
         } catch (NumberFormatException e) {
             params.put("age", 0);
         }
 
+        params.put("interests", etInterests.getText().toString().trim());
+
         StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_SIGNUP,
                 response -> {
-                    Toast.makeText(getApplicationContext(), "Signup Successful!", Toast.LENGTH_SHORT).show();
-                    finish();
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        String message = jsonResponse.optString("message", "");
+                        
+                        if ("success".equalsIgnoreCase(message)) {
+                            Toast.makeText(getApplicationContext(), "Signup Successful!", Toast.LENGTH_SHORT).show();
+                            finish();
+                        } else {
+                            Toast.makeText(getApplicationContext(), "Signup Failed: " + message, Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        // If response is just "success" string instead of JSON
+                        if (response.contains("success")) {
+                            Toast.makeText(getApplicationContext(), "Signup Successful!", Toast.LENGTH_SHORT).show();
+                            finish();
+                        } else {
+                            Log.e("Signup Error", "JSON Parsing error", e);
+                            Toast.makeText(getApplicationContext(), "Server error. Please try again.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
                 },
                 error -> {
-                    Log.e("Signup Error", error.toString());
+                    Log.e("Signup Error", "Volley Error: " + error.toString());
                     Toast.makeText(getApplicationContext(), "Signup Failed. Check connection.", Toast.LENGTH_SHORT).show();
                 }) {
             @Override
