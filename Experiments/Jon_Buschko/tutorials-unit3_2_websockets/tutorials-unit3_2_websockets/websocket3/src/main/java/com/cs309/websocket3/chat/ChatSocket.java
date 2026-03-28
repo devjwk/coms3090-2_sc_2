@@ -1,6 +1,7 @@
 package com.cs309.websocket3.chat;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,11 @@ public class ChatSocket {
       throws IOException {
 
 		logger.info("Entered into Open");
+		if (usernameSessionMap.containsKey(username)) {
+			session.getBasicRemote().sendText("Username already taken.");
+			session.close();
+			return;
+		}
 
     // store connecting user information
 		sessionUsernameMap.put(session, username);
@@ -60,6 +66,7 @@ public class ChatSocket {
     // broadcast that new user joined
 		String message = "User:" + username + " has Joined the Chat";
 		broadcast(message);
+		broadcast("Users online: " + usernameSessionMap.size());
 	}
 
 
@@ -80,7 +87,7 @@ public class ChatSocket {
 
 		} 
     else { // broadcast
-			broadcast(username + ": " + message);
+			broadcast("[" + LocalDateTime.now() + "]" + username + ": " + message);
 		}
 
 		// Saving chat history to repository
@@ -100,6 +107,7 @@ public class ChatSocket {
     // broadcase that the user disconnected
 		String message = username + " disconnected";
 		broadcast(message);
+		broadcast("Users online: " + usernameSessionMap.size());
 	}
 
 
