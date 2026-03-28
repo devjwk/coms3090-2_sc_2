@@ -51,6 +51,11 @@ public class ChatServer {
     @OnOpen
     public void onOpen(Session session, @PathParam("username") String username) throws IOException {
 
+        if (username == null || username.trim().isEmpty()) {
+            session.close();
+            return;
+        }
+
         // server side log
         logger.info("[onOpen] " + username);
 
@@ -71,6 +76,8 @@ public class ChatServer {
 
             // send to everyone in the chat
             broadcast("User: " + username + " has Joined the Chat");
+
+            broadcast("Active users: " + usernameSessionMap.keySet());
         }
     }
 
