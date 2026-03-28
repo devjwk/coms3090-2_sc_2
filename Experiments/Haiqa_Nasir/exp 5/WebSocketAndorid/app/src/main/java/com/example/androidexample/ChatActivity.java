@@ -6,87 +6,85 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import org.java_websocket.handshake.ServerHandshake;
 
-import java.util.Iterator;
-
-/**
- * ChatActivity handles the chat interface where users can send and receive messages
- * using a WebSocket connection.
- */
-public class ChatActivity extends AppCompatActivity implements WebSocketListener{
+public class ChatActivity extends AppCompatActivity implements WebSocketListener {
 
     private Button sendBtn;
     private EditText msgEtx;
     private TextView msgTv;
+    private ScrollView scrollView;
+    private TextView tvChatTitle;
+
+    private String currentUsername;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        /* initialize UI elements */
-        sendBtn = (Button) findViewById(R.id.sendBtn);
-        msgEtx = (EditText) findViewById(R.id.msgEdt);
-        msgTv = (TextView) findViewById(R.id.tx1);
+        currentUsername = getIntent().getStringExtra("USERNAME");
+        if (currentUsername == null) currentUsername = "User";
 
-        /* connect this activity to the websocket instance */
+        sendBtn     = findViewById(R.id.sendBtn);
+        msgEtx      = findViewById(R.id.msgEdt);
+        msgTv       = findViewById(R.id.tx1);
+        scrollView  = findViewById(R.id.scrollView);
+        tvChatTitle = findViewById(R.id.tvChatTitle);
+
+        tvChatTitle.setText("Chat — " + currentUsername);
+
         WebSocketManager.getInstance().setWebSocketListener(ChatActivity.this);
 
-        /* send button listener */
         sendBtn.setOnClickListener(v -> {
             try {
-                // send message
-                WebSocketManager.getInstance().sendMessage(msgEtx.getText().toString());
-                //clear text box once the msg is sent
+                String message = msgEtx.getText().toString().trim();
+                if (message.isEmpty()) return;
+                WebSocketManager.getInstance().sendMessage(message);
                 msgEtx.setText("");
             } catch (Exception e) {
-                Log.d("ExceptionSendMessage:", e.getMessage().toString());
+                Log.d("ChatActivity", "Send error: " + e.getMessage());
             }
         });
     }
 
-
-    /**
-     * Called when a message is received from the WebSocket.
-     * This method ensures that UI updates happen on the main thread.
-     */
     @Override
     public void onWebSocketMessage(String message) {
-        /**
-         * In Android, all UI-related operations must be performed on the main UI thread
-         * to ensure smooth and responsive user interfaces. The 'runOnUiThread' method
-         * is used to post a runnable to the UI thread's message queue, allowing UI updates
-         * to occur safely from a background or non-UI thread.
-         */
         runOnUiThread(() -> {
-            String s = msgTv.getText().toString();
-            msgTv.setText(s + "\n"+message);
+            String current = msgTv.getText().toString();
+            msgTv.setText(current.isEmpty() ? message : current + "\n" + message);
+            scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
         });
     }
 
-    /**
-     * Called when the WebSocket connection is closed.
-     * Displays the closure reason in the TextView.
-     *
-     * @param code   The status code of the closure
-     * @param reason The reason provided for closure
-     */
     @Override
     public void onWebSocketClose(int code, String reason, boolean remote) {
         String closedBy = remote ? "server" : "local";
         runOnUiThread(() -> {
-            String s = msgTv.getText().toString();
-            msgTv.setText(s + "---\nconnection closed by " + closedBy + "\nreason: " + reason);
+            String current = msgTv.getText().toString();
+            msgTv.setText(current + "\n---\nDisconnected (" + closedBy + "): " + reason);
         });
     }
 
     @Override
-    public void onWebSocketOpen(ServerHandshake handshakedata) {}
-
+    public void onWebSocketOpen(ServerHandshake handshakedata) {
+        runOnUiThread(() -> msgTv.setText("Connected to AntiSocial chat ✓\n"));
+    }
 
     @Override
-    public void onWebSocketError(Exception ex) {}
+    public void onWebSocketError(Exception ex) {
+        runOnUiThread(() -> {
+            String current = msgTv.getText().toString();
+            msgTv.setText(current + "\nError: " + ex.getMessage());
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        WebSocketManager.getInstance().disconnectWebSocket();
+    }
 }

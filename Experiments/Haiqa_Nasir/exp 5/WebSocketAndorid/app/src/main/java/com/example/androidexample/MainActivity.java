@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements WebSocketListener
 
             // got to chat activity
             Intent intent = new Intent(this, ChatActivity.class);
+            intent.putExtra("USERNAME", "Badminton Club");
             startActivity(intent);
         });
     }
