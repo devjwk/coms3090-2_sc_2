@@ -255,7 +255,11 @@
             android:textColor="#9B9BB4"
             android:textSize="15sp"
             android:backgroundTint="#1E1E30"/>
-
+        <Button
+            android:id="@+id/btnOpenNotifications"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Open Notifications" />
     </LinearLayout>
 
 </ScrollView>
