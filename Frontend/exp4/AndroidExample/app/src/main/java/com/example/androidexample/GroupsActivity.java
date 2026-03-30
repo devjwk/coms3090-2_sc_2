@@ -43,6 +43,7 @@ public class GroupsActivity extends AppCompatActivity {
 
     private int currentUserId;
 
+    private Button btnOpenNotifications;
     private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/groups";
 
     @Override
@@ -72,6 +73,7 @@ public class GroupsActivity extends AppCompatActivity {
 
         btnManageMembers = findViewById(R.id.btnManageMembers);
         btnBack = findViewById(R.id.btnBack);
+        btnOpenNotifications = findViewById(R.id.btnOpenNotifications);
 
         btnCreateGroup.setOnClickListener(v -> createGroup());
         btnGetAllGroups.setOnClickListener(v -> getAllGroups());
@@ -86,6 +88,13 @@ public class GroupsActivity extends AppCompatActivity {
         });
 
         btnBack.setOnClickListener(v -> finish());
+
+        btnOpenNotifications.setOnClickListener(v -> {
+            Intent intent = new Intent(GroupsActivity.this, WebSocketConnectActivity.class);
+            startActivity(intent);
+        });
+
+
     }
 
     private void createGroup() {
