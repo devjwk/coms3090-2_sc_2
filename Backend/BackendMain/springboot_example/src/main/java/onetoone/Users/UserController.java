@@ -14,9 +14,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 @RestController
+@Tag(name = "Users", description = "Operations for managing users")
 public class UserController {
 
     @Autowired
@@ -27,7 +33,12 @@ public class UserController {
 
     /** Fetch full user profile by id (all fields from database). */
     @GetMapping(path = "/users/{id}")
-    ResponseEntity<User> getUserById(@PathVariable Long id) {
+    @Operation(summary = "Get user by ID", description = "Returns the user associated with the given ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User found"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    ResponseEntity<User> getUserById(@Parameter(description = "ID of the user", required = true) @PathVariable Long id) {
         Optional<User> userOptional = UserRepository.findById(id);
         if (userOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -35,8 +46,14 @@ public class UserController {
         return ResponseEntity.ok(userOptional.get());
     }
 
+
     @PostMapping(path = "/users")
-    String createUser(@RequestBody User User){
+    @Operation(summary = "Create user", description = "Creates a new user account.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input")
+    })
+    String createUser(@Parameter(description = "Information for a new user", required = true)@RequestBody User User){
         if (User == null)
             return failure;
         UserRepository.save(User);
@@ -44,7 +61,12 @@ public class UserController {
     }
 
     @DeleteMapping(path = "/users/{id}")
-    String deletePerson(@PathVariable Long id){
+    @Operation(summary = "Delete user", description = "Deletes a user account by ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User deleted"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    String deletePerson(@Parameter(description = "ID of the user to delete", required = true) @PathVariable Long id){
         UserRepository.deleteById(id);
         return success;
     }
@@ -52,7 +74,12 @@ public class UserController {
     //s4c
     //Edit profile
     @PutMapping(path = "/users/edit/{id}")
-    String editPerson(@PathVariable Long id, @RequestBody User userReq){
+    @Operation(summary = "Update user", description = "Updates user profile fields such as email, name, bio, etc.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User updated successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    String editPerson(@Parameter(description = "ID of the user to update", required = true) @PathVariable Long id, @RequestBody User userReq){
         //find the user being updated through ID
         Optional<User> userOptional = UserRepository.findById(id);
 
@@ -90,7 +117,12 @@ public class UserController {
 
     //s4c
     @GetMapping(path = "/login")
-    ResponseEntity<?> login(@RequestParam String email, @RequestParam String passwordHash) {
+    @Operation(summary = "User login", description = "Authenticates a user using email and password hash.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login successful"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+    })
+    ResponseEntity<?> login(@Parameter(description = "User email", required = true) @RequestParam String email, @Parameter(description = "User password hash", required = true) @RequestParam String passwordHash) {
         if (email == null || email.isEmpty()) {
             return ResponseEntity.status(401).body(failure);
         }
