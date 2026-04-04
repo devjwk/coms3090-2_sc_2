@@ -15,13 +15,32 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 
+/**
+ * Activity that provides functionality to delete a user account from the system.
+ * It takes a User ID as input and sends a DELETE request to the backend server.
+ */
 public class DeleteUserActivity extends AppCompatActivity {
 
+    /** Input field for the User ID to be deleted */
     private EditText etUserId;
-    private Button btnDelete, btnBackToMain;
 
-    private static final String URL_DELETE_USER = "http://coms-3090-015.class.las.iastate.edu:8080/users/ ";
+    /** Button to trigger the delete operation */
+    private Button btnDelete;
 
+    /** Button to return to the previous screen */
+    private Button btnBackToMain;
+
+    /** Base URL for the user deletion endpoint */
+    private static final String URL_DELETE_USER = "http://coms-3090-015.class.las.iastate.edu:8080/users/";
+
+    /**
+     * Initializes the activity, sets up the UI components, and defines
+     * click listeners for the delete and back buttons.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *                           previously being shut down then this Bundle contains the data it most
+     *                           recently supplied in onSaveInstanceState(Bundle).
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +65,11 @@ public class DeleteUserActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Retrieves the User ID from the input field and sends a DELETE request
+     * to the backend server. Displays a success message and closes the activity
+     * upon successful deletion, or an error message if the operation fails.
+     */
     private void performDelete() {
         String userId = etUserId.getText().toString().trim();
         if (userId.isEmpty()) {

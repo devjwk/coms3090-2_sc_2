@@ -7,17 +7,43 @@ import android.os.Bundle;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+/**
+ * Main dashboard activity shown to the user after a successful login.
+ * This screen displays the user's profile information, including their name,
+ * email, bio, and hobbies. It also serves as a navigation hub to access
+ * groups, group memberships, and matches.
+ */
 public class HomeActivity extends AppCompatActivity {
 
+    /** TextViews for displaying user greeting and initials */
     private TextView tvWelcomeName, tvAvatarInitial, tvProfileInitial;
+
+    /** TextViews for displaying profile details: name, email, and bio */
     private TextView tvProfileName, tvProfileEmail, tvProfileBio;
+
+    /** TextViews for displaying up to two hobbies of the user */
     private TextView tvHobby1, tvHobby2;
+
+    /** Interactive text elements used as buttons for profile editing and viewing all groups */
     private TextView btnEditProfile, btnSeeAllGroups;
+
+    /** Bottom navigation bar items represented as clickable layouts */
     private LinearLayout navProfile, navGroups, navMembers, navMatches;
 
+    /** Unique identifier for the logged-in user */
     private int userId;
+
+    /** Raw JSON string containing user details passed from the login screen */
     private String userJson;
 
+    /**
+     * Initializes the activity, sets up the layout, retrieves user data from the intent,
+     * populates profile views, and configures navigation listeners.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *                           previously being shut down then this Bundle contains the data it most
+     *                           recently supplied in onSaveInstanceState(Bundle).
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,6 +67,7 @@ public class HomeActivity extends AppCompatActivity {
         navMembers     = findViewById(R.id.navMembers);
         navMatches     = findViewById(R.id.navMatches);
 
+        // Parse and display user information if the JSON data is available
         if (userJson != null && !userJson.isEmpty()) {
             try {
                 org.json.JSONObject jo = new org.json.JSONObject(userJson);
@@ -68,6 +95,7 @@ public class HomeActivity extends AppCompatActivity {
             }
         }
 
+        // Set navigation listeners
         btnEditProfile.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, Login.class);
             intent.putExtra("USER_ID", userId);
@@ -94,14 +122,14 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // 🤝 connect navMembers to GroupMembershipActivity
+        // 🤝 Navigation to group membership management
         navMembers.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, GroupMembershipActivity.class);
             intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
 
-        // 🔥 connect match button to  MatchesActivity
+        // 🔥 Navigation to matches management
         navMatches.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, MatchesActivity.class);
             intent.putExtra("USER_ID", userId);
