@@ -22,19 +22,57 @@ import java.util.Map;
 
 /**
  * Activity for managing group memberships.
- * Aligned with backend requirements: Join, List, Update, and Leave group.
+ * This screen allows a user to join a group, check membership information,
+ * update membership status, toggle moderator privileges, and leave a group.
+ * It communicates with backend group membership endpoints using Volley requests.
  */
 public class GroupMembershipActivity extends AppCompatActivity {
 
-    private EditText etGroupId, etTargetUserId;
-    private Button btnJoinGroup, btnCheckMembership, btnApprove, btnBan, btnToggleMod, btnLeaveGroup, btnBack;
+    /** Input field for entering the group ID */
+    private EditText etGroupId;
+
+    /** Input field for entering the target user or membership ID */
+    private EditText etTargetUserId;
+
+    /** Button used to join a group */
+    private Button btnJoinGroup;
+
+    /** Button used to check membership information */
+    private Button btnCheckMembership;
+
+    /** Button used to approve a membership request */
+    private Button btnApprove;
+
+    /** Button used to ban a member */
+    private Button btnBan;
+
+    /** Button used to toggle moderator status */
+    private Button btnToggleMod;
+
+    /** Button used to leave a group */
+    private Button btnLeaveGroup;
+
+    /** Button used to return to the previous screen */
+    private Button btnBack;
+
+    /** TextView used to display membership details and status messages */
     private TextView tvMembershipInfo;
 
+    /** Base URL for all group membership related backend requests */
     private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/gm";
 
+    /** Logged-in user's ID passed through the activity intent */
     private int myUserId;
-    private boolean isCurrentMod = false; 
 
+    /** Tracks whether the currently selected member is a moderator */
+    private boolean isCurrentMod = false;
+
+    /**
+     * Initializes the activity, connects UI components, retrieves the logged-in user ID,
+     * and sets button click listeners for all membership actions.
+     *
+     * @param savedInstanceState saved instance state bundle provided by Android
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +106,10 @@ public class GroupMembershipActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
     }
 
+    /**
+     * Sends a request to the backend for the current user to join the specified group.
+     * If the group ID field is empty, a warning message is shown instead.
+     */
     private void joinGroup() {
         String gidStr = etGroupId.getText().toString().trim();
         if (gidStr.isEmpty()) {
@@ -87,6 +129,13 @@ public class GroupMembershipActivity extends AppCompatActivity {
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
+    /**
+     * Checks whether a specific user belongs to the selected group by requesting
+     * the backend membership list for that group. If a matching user is found,
+     * membership information is displayed on the screen.
+     *
+     * @param userIdToFind the user ID to search for within the selected group
+     */
     private void checkMembership(int userIdToFind) {
         String gidStr = etGroupId.getText().toString().trim();
         if (gidStr.isEmpty()) {
@@ -137,6 +186,13 @@ public class GroupMembershipActivity extends AppCompatActivity {
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
+    /**
+     * Updates the membership status of the selected membership record.
+     * The membership ID is read from the target ID input field and sent
+     * to the backend with the requested status value.
+     *
+     * @param newStatus the new status to assign, such as "active" or "banned"
+     */
     private void updateStatus(String newStatus) {
         String membershipId = etTargetUserId.getText().toString().trim();
         if (membershipId.isEmpty()) {
@@ -155,6 +211,10 @@ public class GroupMembershipActivity extends AppCompatActivity {
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
+    /**
+     * Toggles the moderator status of the selected membership record.
+     * The current moderator flag is flipped locally after a successful backend update.
+     */
     private void toggleModerator() {
         String membershipId = etTargetUserId.getText().toString().trim();
         if (membershipId.isEmpty()) {
@@ -176,6 +236,11 @@ public class GroupMembershipActivity extends AppCompatActivity {
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
+    /**
+     * Sends a request for the current user to leave the specified group.
+     * If successful, a confirmation message is displayed and the membership
+     * information area is updated.
+     */
     private void leaveGroup() {
         String gidStr = etGroupId.getText().toString().trim();
         if (gidStr.isEmpty()) {
