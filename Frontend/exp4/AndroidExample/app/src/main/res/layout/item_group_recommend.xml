@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="#1E1E30">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Top Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Emoji -->
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/circle_group_bg">
+
+                <TextView
+                    android:id="@+id/tvGroupEmoji"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="💻"
+                    android:textSize="22sp"
+                    android:gravity="center"/>
+            </FrameLayout>
+
+            <!-- Group Info -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvGroupName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Coding Club"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/tvCategory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tech"
+                    android:textColor="#7B6FFF"
+                    android:textSize="12sp"
+                    android:layout_marginTop="2dp"/>
+
+                <TextView
+                    android:id="@+id/tvMemberCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="120 members"
+                    android:textColor="#9B9BB4"
+                    android:textSize="12sp"
+                    android:layout_marginTop="2dp"/>
+            </LinearLayout>
+
+            <!-- Match Score -->
+            <TextView
+                android:id="@+id/tvMatchScore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="87%"
+                android:textColor="#7B6FFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:background="@drawable/chip_bg"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"/>
+        </LinearLayout>
+
+        <!-- Description -->
+        <TextView
+            android:id="@+id/tvGroupDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="A group for students who love coding and building projects together."
+            android:textColor="#C4C4D4"
+            android:textSize="13sp"
+            android:layout_marginTop="12dp"/>
+
+        <!-- Label -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Matched Keywords"
+            android:textColor="#9B9BB4"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:layout_marginTop="14dp"/>
+
+        <!-- Keywords -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:id="@+id/tvKeyword1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="coding"
+                android:textColor="#7B6FFF"
+                android:textSize="12sp"
+                android:background="@drawable/chip_bg"
+                android:padding="6dp"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/tvKeyword2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="tech"
+                android:textColor="#7B6FFF"
+                android:textSize="12sp"
+                android:background="@drawable/chip_bg"
+                android:padding="6dp"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/tvKeyword3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="software"
+                android:textColor="#7B6FFF"
+                android:textSize="12sp"
+                android:background="@drawable/chip_bg"
+                android:padding="6dp"/>
+        </LinearLayout>
+
+        <!-- Bottom Action -->
+        <TextView
+            android:id="@+id/tvViewDetails"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="View Details →"
+            android:textColor="#7B6FFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:layout_marginTop="14dp"/>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
