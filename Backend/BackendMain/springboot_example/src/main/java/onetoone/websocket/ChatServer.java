@@ -3,171 +3,164 @@ package onetoone.websocket;
 import jakarta.websocket.*;
 import jakarta.websocket.server.PathParam;
 import jakarta.websocket.server.ServerEndpoint;
+import onetoone.Users.User;
+import onetoone.Users.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.Hashtable;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Represents a WebSocket chat server for handling real-time communication
- * between users. Each user connects to the server using their unique
- * username.
- *
- * This class is annotated with Spring's `@ServerEndpoint` and `@Component`
- * annotations, making it a WebSocket endpoint that can handle WebSocket
- * connections at the "/chat/{username}" endpoint.
- *
- * Example URL: ws://localhost:8080/chat/username
- *
- * The server provides functionality for broadcasting messages to all connected
- * users and sending messages to specific users.
- */
-@ServerEndpoint("/chat/{username}")
+@ServerEndpoint("/chat/{userId}")
 @Component
 public class ChatServer {
 
-    // Store all socket session and their corresponding username
-    // Two maps for the ease of retrieval by key
-    private static Map < Session, String > sessionUsernameMap = new Hashtable < > ();
-    private static Map < String, Session > usernameSessionMap = new Hashtable < > ();
+    private static final Logger logger = LoggerFactory.getLogger(ChatServer.class);
 
-    // server side logger
-    private final Logger logger = LoggerFactory.getLogger(ChatServer.class);
+    // session -> userId
+    private static final Map<Session, Long> sessionUserIdMap = new ConcurrentHashMap<>();
 
-    /**
-     * This method is called when a new WebSocket connection is established.
-     *
-     * @param session represents the WebSocket session for the connected user.
-     * @param username username specified in path parameter.
-     */
-    @OnOpen
-    public void onOpen(Session session, @PathParam("username") String username) throws IOException {
+    // userId -> session
+    private static final Map<Long, Session> userIdSessionMap = new ConcurrentHashMap<>();
 
-        // server side log
-        logger.info("[onOpen] " + username);
+    // userId -> displayName
+    private static final Map<Long, String> userDisplayNameMap = new ConcurrentHashMap<>();
 
-        // Handle the case of a duplicate username
-        if (usernameSessionMap.containsKey(username)) {
-            session.getBasicRemote().sendText("Username already exists");
-            session.close();
-        }
-        else {
-            // map current session with username
-            sessionUsernameMap.put(session, username);
-
-            // map current username with session
-            usernameSessionMap.put(username, session);
-
-            // send to the user joining in
-            sendMessageToPArticularUser(username, "Welcome to the chat server, "+username);
-
-            // send to everyone in the chat
-            broadcast("User: " + username + " has Joined the Chat");
-        }
+    private UserRepository getUserRepository() {
+        return SpringContext.getBean(UserRepository.class);
     }
 
-    /**
-     * Handles incoming WebSocket messages from a client.
-     *
-     * @param session The WebSocket session representing the client's connection.
-     * @param message The message received from the client.
-     */
+    @OnOpen
+    public void onOpen(Session session, @PathParam("userId") Long userId) throws IOException {
+        logger.info("[onOpen] userId={}", userId);
+
+        UserRepository userRepository = getUserRepository();
+        Optional<User> optionalUser = userRepository.findById(userId);
+
+        if (optionalUser.isEmpty()) {
+            session.getBasicRemote().sendText("Invalid userId");
+            session.close();
+            return;
+        }
+
+        if (userIdSessionMap.containsKey(userId)) {
+            session.getBasicRemote().sendText("User already connected");
+            session.close();
+            return;
+        }
+
+        User user = optionalUser.get();
+        String displayName = user.getDisplayName();
+
+        sessionUserIdMap.put(session, userId);
+        userIdSessionMap.put(userId, session);
+        userDisplayNameMap.put(userId, displayName);
+
+        session.getBasicRemote().sendText("Welcome to the chat server, " + displayName);
+        broadcast("[SYSTEM] " + displayName + " has joined the chat");
+    }
+
     @OnMessage
     public void onMessage(Session session, String message) throws IOException {
+        Long senderUserId = sessionUserIdMap.get(session);
 
-        // get the username by session
-        String username = sessionUsernameMap.get(session);
-
-        // server side log
-        logger.info("[onMessage] " + username + ": " + message);
-
-        // Direct message to a user using the format "@username <message>"
-        if (message.startsWith("@")) {
-
-            // split by space
-            String[] split_msg =  message.split("\\s+");
-
-            // Combine the rest of message
-            StringBuilder actualMessageBuilder = new StringBuilder();
-            for (int i = 1; i < split_msg.length; i++) {
-                actualMessageBuilder.append(split_msg[i]).append(" ");
-            }
-            String destUserName = split_msg[0].substring(1);    //@username and get rid of @
-            String actualMessage = actualMessageBuilder.toString();
-            sendMessageToPArticularUser(destUserName, "[DM from " + username + "]: " + actualMessage);
-            sendMessageToPArticularUser(username, "[DM from " + username + "]: " + actualMessage);
+        if (senderUserId == null) {
+            session.getBasicRemote().sendText("Unknown session");
+            return;
         }
-        else { // Message to whole chat
-            broadcast(username + ": " + message);
+
+        String senderDisplayName = userDisplayNameMap.get(senderUserId);
+
+        logger.info("[onMessage] {} ({}) : {}", senderDisplayName, senderUserId, message);
+
+        // DM format: @123 hello
+        if (message.startsWith("@")) {
+            String[] splitMsg = message.split("\\s+", 2);
+
+            if (splitMsg.length < 2) {
+                sendMessageToParticularUser(senderUserId, "[SYSTEM] Invalid DM format. Use: @userId message");
+                return;
+            }
+
+            String targetPart = splitMsg[0].substring(1).trim();
+            String actualMessage = splitMsg[1].trim();
+
+            Long destUserId;
+            try {
+                destUserId = Long.parseLong(targetPart);
+            } catch (NumberFormatException e) {
+                sendMessageToParticularUser(senderUserId, "[SYSTEM] Invalid userId in DM");
+                return;
+            }
+
+            if (!userIdSessionMap.containsKey(destUserId)) {
+                sendMessageToParticularUser(senderUserId, "[SYSTEM] User " + destUserId + " is not connected");
+                return;
+            }
+
+            String destDisplayName = userDisplayNameMap.getOrDefault(destUserId, "User " + destUserId);
+
+            sendMessageToParticularUser(destUserId,
+                    "[DM from " + senderDisplayName + "] " + actualMessage);
+
+            sendMessageToParticularUser(senderUserId,
+                    "[DM to " + destDisplayName + "] " + actualMessage);
+        } else {
+            broadcast(senderDisplayName + ": " + message);
         }
     }
 
-    /**
-     * Handles the closure of a WebSocket connection.
-     *
-     * @param session The WebSocket session that is being closed.
-     */
     @OnClose
     public void onClose(Session session) throws IOException {
+        Long userId = sessionUserIdMap.remove(session);
 
-        // get the username from session-username mapping
-        String username = sessionUsernameMap.get(session);
+        if (userId != null) {
+            String displayName = userDisplayNameMap.getOrDefault(userId, "User " + userId);
 
-        // server side log
-        logger.info("[onClose] " + username);
+            userIdSessionMap.remove(userId);
+            userDisplayNameMap.remove(userId);
 
-        // remove user from memory mappings
-        sessionUsernameMap.remove(session);
-        usernameSessionMap.remove(username);
-
-        // send the message to chat
-        broadcast(username + " disconnected");
-    }
-
-    /**
-     * Handles WebSocket errors that occur during the connection.
-     *
-     * @param session   The WebSocket session where the error occurred.
-     * @param throwable The Throwable representing the error condition.
-     */
-    @OnError
-    public void onError(Session session, Throwable throwable) {
-
-        // get the username from session-username mapping
-        String username = sessionUsernameMap.get(session);
-
-        // do error handling here
-        logger.info("[onError]" + username + ": " + throwable.getMessage());
-    }
-
-    /**
-     * Sends a message to a specific user in the chat (DM).
-     *
-     * @param username The username of the recipient.
-     * @param message  The message to be sent.
-     */
-    private void sendMessageToPArticularUser(String username, String message) {
-        try {
-            usernameSessionMap.get(username).getBasicRemote().sendText(message);
-        } catch (IOException e) {
-            logger.info("[DM Exception] " + e.getMessage());
+            logger.info("[onClose] userId={} displayName={}", userId, displayName);
+            broadcast("[SYSTEM] " + displayName + " disconnected");
         }
     }
 
-    /**
-     * Broadcasts a message to all users in the chat.
-     *
-     * @param message The message to be broadcasted to all users.
-     */
+    @OnError
+    public void onError(Session session, Throwable throwable) {
+        Long userId = sessionUserIdMap.get(session);
+        String displayName = (userId != null)
+                ? userDisplayNameMap.getOrDefault(userId, "User " + userId)
+                : "Unknown user";
+
+        logger.error("[onError] {} : {}", displayName, throwable.getMessage(), throwable);
+    }
+
+    private void sendMessageToParticularUser(Long userId, String message) {
+        Session targetSession = userIdSessionMap.get(userId);
+
+        if (targetSession == null || !targetSession.isOpen()) {
+            logger.info("[DM Exception] user {} not connected", userId);
+            return;
+        }
+
+        try {
+            targetSession.getBasicRemote().sendText(message);
+        } catch (IOException e) {
+            logger.info("[DM Exception] {}", e.getMessage());
+        }
+    }
+
     private void broadcast(String message) {
-        sessionUsernameMap.forEach((session, username) -> {
-            try {
-                session.getBasicRemote().sendText(message);
-            } catch (IOException e) {
-                logger.info("[Broadcast Exception] " + e.getMessage());
+        sessionUserIdMap.forEach((session, userId) -> {
+            if (session.isOpen()) {
+                try {
+                    session.getBasicRemote().sendText(message);
+                } catch (IOException e) {
+                    logger.info("[Broadcast Exception] {}", e.getMessage());
+                }
             }
         });
     }
