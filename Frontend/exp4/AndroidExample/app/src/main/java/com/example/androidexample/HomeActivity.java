@@ -82,9 +82,8 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         navProfile.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, Login.class);
+            Intent intent = new Intent(HomeActivity.this, SwipeActivity.class);
             intent.putExtra("USER_ID", userId);
-            intent.putExtra("USER_JSON", userJson);
             startActivity(intent);
         });
 
@@ -93,6 +92,8 @@ public class HomeActivity extends AppCompatActivity {
             intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
+
+
 
         // 🤝 connect navMembers to GroupMembershipActivity
         navMembers.setOnClickListener(v -> {
@@ -109,9 +110,8 @@ public class HomeActivity extends AppCompatActivity {
         });
         LinearLayout navChat = findViewById(R.id.navChat);
         navChat.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, ChatActivity.class);
-            intent.putExtra("USERNAME", "haiqa");
-            intent.putExtra("OTHER_USERNAME", "saadi");
+            Intent intent = new Intent(HomeActivity.this, ChatListActivity.class);
+            intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
     }

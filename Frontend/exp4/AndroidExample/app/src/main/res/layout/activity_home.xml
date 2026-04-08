@@ -412,7 +412,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Profile"
+                        android:text="Swipe"
                         android:textColor="#7B6FFF"
                         android:textSize="11sp"
                         android:layout_marginTop="2dp"/>
