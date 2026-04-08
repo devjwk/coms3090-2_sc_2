@@ -1,14 +1,13 @@
 package com.example.androidexample;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,7 +15,11 @@ import com.android.volley.Request;
 import com.android.volley.toolbox.StringRequest;
 
 import org.java_websocket.handshake.ServerHandshake;
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChatActivity extends AppCompatActivity implements WebSocketEventListener {
 
@@ -24,9 +27,11 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
 
     private Button sendBtn, backBtn;
     private EditText msgEtx;
-    private LinearLayout chatContainer;
-    private ScrollView scrollView;
+    private RecyclerView recyclerChat;
     private TextView tvChatWith;
+
+    private ChatAdapter chatAdapter;
+    private List<ChatMessage> messageList = new ArrayList<>();
 
     private int currentUserId;
     private int otherUserId;
@@ -48,9 +53,14 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
         sendBtn       = findViewById(R.id.sendBtn);
         backBtn       = findViewById(R.id.backBtn);
         msgEtx        = findViewById(R.id.msgEdt);
-        chatContainer = findViewById(R.id.chatContainer);
-        scrollView    = findViewById(R.id.scrollView);
+        recyclerChat  = findViewById(R.id.recyclerChat);
         tvChatWith    = findViewById(R.id.tvChatWith);
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager.setStackFromEnd(true);
+        recyclerChat.setLayoutManager(layoutManager);
+        chatAdapter = new ChatAdapter(messageList);
+        recyclerChat.setAdapter(chatAdapter);
 
         backBtn.setOnClickListener(v -> {
             WebSocketClientManager.getInstance().disconnectWebSocket();
@@ -59,7 +69,7 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
 
         if (otherUsername != null && !otherUsername.isEmpty() && !otherUsername.equals("Chat")) {
             tvChatWith.setText(otherUsername);
-            connectWebSocket();
+            loadChatHistoryThenConnect();
         } else if (otherUserId > 0) {
             tvChatWith.setText("Loading...");
             fetchOtherUserName(otherUserId);
@@ -67,6 +77,45 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
             Toast.makeText(this, "No chat partner specified", Toast.LENGTH_SHORT).show();
             finish();
         }
+    }
+
+
+    private void loadChatHistoryThenConnect() {
+        String url = BASE_URL + "/chat/history/" + currentUserId + "/" + otherUserId;
+        Log.d(TAG, "Fetching chat history: " + url);
+
+        StringRequest request = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        JSONArray arr = new JSONArray(response);
+                        for (int i = 0; i < arr.length(); i++) {
+                            JSONObject obj = arr.getJSONObject(i);
+
+                            long id = obj.optLong("id", 0);
+                            int senderId = obj.optInt("senderId", obj.optInt("sender_id", 0));
+                            int receiverId = obj.optInt("receiverId", obj.optInt("receiver_id", 0));
+                            String content = obj.optString("content", obj.optString("message", ""));
+                            String timestamp = obj.optString("timestamp", obj.optString("sentAt", ""));
+
+                            boolean isSent = (senderId == currentUserId);
+
+                            ChatMessage msg = new ChatMessage(id, senderId, receiverId, content, timestamp, isSent);
+                            messageList.add(msg);
+                        }
+                        chatAdapter.notifyDataSetChanged();
+                        scrollToBottom();
+                        Log.d(TAG, "Loaded " + arr.length() + " history messages");
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing chat history: " + e.getMessage());
+                    }
+                    connectWebSocket();
+                },
+                error -> {
+                    Log.w(TAG, "Chat history not available (backend may not have it yet): " + error);
+                    connectWebSocket();
+                });
+
+        VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
     private void connectWebSocket() {
@@ -86,12 +135,10 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                 return;
             }
 
-
-
             try {
                 lastSentMessage = message;
                 WebSocketClientManager.getInstance().sendMessage(message);
-                addMessageBubble(message, true);
+                appendMessage(message, true);
                 msgEtx.setText("");
             } catch (Exception e) {
                 Log.e(TAG, "Send error: " + e.getMessage());
@@ -115,50 +162,36 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                         otherUsername = "User " + userId;
                     }
                     tvChatWith.setText(otherUsername);
-                    connectWebSocket();
+                    loadChatHistoryThenConnect();
                 },
                 error -> {
                     Log.e(TAG, "Failed to fetch user name: " + error);
                     otherUsername = "User " + userId;
                     tvChatWith.setText(otherUsername);
-                    connectWebSocket();
+                    loadChatHistoryThenConnect();
                 });
 
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
-    private void addMessageBubble(String message, boolean isSent) {
-        TextView bubble = new TextView(this);
-        bubble.setText(message);
-        bubble.setTextSize(15);
-        bubble.setPadding(36, 20, 36, 20);
-        bubble.setMaxWidth(900);
 
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        params.setMargins(16, 8, 16, 8);
+    private void appendMessage(String content, boolean isSent) {
+        ChatMessage msg = new ChatMessage(content, isSent);
+        messageList.add(msg);
+        chatAdapter.notifyItemInserted(messageList.size() - 1);
+        scrollToBottom();
+    }
 
-        if (isSent) {
-            bubble.setBackgroundResource(R.drawable.bubble_sent);
-            bubble.setTextColor(0xFFFFFFFF);
-            params.gravity = Gravity.END;
-        } else {
-            bubble.setBackgroundResource(R.drawable.bubble_received);
-            bubble.setTextColor(0xFFFFFFFF);
-            params.gravity = Gravity.START;
+    private void scrollToBottom() {
+        if (!messageList.isEmpty()) {
+            recyclerChat.scrollToPosition(messageList.size() - 1);
         }
-
-        bubble.setLayoutParams(params);
-        chatContainer.addView(bubble);
-        scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
     }
 
     @Override
     public void onWebSocketOpen(ServerHandshake handshakedata) {
         Log.d(TAG, "WebSocket OPEN — HTTP status: " + handshakedata.getHttpStatus());
-        runOnUiThread(() -> addMessageBubble("Connected ✓", false));
+        runOnUiThread(() -> appendMessage("Connected ✓", false));
     }
 
     @Override
@@ -181,7 +214,7 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                 return;
             }
 
-            addMessageBubble(message, false);
+            appendMessage(message, false);
         });
     }
 
