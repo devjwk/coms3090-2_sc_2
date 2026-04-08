@@ -9,8 +9,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 
 @RestController
+@Tag(name = "Groups", description = "Operations for managing user groups")
 public class GroupController {
 
     @Autowired
@@ -21,7 +28,12 @@ public class GroupController {
 
     /** Fetch full user profile by id (all fields from database). */
     @GetMapping(path = "/groups/{id}")
-    ResponseEntity<Group> getGroupById(@PathVariable Long id) {
+    @Operation(summary = "Get group by ID", description = "Returns the group associated with the given group ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Group found"),
+            @ApiResponse(responseCode = "404", description = "Group not found")
+    })
+    ResponseEntity<Group> getGroupById(@Parameter(description = "ID of the group", required = true) @PathVariable Long id) {
         Optional<Group> groupOptional = GroupRepository.findById(id);
         if (groupOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -30,11 +42,17 @@ public class GroupController {
     }
 
     @GetMapping(path = "/groups")
+    @Operation(summary = "Get all groups", description = "Returns a list of all user groups.")
     public List<Group> getAllGroups() {
         return GroupRepository.findAll();
     }
 
     @PostMapping(path = "/groups")
+    @Operation(summary = "Create group", description = "Creates a new user group.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Group created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input")
+    })
     String createGroup(@RequestBody Group group) {
         if (group == null)
             return failure;
@@ -43,7 +61,12 @@ public class GroupController {
     }
 
     @PutMapping("/groups/edit/{id}")
-    public ResponseEntity<Group> editGroup(@PathVariable Long id, @RequestBody Group req) {
+    @Operation(summary = "Update group", description = "Updates group information fields such as name and description.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Group updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Group not found")
+    })
+    public ResponseEntity<Group> editGroup(@Parameter(description = "ID of the group to update", required = true) @PathVariable Long id, @RequestBody Group req) {
 
         Optional<Group> groupOptional = GroupRepository.findById(id);
 
@@ -62,8 +85,12 @@ public class GroupController {
 
     // DELETE group
     @DeleteMapping("/groups/{id}")
-    public ResponseEntity<String> deleteGroup(@PathVariable Long id) {
-
+    @Operation(summary = "Delete group", description = "Deletes a user group by ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Group deleted"),
+            @ApiResponse(responseCode = "404", description = "Group not found")
+    })
+    public ResponseEntity<String> deleteGroup(@Parameter(description = "ID of the group to delete", required = true) @PathVariable Long id) {
         if(!GroupRepository.existsById(id)){
             return ResponseEntity.status(404).body("Group not found");
         }
