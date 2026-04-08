@@ -1,5 +1,8 @@
 package onetoone.GroupMember;
 
+import onetoone.UserImages.Image;
+import org.springframework.data.domain.Limit;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import javax.swing.*;
