@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ServerEndpoint("/chat/{userId}")
@@ -25,6 +26,12 @@ public class ChatServer {
 
     // userId -> session
     private static final Map<Long, Session> userIdSessionMap = new ConcurrentHashMap<>();
+
+    private static final Map<Long, Set<Long>> groupMembersMap = new ConcurrentHashMap<>();
+
+    static {
+        groupMembersMap.put(100L, Set.of(1L, 2L, 4L)); // group 100 has users 1,2,3
+    }
 
     // userId -> displayName
     private static final Map<Long, String> userDisplayNameMap = new ConcurrentHashMap<>();
@@ -76,7 +83,52 @@ public class ChatServer {
 
         logger.info("[onMessage] {} ({}) : {}", senderDisplayName, senderUserId, message);
 
-        // DM format: @123 hello
+        // ===== GROUP MESSAGE =====
+        if (message.startsWith("#g")) {
+            String[] splitMsg = message.split("\\s+", 2);
+
+            if (splitMsg.length < 2) {
+                sendMessageToParticularUser(senderUserId, "[SYSTEM] Invalid group format. Use: #g<groupId> message");
+                return;
+            }
+
+            String groupPart = splitMsg[0].substring(2).trim(); // remove #g
+            String actualMessage = splitMsg[1].trim();
+
+            Long groupId;
+            try {
+                groupId = Long.parseLong(groupPart);
+            } catch (NumberFormatException e) {
+                sendMessageToParticularUser(senderUserId, "[SYSTEM] Invalid groupId");
+                return;
+            }
+
+            Set<Long> members = groupMembersMap.get(groupId);
+
+            if (members == null) {
+                sendMessageToParticularUser(senderUserId, "[SYSTEM] Group does not exist");
+                return;
+            }
+
+            if (!members.contains(senderUserId)) {
+                sendMessageToParticularUser(senderUserId, "[SYSTEM] You are not in this group");
+                return;
+            }
+
+            for (Long memberUserId : members) {
+                Session targetSession = userIdSessionMap.get(memberUserId);
+
+                if (targetSession != null && targetSession.isOpen()) {
+                    targetSession.getBasicRemote().sendText(
+                            "[Group " + groupId + "] " + senderDisplayName + ": " + actualMessage
+                    );
+                }
+            }
+
+            return;
+        }
+
+        // ===== DM =====
         if (message.startsWith("@")) {
             String[] splitMsg = message.split("\\s+", 2);
 
@@ -108,9 +160,12 @@ public class ChatServer {
 
             sendMessageToParticularUser(senderUserId,
                     "[DM to " + destDisplayName + "] " + actualMessage);
-        } else {
-            broadcast(senderDisplayName + ": " + message);
+
+            return;
         }
+
+        // ===== GLOBAL BROADCAST =====
+        broadcast(senderDisplayName + ": " + message);
     }
 
     @OnClose

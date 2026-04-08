@@ -11,7 +11,7 @@ public class ConversationMember {
     private Long Id;
 
     private Long conversationId;
-    private Long UserId;
+    private Long userId;
 
     public ConversationMember() {}
 }
