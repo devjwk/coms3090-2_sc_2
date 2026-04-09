@@ -1,6 +1,7 @@
 package onetoone.Groups;
 
 import onetoone.Groups.Group;
+import onetoone.Notifications.Notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,9 @@ public class GroupController {
     @Autowired
     GroupRepository GroupRepository;
 
+    @Autowired
+    Notification notification;
+
     private String success = "{\"message\":\"success\"}";
     private String failure = "{\"message\":\"failure\"}";
 
@@ -44,6 +48,7 @@ public class GroupController {
     @GetMapping(path = "/groups")
     @Operation(summary = "Get all groups", description = "Returns a list of all user groups.")
     public List<Group> getAllGroups() {
+        notification.sendNotification(1L, "Testing");
         return GroupRepository.findAll();
     }
 

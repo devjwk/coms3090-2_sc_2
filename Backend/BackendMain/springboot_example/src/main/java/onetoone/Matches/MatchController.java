@@ -2,6 +2,7 @@ package onetoone.Matches;
 
 import onetoone.Groups.Group;
 import onetoone.Groups.GroupRepository;
+import onetoone.Notifications.Notification;
 import onetoone.Users.User;
 import onetoone.Users.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,9 @@ public class MatchController {
 
     @Autowired
     UserRepository UserRepository;
+
+    @Autowired
+    Notification notification;
 
     public record NextMatchResponse(Long userId, Long matchId) {}
 
