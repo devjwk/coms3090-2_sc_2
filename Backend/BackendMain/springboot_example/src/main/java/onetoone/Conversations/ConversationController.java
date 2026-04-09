@@ -27,6 +27,44 @@ public class ConversationController {
 
     @PostMapping("/conversations/direct")
     public Conversation createDirectConversation(@RequestBody DirectConversationRequest req) {
+        Long user1 = req.getUser1Id();
+        Long user2 = req.getUser2Id();
+
+        if (user1.equals(user2)) {
+            throw new RuntimeException("Cannot create conversation with yourself");
+        }
+
+        // find existing direct convo
+        List<ConversationMember> user1Memberships = convoMemRepository.findByUserId(user1);
+
+        for (ConversationMember membership : user1Memberships) {
+            Long convoId = membership.getConversationId();
+
+            Optional<Conversation> convoOpt = convoRepository.findById(convoId);
+            if (convoOpt.isEmpty()) continue;
+
+            Conversation convo = convoOpt.get();
+
+            if (!"DIRECT".equals(convo.getType())) continue;
+
+            List<ConversationMember> members = convoMemRepository.findByConversationId(convoId);
+
+            if (members.size() == 2) {
+                boolean hasUser1 = false;
+                boolean hasUser2 = false;
+
+                for (ConversationMember member : members) {
+                    if (member.getUserId().equals(user1)) hasUser1 = true;
+                    if (member.getUserId().equals(user2)) hasUser2 = true;
+                }
+
+                if (hasUser1 && hasUser2) {
+                    return convo;
+                }
+            }
+        }
+
+        // create new if none exists
         Conversation conversation = new Conversation();
         conversation.setType("DIRECT");
         conversation.setName(null);
@@ -34,16 +72,16 @@ public class ConversationController {
 
         Conversation savedConversation = convoRepository.save(conversation);
 
-        ConversationMember member1 = new ConversationMember();
-        member1.setConversationId(savedConversation.getConversationId());
-        member1.setUserId(req.getUser1Id());
+        ConversationMember m1 = new ConversationMember();
+        m1.setConversationId(savedConversation.getConversationId());
+        m1.setUserId(user1);
 
-        ConversationMember member2 = new ConversationMember();
-        member2.setConversationId(savedConversation.getConversationId());
-        member2.setUserId(req.getUser2Id());
+        ConversationMember m2 = new ConversationMember();
+        m2.setConversationId(savedConversation.getConversationId());
+        m2.setUserId(user2);
 
-        convoMemRepository.save(member1);
-        convoMemRepository.save(member2);
+        convoMemRepository.save(m1);
+        convoMemRepository.save(m2);
 
         return savedConversation;
     }
