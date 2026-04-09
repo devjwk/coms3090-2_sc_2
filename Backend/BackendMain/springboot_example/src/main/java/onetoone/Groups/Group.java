@@ -23,6 +23,9 @@ public class Group {
     @Column(name = "Description", nullable = false)
     private String description;
 
+    @Column(name = "Interests", nullable = false)
+    private String interests;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -40,6 +43,9 @@ public class Group {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getInterests() { return interests; }
+    public void setInterests(String interests) { this.interests = interests; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt() { this.createdAt = createdAt; }
