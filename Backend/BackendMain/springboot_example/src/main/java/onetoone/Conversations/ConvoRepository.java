@@ -2,6 +2,8 @@ package onetoone.Conversations;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
+
 public interface ConvoRepository extends JpaRepository<Conversation, Long> {
-    // find all conversations a user is in (via join or custom query later)
+    Optional<Conversation> findByGroupId(Long groupId);
 }

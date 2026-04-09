@@ -1,6 +1,9 @@
 package onetoone.Groups;
 
-import onetoone.Groups.Group;
+import onetoone.Conversations.Conversation;
+import onetoone.Conversations.ConvoRepository;
+import onetoone.ConverstaionMembers.ConversationMember;
+import onetoone.ConverstaionMembers.ConvoMemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,26 +18,33 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-
 @RestController
 @Tag(name = "Groups", description = "Operations for managing user groups")
 public class GroupController {
 
     @Autowired
-    GroupRepository GroupRepository;
+    GroupRepository groupRepository;
 
-    private String success = "{\"message\":\"success\"}";
-    private String failure = "{\"message\":\"failure\"}";
+    @Autowired
+    ConvoRepository convoRepository;
 
-    /** Fetch full user profile by id (all fields from database). */
+    @Autowired
+    ConvoMemRepository convoMemRepository;
+
+    private final String success = "{\"message\":\"success\"}";
+    private final String failure = "{\"message\":\"failure\"}";
+
     @GetMapping(path = "/groups/{id}")
     @Operation(summary = "Get group by ID", description = "Returns the group associated with the given group ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Group found"),
             @ApiResponse(responseCode = "404", description = "Group not found")
     })
-    ResponseEntity<Group> getGroupById(@Parameter(description = "ID of the group", required = true) @PathVariable Long id) {
-        Optional<Group> groupOptional = GroupRepository.findById(id);
+    public ResponseEntity<Group> getGroupById(
+            @Parameter(description = "ID of the group", required = true)
+            @PathVariable Long id) {
+
+        Optional<Group> groupOptional = groupRepository.findById(id);
         if (groupOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -44,20 +54,37 @@ public class GroupController {
     @GetMapping(path = "/groups")
     @Operation(summary = "Get all groups", description = "Returns a list of all user groups.")
     public List<Group> getAllGroups() {
-        return GroupRepository.findAll();
+        return groupRepository.findAll();
     }
 
     @PostMapping(path = "/groups")
-    @Operation(summary = "Create group", description = "Creates a new user group.")
+    @Operation(summary = "Create group", description = "Creates a new user group and its linked conversation.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Group created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input")
     })
-    String createGroup(@RequestBody Group group) {
-        if (group == null)
-            return failure;
-        GroupRepository.save(group);
-        return success;
+    public ResponseEntity<Group> createGroup(@RequestBody Group group) {
+        if (group == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Group savedGroup = groupRepository.save(group);
+
+        Conversation conversation = new Conversation();
+        conversation.setType("GROUP");
+        conversation.setName(savedGroup.getGroupName());
+        conversation.setGroupId(savedGroup.getGroupId());
+        conversation.setCreatedAt(LocalDateTime.now());
+
+        Conversation savedConversation = convoRepository.save(conversation);
+
+        ConversationMember creator = new ConversationMember();
+        creator.setConversationId(savedConversation.getConversationId());
+        creator.setUserId(savedGroup.getCreatedBy());
+
+        convoMemRepository.save(creator);
+
+        return ResponseEntity.ok(savedGroup);
     }
 
     @PutMapping("/groups/edit/{id}")
@@ -66,11 +93,14 @@ public class GroupController {
             @ApiResponse(responseCode = "200", description = "Group updated successfully"),
             @ApiResponse(responseCode = "404", description = "Group not found")
     })
-    public ResponseEntity<Group> editGroup(@Parameter(description = "ID of the group to update", required = true) @PathVariable Long id, @RequestBody Group req) {
+    public ResponseEntity<Group> editGroup(
+            @Parameter(description = "ID of the group to update", required = true)
+            @PathVariable Long id,
+            @RequestBody Group req) {
 
-        Optional<Group> groupOptional = GroupRepository.findById(id);
+        Optional<Group> groupOptional = groupRepository.findById(id);
 
-        if(groupOptional.isEmpty()){
+        if (groupOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
@@ -78,25 +108,36 @@ public class GroupController {
         group.setGroupName(req.getGroupName());
         group.setDescription(req.getDescription());
 
-        GroupRepository.save(group);
+        Group savedGroup = groupRepository.save(group);
 
-        return ResponseEntity.ok(group);
+        Optional<Conversation> conversationOptional = convoRepository.findByGroupId(id);
+        if (conversationOptional.isPresent()) {
+            Conversation conversation = conversationOptional.get();
+            conversation.setName(savedGroup.getGroupName());
+            convoRepository.save(conversation);
+        }
+
+        return ResponseEntity.ok(savedGroup);
     }
 
-    // DELETE group
     @DeleteMapping("/groups/{id}")
-    @Operation(summary = "Delete group", description = "Deletes a user group by ID.")
+    @Operation(summary = "Delete group", description = "Deletes a user group by ID and its linked conversation.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Group deleted"),
             @ApiResponse(responseCode = "404", description = "Group not found")
     })
-    public ResponseEntity<String> deleteGroup(@Parameter(description = "ID of the group to delete", required = true) @PathVariable Long id) {
-        if(!GroupRepository.existsById(id)){
+    public ResponseEntity<String> deleteGroup(
+            @Parameter(description = "ID of the group to delete", required = true)
+            @PathVariable Long id) {
+
+        if (!groupRepository.existsById(id)) {
             return ResponseEntity.status(404).body("Group not found");
         }
 
-        GroupRepository.deleteById(id);
+        Optional<Conversation> conversationOptional = convoRepository.findByGroupId(id);
+        conversationOptional.ifPresent(convoRepository::delete);
+
+        groupRepository.deleteById(id);
         return ResponseEntity.ok("Group deleted");
     }
-
 }

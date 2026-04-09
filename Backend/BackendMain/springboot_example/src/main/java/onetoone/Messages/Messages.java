@@ -1,11 +1,6 @@
 package onetoone.Messages;
-import lombok.Getter;
-import lombok.Setter;
+
 import jakarta.persistence.*;
-import onetoone.Groups.Group;
-import onetoone.Users.User;
-import org.hibernate.annotations.CreationTimestamp;
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,12 +12,55 @@ public class Messages {
     private Long messageId;
 
     private Long conversationId;
+
     private Long senderUserId;
 
-    @Column(nullable = false, length = 2000)
+    @Column(nullable = false)
     private String content;
 
     private LocalDateTime sentAt;
 
     public Messages() {}
+
+    // ===== GETTERS + SETTERS =====
+
+    public Long getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(Long messageId) {
+        this.messageId = messageId;
+    }
+
+    public Long getConversationId() {
+        return conversationId;
+    }
+
+    public void setConversationId(Long conversationId) {
+        this.conversationId = conversationId;
+    }
+
+    public Long getSenderUserId() {
+        return senderUserId;
+    }
+
+    public void setSenderUserId(Long senderUserId) {
+        this.senderUserId = senderUserId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public LocalDateTime getSentAt() {
+        return sentAt;
+    }
+
+    public void setSentAt(LocalDateTime sentAt) {
+        this.sentAt = sentAt;
+    }
 }
