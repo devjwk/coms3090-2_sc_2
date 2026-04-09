@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import androidx.cardview.widget.CardView;
+
 /**
  * Main dashboard activity shown to the user after a successful login.
  * This screen displays the user's profile information, including their name,
@@ -94,7 +94,6 @@ public class HomeActivity extends AppCompatActivity {
                 tvProfileEmail.setText(email);
                 tvProfileBio.setText(bio);
 
-
                 if (jo.has("hobbies") && !jo.isNull("hobbies")) {
                     org.json.JSONArray hobbies = jo.getJSONArray("hobbies");
                     if (hobbies.length() > 0) tvHobby1.setText(hobbies.optString(0));
@@ -150,12 +149,15 @@ public class HomeActivity extends AppCompatActivity {
             intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
-
-
-
+        LinearLayout navChat = findViewById(R.id.navChat);
+        navChat.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, ChatActivity.class);
+            intent.putExtra("USERNAME", "haiqa");
+            intent.putExtra("OTHER_USERNAME", "saadi");
+            startActivity(intent);
+        });
 
     }
-
     private void openGroupRecommendActivity() {
         Intent intent = new Intent(HomeActivity.this, GroupRecommendActivity.class);
         intent.putExtra("USER_ID", userId);
