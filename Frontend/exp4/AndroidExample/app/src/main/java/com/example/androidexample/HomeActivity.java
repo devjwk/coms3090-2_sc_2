@@ -7,6 +7,10 @@ import android.os.Bundle;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import android.view.View;
+
+import org.java_websocket.handshake.ServerHandshake;
+
 /**
  * Main dashboard activity shown to the user after a successful login.
  * This screen displays the user's profile information, including their name,
@@ -40,6 +44,8 @@ public class HomeActivity extends AppCompatActivity {
 
     private TextView tvGroup1Name, tvGroup1Desc, tvGroup2Name, tvGroup2Desc;
 
+    private LinearLayout layoutNotificationBanner;
+    private TextView tvNotificationBanner;
     /**
      * Initializes the activity, sets up the layout, retrieves user data from the intent,
      * populates profile views, and configures navigation listeners.
@@ -76,6 +82,9 @@ public class HomeActivity extends AppCompatActivity {
         tvGroup1Desc   = findViewById(R.id.tvGroup1Desc);
         tvGroup2Name   = findViewById(R.id.tvGroup2Name);
         tvGroup2Desc   = findViewById(R.id.tvGroup2Desc);
+        layoutNotificationBanner = findViewById(R.id.layoutNotificationBanner);
+        tvNotificationBanner = findViewById(R.id.tvNotificationBanner);
+
 
         // Parse and display user information if the JSON data is available
         if (userJson != null && !userJson.isEmpty()) {
@@ -156,7 +165,34 @@ public class HomeActivity extends AppCompatActivity {
             intent.putExtra("OTHER_USERNAME", "saadi");
             startActivity(intent);
         });
+        WebSocketClientManager.getInstance().setWebSocketEventListener(new WebSocketEventListener(){
+            @Override
+            public void onWebSocketOpen(ServerHandshake handshakedata) {
 
+            }
+            @Override
+            public void onWebSocketMessage(String message) {
+                runOnUiThread(() -> handleNotificationMessage(message));}
+            @Override
+            public void onWebSocketClose(int code, String reason, boolean remote) {
+
+            }
+            @Override
+            public void onWebSocketError(Exception ex) {
+
+            }
+        });
+//        //dummy test notification
+//        layoutNotificationBanner.postDelayed(() -> {
+//            String fakeMessage = "{"
+//                    + "\"type\":\"GROUP_JOIN\","
+//                    + "\"message\":\"John joined Coding Club\","
+//                    + "\"timestamp\":\"\""
+//                    + "}";
+//
+//            handleNotificationMessage(fakeMessage);
+//        }, 2000);
+        connectNotificationSocket();
     }
     private void openGroupRecommendActivity() {
         Intent intent = new Intent(HomeActivity.this, GroupRecommendActivity.class);
@@ -164,4 +200,51 @@ public class HomeActivity extends AppCompatActivity {
         intent.putExtra("USER_JSON", userJson);
         startActivity(intent);
     }
+
+    private void handleNotificationMessage(String message) {
+        try {
+            org.json.JSONObject json = new org.json.JSONObject(message);
+
+            String type = json.optString("type", "GENERAL");
+            String body = json.optString("message", "New notification");
+            String timestamp = json.optString("timestamp", "");
+
+            String formattedMessage =
+                    NotificationFormatter.formatNotification(type, body, timestamp);
+
+            showTopBanner(formattedMessage);
+
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void showTopBanner(String message) {
+        tvNotificationBanner.setText(message);
+        layoutNotificationBanner.setVisibility(View.VISIBLE);
+
+        layoutNotificationBanner.removeCallbacks(hideBannerRunnable);
+        layoutNotificationBanner.postDelayed(hideBannerRunnable, 3000);
+    }
+
+    private final Runnable hideBannerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            layoutNotificationBanner.setVisibility(View.GONE);
+        }
+    };
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        WebSocketClientManager.getInstance().removeWebSocketEventListener();
+    }
+
+    private void connectNotificationSocket() {
+        // backend endpoint confirmed later
+        // String wsUrl = "ws://.../notifications/" + userId;
+        // WebSocketClientManager.getInstance().connectWebSocket(wsUrl);
+    }
+
 }
