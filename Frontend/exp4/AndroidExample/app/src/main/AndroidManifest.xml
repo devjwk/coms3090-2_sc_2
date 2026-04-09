@@ -36,7 +36,8 @@
 
         <activity android:name=".GroupsActivity" />
         <activity android:name=".HomeActivity" />
-        <activity android:name=".ChatActivity" />
+        <activity android:name=".GroupRecommendActivity"/>
+        <activity android:name=".ChatActivity"/>
 
         <activity
             android:name=".MainActivity"

@@ -67,7 +67,20 @@ public class SignupActivity extends AppCompatActivity {
             params.put("age", 0);
         }
 
-        params.put("interests", etInterests.getText().toString().trim());
+        String interestsText = etInterests.getText().toString().trim();
+        org.json.JSONArray interestsArray = new org.json.JSONArray();
+
+        if (!interestsText.isEmpty()) {
+            String[] interests = interestsText.split(",");
+            for (String interest : interests) {
+                String trimmed = interest.trim();
+                if (!trimmed.isEmpty()) {
+                    interestsArray.put(trimmed);
+                }
+            }
+        }
+
+        params.put("interests", interestsArray);
 
         StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_SIGNUP,
                 response -> {
