@@ -13,8 +13,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
+@Tag(name = "GroupMembers", description = "Operations for managing group memberships")
 public class GMController {
 
     @Autowired
@@ -32,6 +38,11 @@ public class GMController {
     // post - join group (req: group id, user id)
     // /gm/glist/{id}
     @PostMapping(path = "/gm/join")
+    @Operation(summary = "Join group", description = "Adds a user to a group using User ID and Group ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Member created"),
+            @ApiResponse(responseCode = "400", description = "Invalid input")
+    })
     String joinGroup(@RequestBody Map<String, Object> body) {
         Long userId = ((Number) body.get("user_id")).longValue();
         Long groupId = ((Number) body.get("group_id")).longValue();
@@ -59,7 +70,12 @@ public class GMController {
     // get - list group members (req: group id)
     // /gm/glist/{id}
     @GetMapping(path = "/gm/glist/{id}")
-    ResponseEntity<List<UserInfo>> listGroupMembers(@PathVariable Long id) {
+    @Operation(summary = "List group members", description = "Lists the members of a specific group using group ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Group found"),
+            @ApiResponse(responseCode = "404", description = "Group not found")
+    })
+    ResponseEntity<List<UserInfo>> listGroupMembers(@Parameter(description = "ID of the group to search through", required = true) @PathVariable Long id) {
         List<GroupMember> members = gmRepository.findByGroupId_groupId(id);
 
         if (members.isEmpty()) {
@@ -81,7 +97,12 @@ public class GMController {
     // get - list groups a user is in (req: user id)
     // /gm/ulist/{id}
     @GetMapping(path = "/gm/ulist/{id}")
-    ResponseEntity<List<GroupInfo>> listUserGroups(@PathVariable Long id) {
+    @Operation(summary = "List user groups", description = "Lists the groups a user is in using User ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User found"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    ResponseEntity<List<GroupInfo>> listUserGroups(@Parameter(description = "ID of the user to search through", required = true) @PathVariable Long id) {
         List<GroupMember> memberships = gmRepository.findByUserId_userId(id);
 
         if (memberships.isEmpty()) {
@@ -101,7 +122,12 @@ public class GMController {
     // put - update membership status (req: membership id)
     // /gm/memstat/{id}
     @PutMapping(path = "/gm/memstat/{id}")
-    String updateMemStatus(@PathVariable Long id, @RequestBody Map<String, String> body){
+    @Operation(summary = "Update member status", description = "Updates a group member's status.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Updated"),
+            @ApiResponse(responseCode = "404", description = "Group member not found")
+    })
+    String updateMemStatus(@Parameter(description = "ID of the member to update", required = true) @PathVariable Long id, @RequestBody Map<String, String> body){
         Optional<GroupMember> gmOptional = gmRepository.findById(id);
 
         if (gmOptional.isEmpty()) {
@@ -120,7 +146,12 @@ public class GMController {
     // put - update moderator status (req: membership id)
     // /gm/modstat/{id}
     @PutMapping(path = "/gm/modstat/{id}")
-    String updateModStatus(@PathVariable Long id, @RequestBody Map<String, Boolean> body){
+    @Operation(summary = "Update mod status", description = "Updates whether a member is a group moderator or not.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Updated"),
+            @ApiResponse(responseCode = "404", description = "Group member not found")
+    })
+    String updateModStatus(@Parameter(description = "ID of the member to update", required = true) @PathVariable Long id, @RequestBody Map<String, Boolean> body){
         Optional<GroupMember> gmOptional = gmRepository.findById(id);
 
         if (gmOptional.isEmpty()) {
@@ -139,7 +170,12 @@ public class GMController {
 
     // del - leave group (req: membership id)
     @DeleteMapping(path = "/gm/leave/{id}")
-    String removeMember(@PathVariable Long id){
+    @Operation(summary = "Leave group", description = "Removes a user from a group using membership ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Member removed"),
+            @ApiResponse(responseCode = "404", description = "Member not found")
+    })
+    String removeMember(@Parameter(description = "ID of the member to remove", required = true) @PathVariable Long id){
         gmRepository.deleteById(id);
         return "{\"message\":\"success\"}";
     }
