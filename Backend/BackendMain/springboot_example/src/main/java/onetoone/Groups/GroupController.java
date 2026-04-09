@@ -4,13 +4,14 @@ import onetoone.Conversations.Conversation;
 import onetoone.Conversations.ConvoRepository;
 import onetoone.ConverstaionMembers.ConversationMember;
 import onetoone.ConverstaionMembers.ConvoMemRepository;
+import onetoone.Users.User;
+import onetoone.Users.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,6 +24,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class GroupController {
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     GroupRepository groupRepository;
 
     @Autowired
@@ -33,6 +37,50 @@ public class GroupController {
 
     private final String success = "{\"message\":\"success\"}";
     private final String failure = "{\"message\":\"failure\"}";
+
+    private int countOverlap(List<String> userInterests, List<String> groupInterests) {
+        if (userInterests == null || groupInterests == null) return 0;
+
+        Set<String> userSet = new HashSet<>();
+        for (String s : userInterests) {
+            if (s != null) userSet.add(s.trim().toLowerCase());
+        }
+
+        Set<String> groupSet = new HashSet<>();
+        for (String s : groupInterests) {
+            if (s != null) groupSet.add(s.trim().toLowerCase());
+        }
+
+        userSet.retainAll(groupSet);
+        return userSet.size();
+    }
+
+    @GetMapping("/groups/recommend/{userId}")
+    public List<Group> recommendGroups(@PathVariable Long userId) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        User user = userOpt.get();
+        List<Group> groups = groupRepository.findAll();
+
+        groups.sort((g1, g2) -> Integer.compare(
+                countOverlap(user.getInterests(), g2.getInterests()),
+                countOverlap(user.getInterests(), g1.getInterests())
+        ));
+
+        return groups;
+    }
+
+    @GetMapping("/groups/search")
+    public List<Group> searchGroups(@RequestParam(required = false) String keyword) {
+        String cleanedKeyword = (keyword != null && !keyword.trim().isEmpty())
+                ? keyword.trim()
+                : null;
+
+        return groupRepository.searchGroups(cleanedKeyword);
+    }
 
     @GetMapping(path = "/groups/{id}")
     @Operation(summary = "Get group by ID", description = "Returns the group associated with the given group ID.")

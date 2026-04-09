@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Getter
@@ -36,6 +37,11 @@ public class User {
 
     @Column(length = 280)
     private String bio;
+
+    @ElementCollection
+    @CollectionTable(name = "user_interests", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "interest")
+    private List<String> interests;
 
     private String major;
 
@@ -68,4 +74,7 @@ public class User {
 
     public Integer getAge() { return age; }
     public void setAge(Integer age) { this.age = age; }
+
+    public List<String> getInterests() { return interests; }
+    public void setInterests(List<String> interests) { this.interests = interests; }
 }

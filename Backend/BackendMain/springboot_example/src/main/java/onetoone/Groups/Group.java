@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Getter
@@ -23,8 +24,10 @@ public class Group {
     @Column(name = "Description", nullable = false)
     private String description;
 
-    @Column(name = "Interests", nullable = false)
-    private String interests;
+    @ElementCollection
+    @CollectionTable(name = "group_interests", joinColumns = @JoinColumn(name = "group_id"))
+    @Column(name = "interest")
+    private List<String> interests;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -44,12 +47,12 @@ public class Group {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public String getInterests() { return interests; }
-    public void setInterests(String interests) { this.interests = interests; }
-
     public Instant getCreatedAt() { return createdAt; }
-    public void setCreatedAt() { this.createdAt = createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 
     public Long getCreatedBy() { return createdBy; }
     public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
+
+    public List<String> getInterests() { return interests; }
+    public void setInterests(List<String> interests) { this.interests = interests; }
 }
