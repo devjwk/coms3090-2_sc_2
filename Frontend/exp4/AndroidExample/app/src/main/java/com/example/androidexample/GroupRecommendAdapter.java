@@ -7,11 +7,19 @@ import java.util.List;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import android.widget.Button;
+
 public class GroupRecommendAdapter extends RecyclerView.Adapter<GroupRecommendAdapter.GroupRecommendViewHolder>{
     private List<RecommendGroup> recommendGroupsList;
+    private OnJoinClickListener onJoinClickListener;
 
-    public GroupRecommendAdapter(List<RecommendGroup> recommendGroupsList) {
+    public interface OnJoinClickListener {
+        void onJoinClick(RecommendGroup group);
+    }
+
+    public GroupRecommendAdapter(List<RecommendGroup> recommendGroupsList, OnJoinClickListener onJoinClickListener) {
         this.recommendGroupsList = recommendGroupsList;
+        this.onJoinClickListener = onJoinClickListener;
     }
 
     @NonNull
@@ -26,6 +34,11 @@ public class GroupRecommendAdapter extends RecyclerView.Adapter<GroupRecommendAd
         RecommendGroup group = recommendGroupsList.get(position);
         holder.tvGroupName.setText(group.getGroupName());
         holder.tvCategory.setText(group.getCategory());
+        holder.btnJoinGroup.setOnClickListener(v -> {
+            if (onJoinClickListener != null) {
+                onJoinClickListener.onJoinClick(group);
+            }
+        });
         holder.tvMemberCount.setText(group.getMemberCount() + " members");
         holder.tvMatchScore.setText(group.getMatchScore() + "%");
         holder.tvGroupDescription.setText(group.getDescription());
@@ -104,6 +117,8 @@ public class GroupRecommendAdapter extends RecyclerView.Adapter<GroupRecommendAd
         TextView tvKeyword3;
         TextView tvViewDetails;
 
+        Button btnJoinGroup;
+
         public GroupRecommendViewHolder(@NonNull View itemView) {
             super(itemView);
 
@@ -117,6 +132,7 @@ public class GroupRecommendAdapter extends RecyclerView.Adapter<GroupRecommendAd
             tvKeyword2 = itemView.findViewById(R.id.tvKeyword2);
             tvKeyword3 = itemView.findViewById(R.id.tvKeyword3);
             tvViewDetails = itemView.findViewById(R.id.tvViewDetails);
+            btnJoinGroup = itemView.findViewById(R.id.btnJoinGroup);
         }
     }
 

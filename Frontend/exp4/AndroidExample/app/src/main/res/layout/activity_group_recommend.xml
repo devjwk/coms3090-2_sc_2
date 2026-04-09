@@ -10,6 +10,16 @@
 
     <!-- Header -->
     <TextView
+        android:id="@+id/btnBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="← Back"
+        android:textColor="#7B6FFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="12dp"/>
+
+    <TextView
         android:id="@+id/tvAppTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -56,11 +66,11 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
+            android:backgroundTint="#2A2A42"
             android:text="Recommended"
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:backgroundTint="#2A2A42" />
+            android:textStyle="bold" />
     </LinearLayout>
 
     <!-- Search Section -->
