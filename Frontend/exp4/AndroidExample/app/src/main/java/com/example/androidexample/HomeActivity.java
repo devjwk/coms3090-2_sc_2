@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -55,6 +56,11 @@ public class HomeActivity extends AppCompatActivity {
 
         userId   = getIntent().getIntExtra("USER_ID", 1);
         userJson = getIntent().getStringExtra("USER_JSON");
+
+        String wsUrl = "ws://coms-3090-015.class.las.iastate.edu:8080/chat/" + userId;
+        Log.d("HomeActivity", "Connecting WebSocket early: " + wsUrl);
+        WebSocketClientManager.getInstance().setCurrentUserId(userId);
+        WebSocketClientManager.getInstance().connectWebSocket(wsUrl);
 
         tvWelcomeName  = findViewById(R.id.tvWelcomeName);
         tvAvatarInitial  = findViewById(R.id.tvAvatarInitial);

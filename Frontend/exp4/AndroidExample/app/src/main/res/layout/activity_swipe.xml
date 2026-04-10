@@ -4,140 +4,219 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#0F0F1A"
-    android:padding="20dp">
+    android:background="#0F0F1A">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="AntiSocial"
-        android:textColor="#7B6FFF"
-        android:textSize="26sp"
-        android:textStyle="bold"
-        android:layout_gravity="center"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="20dp"/>
-
-    <LinearLayout
-        android:id="@+id/cardView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:background="#1E1E30"
-        android:padding="28dp"
-        android:gravity="center">
-
-        <!-- Profile photo -->
-        <ImageView
-            android:id="@+id/ivProfilePhoto"
-            android:layout_width="160dp"
-            android:layout_height="160dp"
-            android:scaleType="centerCrop"
-            android:background="#2A2A42"
-            android:layout_marginBottom="20dp"
-            android:src="@android:drawable/ic_menu_gallery"/>
-
-        <TextView
-            android:id="@+id/tvName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Loading..."
-            android:textColor="#FFFFFF"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp"/>
-
-        <TextView
-            android:id="@+id/tvAge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="#9B9BB4"
-            android:textSize="15sp"
-            android:layout_marginBottom="6dp"/>
-
-        <TextView
-            android:id="@+id/tvMajor"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="#9B9BB4"
-            android:textSize="15sp"
-            android:layout_marginBottom="12dp"/>
-
-        <TextView
-            android:id="@+id/tvBio"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="#C4C4D4"
-            android:textSize="14sp"
-            android:gravity="center"
-            android:layout_marginBottom="12dp"/>
-
-        <TextView
-            android:id="@+id/tvHobbies"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="#7B6FFF"
-            android:textSize="13sp"
-            android:layout_marginBottom="6dp"/>
-
-        <TextView
-            android:id="@+id/tvRole"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="#9B9BB4"
-            android:textSize="13sp"/>
-
-    </LinearLayout>
-
+    <!-- Top bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="10dp">
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔥"
+            android:textSize="22sp"
+            android:layout_marginEnd="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Discover"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- Profile Card -->
+    <FrameLayout
+        android:id="@+id/cardView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="14dp"
+        android:background="#1E1E30"
+        android:clipChildren="true">
+
+        <!-- Large profile photo fills the card -->
+        <ImageView
+            android:id="@+id/ivProfilePhoto"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:background="#2A2A42"
+            android:src="@android:drawable/ic_menu_gallery"/>
+
+        <!-- Gradient overlay for readability -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="320dp"
+            android:layout_gravity="bottom"
+            android:background="@drawable/gradient_card_bottom"/>
+
+        <!-- Info overlay at the bottom of the card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="vertical"
+            android:paddingStart="22dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="20dp">
+
+            <!-- Name, e.g. "Sarah, 21" -->
+            <TextView
+                android:id="@+id/tvName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Loading..."
+                android:textColor="#FFFFFF"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:shadowColor="#000000"
+                android:shadowDx="1"
+                android:shadowDy="2"
+                android:shadowRadius="6"/>
+
+            <!-- Age (hidden — shown inline with name) -->
+            <TextView
+                android:id="@+id/tvAge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:visibility="gone"/>
+
+            <!-- Major row with icon -->
+            <LinearLayout
+                android:id="@+id/layoutMajor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📚"
+                    android:textSize="14sp"
+                    android:layout_marginEnd="6dp"/>
+
+                <TextView
+                    android:id="@+id/tvMajor"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#E0E0F0"
+                    android:textSize="16sp"/>
+            </LinearLayout>
+
+            <!-- Purple accent divider -->
+            <View
+                android:layout_width="36dp"
+                android:layout_height="3dp"
+                android:background="#7B6FFF"
+                android:layout_marginTop="14dp"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Bio section -->
+            <TextView
+                android:id="@+id/tvBio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#D8D8EC"
+                android:textSize="15sp"
+                android:textStyle="italic"
+                android:lineSpacingExtra="4dp"
+                android:maxLines="3"
+                android:ellipsize="end"/>
+
+            <!-- Hobbies as styled tags row -->
+            <LinearLayout
+                android:id="@+id/layoutHobbies"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="14dp">
+
+                <TextView
+                    android:id="@+id/tvHobbies"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#B0A8FF"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/tag_hobby"/>
+            </LinearLayout>
+
+            <!-- Role badge -->
+            <TextView
+                android:id="@+id/tvRole"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#7B6FFF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.15"
+                android:layout_marginTop="10dp"/>
+
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Action buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginBottom="16dp">
+        android:layout_marginTop="14dp"
+        android:layout_marginBottom="6dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
 
         <Button
             android:id="@+id/btnDislike"
-            android:layout_width="120dp"
-            android:layout_height="56dp"
-            android:text="✕ Dislike"
-            android:textColor="#FF5C5C"
-            android:textSize="15sp"
+            android:layout_width="0dp"
+            android:layout_height="62dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
             android:backgroundTint="#1E1E30"
-            android:layout_marginEnd="20dp"/>
+            android:text="✕  Pass"
+            android:textColor="#FF5C5C"
+            android:textSize="17sp"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnLike"
-            android:layout_width="120dp"
-            android:layout_height="56dp"
-            android:text="♥ Like"
+            android:layout_width="0dp"
+            android:layout_height="62dp"
+            android:layout_weight="1"
+            android:text="♥  Like"
             android:textColor="#FFFFFF"
-            android:textSize="15sp"
-            android:backgroundTint="#7B6FFF"/>
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginStart="8dp"/>
 
     </LinearLayout>
 
     <Button
         android:id="@+id/btnBack"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="Back"
-        android:textColor="#9B9BB4"
-        android:textSize="14sp"
-        android:backgroundTint="#1E1E30"/>
+        android:layout_height="40dp"
+        android:text="← Back"
+        android:textColor="#555570"
+        android:textSize="12sp"
+        android:backgroundTint="#0F0F1A"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="10dp"/>
 
 </LinearLayout>

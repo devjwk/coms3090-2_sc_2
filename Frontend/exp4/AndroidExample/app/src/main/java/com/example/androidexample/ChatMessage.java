@@ -11,6 +11,7 @@ public class ChatMessage {
     private String content;
     private String timestamp;
     private boolean sent;
+    private String senderName; // for group chat
 
     public ChatMessage(String content, boolean sent) {
         this.content = content;
@@ -43,5 +44,7 @@ public class ChatMessage {
 
     public boolean isSent() { return sent; }
     public void setSent(boolean sent) { this.sent = sent; }
-}
 
+    public String getSenderName() { return senderName; }
+    public void setSenderName(String senderName) { this.senderName = senderName; }
+}

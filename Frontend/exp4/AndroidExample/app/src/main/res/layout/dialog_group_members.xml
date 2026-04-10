@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#1E1E30"
+    android:padding="24dp">
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="👥  Group Members"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="6dp"/>
+
+    <!-- Member count (hidden) -->
+    <TextView
+        android:id="@+id/tvDialogMemberCount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:visibility="gone"
+        android:textColor="#7B6FFF"
+        android:textSize="13sp"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#2A2A42"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- Members list container (scrollable) -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:id="@+id/membersContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"/>
+
+    </ScrollView>
+
+    <!-- Close button -->
+    <Button
+        android:id="@+id/btnCloseMembersDialog"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:text="Close"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:backgroundTint="#7B6FFF"
+        android:layout_marginTop="16dp"/>
+
+</LinearLayout>

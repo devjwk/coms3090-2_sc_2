@@ -1,13 +1,18 @@
 package com.example.androidexample;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -29,12 +34,14 @@ import java.util.Set;
 
 public class SwipeActivity extends AppCompatActivity {
 
-    private LinearLayout cardView;
+    private FrameLayout cardView;
+    private LinearLayout layoutMajor, layoutHobbies;
     private TextView tvName, tvBio, tvMajor, tvAge, tvHobbies, tvRole;
     private ImageView ivProfilePhoto;
     private Button btnLike, btnDislike, btnBack;
 
     private int currentUserId;
+    private String currentDisplayName = "";
 
     private int nextSwipeUserId = -1;
     private int currentMatchId = -1;
@@ -62,6 +69,8 @@ public class SwipeActivity extends AppCompatActivity {
         tvHobbies = findViewById(R.id.tvHobbies);
         tvRole    = findViewById(R.id.tvRole);
         ivProfilePhoto = findViewById(R.id.ivProfilePhoto);
+        layoutMajor    = findViewById(R.id.layoutMajor);
+        layoutHobbies  = findViewById(R.id.layoutHobbies);
         btnLike    = findViewById(R.id.btnLike);
         btnDislike = findViewById(R.id.btnDislike);
         btnBack    = findViewById(R.id.btnBack);
@@ -116,9 +125,9 @@ public class SwipeActivity extends AppCompatActivity {
 
         updateMatchStatus(currentMatchId, newStatus, () -> {
             if ("ACCEPTED".equals(newStatus)) {
-                runOnUiThread(() ->
-                    Toast.makeText(this, "🎉 It's a match!", Toast.LENGTH_LONG).show()
-                );
+                final int matchedUserId = nextSwipeUserId;
+                final String matchedName = currentDisplayName;
+                runOnUiThread(() -> showMatchDialog(matchedName, matchedUserId));
             } else {
                 runOnUiThread(() ->
                     Toast.makeText(this, "Liked! ♥", Toast.LENGTH_SHORT).show()
@@ -274,15 +283,18 @@ public class SwipeActivity extends AppCompatActivity {
 
     private void showNoMoreUsers() {
         isLoading = false;
-        tvName.setText("No more profiles!");
-        tvBio.setText("");
+        tvName.setText("No more profiles");
+        tvBio.setText("Check back later for new people ✨");
         tvMajor.setText("");
-        tvAge.setText("");
         tvHobbies.setText("");
         tvRole.setText("");
+        layoutMajor.setVisibility(View.GONE);
+        layoutHobbies.setVisibility(View.GONE);
         ivProfilePhoto.setImageResource(android.R.drawable.ic_menu_gallery);
         btnLike.setEnabled(false);
         btnDislike.setEnabled(false);
+        btnLike.setAlpha(0.4f);
+        btnDislike.setAlpha(0.4f);
     }
 
     private void fetchUser(int userId) {
@@ -309,16 +321,52 @@ public class SwipeActivity extends AppCompatActivity {
                         String role    = safeString(userObj, "role");
 
                         final String displayName = name;
+                        currentDisplayName = name;
+                        final int displayAge = age;
                         runOnUiThread(() -> {
-                            tvName.setText(displayName);
-                            tvBio.setText(bio.isEmpty() ? "" : "Bio: " + bio);
-                            tvMajor.setText(major.isEmpty() ? "" : "Major: " + major);
-                            tvAge.setText(age > 0 ? "Age: " + age : "");
-                            tvHobbies.setText(hobbies.isEmpty() ? "" : "Hobbies: " + hobbies);
-                            tvRole.setText(role.isEmpty() ? "" : "Role: " + role);
+                            // Name + Age on same line: "Sarah, 21"
+                            if (displayAge > 0) {
+                                tvName.setText(displayName + ",  " + displayAge);
+                            } else {
+                                tvName.setText(displayName);
+                            }
+
+                            // Major — show/hide the whole row
+                            if (major.isEmpty()) {
+                                layoutMajor.setVisibility(View.GONE);
+                            } else {
+                                layoutMajor.setVisibility(View.VISIBLE);
+                                tvMajor.setText(major);
+                            }
+
+                            // Bio in quotes
+                            if (bio.isEmpty()) {
+                                tvBio.setVisibility(View.GONE);
+                            } else {
+                                tvBio.setVisibility(View.VISIBLE);
+                                tvBio.setText("\"" + bio + "\"");
+                            }
+
+                            // Hobbies as tag
+                            if (hobbies.isEmpty()) {
+                                layoutHobbies.setVisibility(View.GONE);
+                            } else {
+                                layoutHobbies.setVisibility(View.VISIBLE);
+                                tvHobbies.setText(hobbies);
+                            }
+
+                            // Role badge
+                            if (role.isEmpty()) {
+                                tvRole.setVisibility(View.GONE);
+                            } else {
+                                tvRole.setVisibility(View.VISIBLE);
+                                tvRole.setText("● " + role.toUpperCase());
+                            }
 
                             btnLike.setEnabled(true);
                             btnDislike.setEnabled(true);
+                            btnLike.setAlpha(1f);
+                            btnDislike.setAlpha(1f);
                             isLoading = false;
                         });
 
@@ -440,5 +488,56 @@ public class SwipeActivity extends AppCompatActivity {
                         .into(ivProfilePhoto);
             }
         });
+    }
+
+    private void showMatchDialog(String matchedName, int matchedUserId) {
+        if (isFinishing() || isDestroyed()) return;
+
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_match, null);
+
+        TextView tvSubtitle = dialogView.findViewById(R.id.tvMatchSubtitle);
+        Button btnSendMessage = dialogView.findViewById(R.id.btnSendMessage);
+        Button btnKeepSwiping = dialogView.findViewById(R.id.btnKeepSwiping);
+
+        String subtitle = matchedName.isEmpty()
+                ? "You both liked each other!"
+                : "You and " + matchedName + " liked each other!";
+        tvSubtitle.setText(subtitle);
+
+        AlertDialog dialog = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_NoActionBar)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        btnSendMessage.setOnClickListener(v -> {
+            dialog.dismiss();
+            Intent intent = new Intent(SwipeActivity.this, ChatActivity.class);
+            intent.putExtra("USER_ID", currentUserId);
+            intent.putExtra("OTHER_USER_ID", matchedUserId);
+            intent.putExtra("OTHER_USERNAME", matchedName);
+            startActivity(intent);
+        });
+
+        btnKeepSwiping.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+
+        // Animate the dialog in with a scale + fade
+        View decorView = dialog.getWindow().getDecorView();
+        decorView.setScaleX(0.8f);
+        decorView.setScaleY(0.8f);
+        decorView.setAlpha(0f);
+        AnimatorSet animSet = new AnimatorSet();
+        animSet.playTogether(
+                ObjectAnimator.ofFloat(decorView, "scaleX", 0.8f, 1f),
+                ObjectAnimator.ofFloat(decorView, "scaleY", 0.8f, 1f),
+                ObjectAnimator.ofFloat(decorView, "alpha", 0f, 1f)
+        );
+        animSet.setDuration(350);
+        animSet.start();
     }
 }

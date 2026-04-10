@@ -90,6 +90,13 @@ public class GroupsActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        Button btnGroupChat = findViewById(R.id.btnGroupChat);
+        btnGroupChat.setOnClickListener(v -> {
+            Intent intent = new Intent(GroupsActivity.this, GroupChatListActivity.class);
+            intent.putExtra("USER_ID", currentUserId);
+            startActivity(intent);
+        });
+
         btnBack.setOnClickListener(v -> finish());
 
         btnOpenNotifications.setOnClickListener(v -> {

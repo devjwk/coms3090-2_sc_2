@@ -41,6 +41,13 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
         ChatMessage msg = messages.get(position);
         holder.tvMessage.setText(msg.getContent());
 
+        if (!msg.isSent() && msg.getSenderName() != null && !msg.getSenderName().isEmpty()) {
+            holder.tvSenderName.setVisibility(View.VISIBLE);
+            holder.tvSenderName.setText(msg.getSenderName());
+        } else {
+            holder.tvSenderName.setVisibility(View.GONE);
+        }
+
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -78,11 +85,13 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
     }
 
     static class ChatViewHolder extends RecyclerView.ViewHolder {
+        TextView tvSenderName;
         TextView tvMessage;
         TextView tvTimestamp;
 
         ChatViewHolder(@NonNull View itemView) {
             super(itemView);
+            tvSenderName = itemView.findViewById(R.id.tvSenderName);
             tvMessage = itemView.findViewById(R.id.tvMessage);
             tvTimestamp = itemView.findViewById(R.id.tvTimestamp);
         }

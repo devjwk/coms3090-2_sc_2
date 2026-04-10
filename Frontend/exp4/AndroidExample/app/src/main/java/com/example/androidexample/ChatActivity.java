@@ -35,6 +35,7 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
 
     private int currentUserId;
     private int otherUserId;
+    private int conversationId = -1;
     private String otherUsername;
     private String lastSentMessage = null;
 
@@ -63,13 +64,13 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
         recyclerChat.setAdapter(chatAdapter);
 
         backBtn.setOnClickListener(v -> {
-            WebSocketClientManager.getInstance().disconnectWebSocket();
+            WebSocketClientManager.getInstance().removeWebSocketEventListener();
             finish();
         });
 
         if (otherUsername != null && !otherUsername.isEmpty() && !otherUsername.equals("Chat")) {
             tvChatWith.setText(otherUsername);
-            loadChatHistoryThenConnect();
+            fetchConversationId();
         } else if (otherUserId > 0) {
             tvChatWith.setText("Loading...");
             fetchOtherUserName(otherUserId);
@@ -80,53 +81,196 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
     }
 
 
-    private void loadChatHistoryThenConnect() {
-        String url = BASE_URL + "/chat/history/" + currentUserId + "/" + otherUserId;
-        Log.d(TAG, "Fetching chat history: " + url);
+    private void fetchConversationId() {
+        String url = BASE_URL + "/conversations/direct";
+        Log.d(TAG, "POST " + url + " with user1Id=" + currentUserId + " user2Id=" + otherUserId);
 
-        StringRequest request = new StringRequest(Request.Method.GET, url,
+        JSONObject body = new JSONObject();
+        try {
+            body.put("user1Id", currentUserId);
+            body.put("user2Id", otherUserId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error building request body", e);
+            connectWebSocket();
+            return;
+        }
+
+        StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
+                    Log.d(TAG, "Conversation response: " + response);
                     try {
-                        JSONArray arr = new JSONArray(response);
-                        for (int i = 0; i < arr.length(); i++) {
-                            JSONObject obj = arr.getJSONObject(i);
-
-                            long id = obj.optLong("id", 0);
-                            int senderId = obj.optInt("senderId", obj.optInt("sender_id", 0));
-                            int receiverId = obj.optInt("receiverId", obj.optInt("receiver_id", 0));
-                            String content = obj.optString("content", obj.optString("message", ""));
-                            String timestamp = obj.optString("timestamp", obj.optString("sentAt", ""));
-
-                            boolean isSent = (senderId == currentUserId);
-
-                            ChatMessage msg = new ChatMessage(id, senderId, receiverId, content, timestamp, isSent);
-                            messageList.add(msg);
-                        }
-                        chatAdapter.notifyDataSetChanged();
-                        scrollToBottom();
-                        Log.d(TAG, "Loaded " + arr.length() + " history messages");
+                        JSONObject json = new JSONObject(response);
+                        conversationId = json.optInt("conversationId",
+                                json.optInt("id",
+                                        json.optInt("conversation_id", -1)));
+                        Log.d(TAG, "Got conversationId = " + conversationId);
                     } catch (Exception e) {
-                        Log.e(TAG, "Error parsing chat history: " + e.getMessage());
+                        try {
+                            conversationId = Integer.parseInt(response.trim());
+                            Log.d(TAG, "Parsed conversationId from plain response = " + conversationId);
+                        } catch (NumberFormatException nfe) {
+                            Log.e(TAG, "Could not parse conversationId from: " + response);
+                        }
+                    }
+                    loadChatHistoryThenConnect();
+                },
+                error -> {
+                    Log.e(TAG, "Failed to get conversationId: " + error);
+                    if (error.networkResponse != null) {
+                        Log.e(TAG, "Status: " + error.networkResponse.statusCode
+                                + " Body: " + new String(error.networkResponse.data));
+                    }
+                    Toast.makeText(this, "Could not establish conversation", Toast.LENGTH_SHORT).show();
+                    connectWebSocket();
+                }) {
+            @Override
+            public byte[] getBody() {
+                return body.toString().getBytes();
+            }
+
+            @Override
+            public String getBodyContentType() {
+                return "application/json";
+            }
+        };
+
+        VolleySingleton.getInstance(this).addToRequestQueue(request);
+    }
+
+    private void loadChatHistoryThenConnect() {
+        if (conversationId <= 0) {
+            Log.w(TAG, "No valid conversationId (" + conversationId + "), skipping history load");
+            Log.w(TAG, "This means POST /conversations/direct did not return a valid ID");
+            connectWebSocket();
+            return;
+        }
+
+        String primaryUrl = BASE_URL + "/messages/conversation/" + conversationId + "/user/" + currentUserId;
+        Log.d(TAG, "GET (primary) " + primaryUrl);
+
+        StringRequest request = new StringRequest(Request.Method.GET, primaryUrl,
+                response -> {
+                    Log.d(TAG, "Primary history response (" + response.length() + " chars): "
+                            + (response.length() > 200 ? response.substring(0, 200) + "..." : response));
+                    int loaded = parseAndLoadMessages(response);
+                    if (loaded == 0) {
+                        Log.d(TAG, "Primary URL returned 0 messages, trying fallback URL...");
+                        loadChatHistoryFallback();
+                    } else {
+                        Log.d(TAG, "Loaded " + loaded + " history messages from primary URL");
+                        connectWebSocket();
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "Primary history URL FAILED: " + error);
+                    if (error.networkResponse != null) {
+                        Log.e(TAG, "Primary error status: " + error.networkResponse.statusCode
+                                + " body: " + new String(error.networkResponse.data));
+                    }
+                    Log.d(TAG, "Trying fallback history URL...");
+                    loadChatHistoryFallback();
+                });
+
+        VolleySingleton.getInstance(this).addToRequestQueue(request);
+    }
+
+
+    private void loadChatHistoryFallback() {
+        String fallbackUrl = BASE_URL + "/messages/conversation/" + conversationId;
+        Log.d(TAG, "GET (fallback) " + fallbackUrl);
+
+        StringRequest request = new StringRequest(Request.Method.GET, fallbackUrl,
+                response -> {
+                    Log.d(TAG, "Fallback history response (" + response.length() + " chars): "
+                            + (response.length() > 200 ? response.substring(0, 200) + "..." : response));
+                    int loaded = parseAndLoadMessages(response);
+                    if (loaded == 0) {
+                        Log.d(TAG, "Fallback also returned 0 messages — conversation is likely new (no messages yet)");
+                    } else {
+                        Log.d(TAG, "Loaded " + loaded + " history messages from fallback URL");
                     }
                     connectWebSocket();
                 },
                 error -> {
-                    Log.w(TAG, "Chat history not available (backend may not have it yet): " + error);
+                    Log.e(TAG, "Fallback history URL also FAILED: " + error);
+                    if (error.networkResponse != null) {
+                        Log.e(TAG, "Fallback error status: " + error.networkResponse.statusCode
+                                + " body: " + new String(error.networkResponse.data));
+                    }
+                    Log.d(TAG, "Both history URLs failed — conversation may be new");
                     connectWebSocket();
                 });
 
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
+
+    private int parseAndLoadMessages(String response) {
+        try {
+            JSONArray arr = new JSONArray(response);
+            if (arr.length() > 0) {
+                Log.d(TAG, "FIRST MSG JSON: " + arr.getJSONObject(0).toString());
+                Log.d(TAG, "currentUserId = " + currentUserId);
+            }
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.getJSONObject(i);
+
+                long id = obj.optLong("messageId", obj.optLong("id", 0));
+                String content = obj.optString("content", obj.optString("message", ""));
+                String timestamp = obj.optString("sentAt", obj.optString("timestamp", ""));
+
+                int senderId = extractUserId(obj, "sender", "senderUserId", "senderId", "sender_id", "fromId");
+                int receiverId = extractUserId(obj, "receiver", "receiverUserId", "receiverId", "receiver_id", "toId");
+
+                boolean isSent = (senderId == currentUserId);
+                Log.d(TAG, "Msg #" + i + " senderId=" + senderId + " currentUserId=" + currentUserId + " isSent=" + isSent);
+
+                ChatMessage msg = new ChatMessage(id, senderId, receiverId, content, timestamp, isSent);
+                messageList.add(msg);
+            }
+            chatAdapter.notifyDataSetChanged();
+            scrollToBottom();
+            return arr.length();
+        } catch (Exception e) {
+            Log.e(TAG, "Error parsing chat history: " + e.getMessage());
+            return 0;
+        }
+    }
+
+
+    private int extractUserId(JSONObject obj, String objectKey, String... flatKeys) {
+        for (String key : flatKeys) {
+            int val = obj.optInt(key, -1);
+            if (val > 0) return val;
+        }
+        if (obj.has(objectKey) && !obj.isNull(objectKey)) {
+            try {
+                JSONObject nested = obj.getJSONObject(objectKey);
+                int val = nested.optInt("id", -1);
+                if (val > 0) return val;
+                val = nested.optInt("userId", -1);
+                if (val > 0) return val;
+                val = nested.optInt("user_id", -1);
+                if (val > 0) return val;
+            } catch (Exception ignored) {}
+        }
+        return 0;
+    }
+
     private void connectWebSocket() {
-        WebSocketClientManager.getInstance().disconnectWebSocket();
+        // Clear queued messages — history already has everything
+        WebSocketClientManager.getInstance().clearMessageQueue();
 
         WebSocketClientManager.getInstance().setWebSocketEventListener(this);
 
         String wsUrl = WS_BASE + currentUserId;
-        Log.d(TAG, "Connecting WebSocket: " + wsUrl);
 
-        WebSocketClientManager.getInstance().connectWebSocket(wsUrl);
+        if (WebSocketClientManager.getInstance().isConnected()) {
+            Log.d(TAG, "WebSocket already connected (from HomeActivity), reusing");
+        } else {
+            Log.d(TAG, "WebSocket not connected, connecting now: " + wsUrl);
+            WebSocketClientManager.getInstance().connectWebSocket(wsUrl);
+        }
 
         sendBtn.setOnClickListener(v -> {
             String message = msgEtx.getText().toString().trim();
@@ -135,11 +279,27 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                 return;
             }
 
+            if (conversationId <= 0) {
+                Toast.makeText(this, "Chat not ready — no conversationId", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             try {
-                lastSentMessage = message;
-                WebSocketClientManager.getInstance().sendMessage(message);
-                appendMessage(message, true);
-                msgEtx.setText("");
+                JSONObject jsonMsg = new JSONObject();
+                jsonMsg.put("conversationId", conversationId);
+                jsonMsg.put("content", message);
+
+                Log.d(TAG, "Sending: " + jsonMsg);
+
+                boolean sent = WebSocketClientManager.getInstance().sendMessage(jsonMsg.toString());
+                if (sent) {
+                    lastSentMessage = message;
+                    appendMessage(message, true);
+                    msgEtx.setText("");
+                } else {
+                    Toast.makeText(this, "Not connected. Reconnecting...", Toast.LENGTH_SHORT).show();
+                    WebSocketClientManager.getInstance().connectWebSocket(WS_BASE + currentUserId);
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Send error: " + e.getMessage());
                 Toast.makeText(this, "Failed to send message", Toast.LENGTH_SHORT).show();
@@ -162,18 +322,17 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                         otherUsername = "User " + userId;
                     }
                     tvChatWith.setText(otherUsername);
-                    loadChatHistoryThenConnect();
+                    fetchConversationId();
                 },
                 error -> {
                     Log.e(TAG, "Failed to fetch user name: " + error);
                     otherUsername = "User " + userId;
                     tvChatWith.setText(otherUsername);
-                    loadChatHistoryThenConnect();
+                    fetchConversationId();
                 });
 
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
-
 
     private void appendMessage(String content, boolean isSent) {
         ChatMessage msg = new ChatMessage(content, isSent);
@@ -190,7 +349,7 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
 
     @Override
     public void onWebSocketOpen(ServerHandshake handshakedata) {
-        Log.d(TAG, "WebSocket OPEN — HTTP status: " + handshakedata.getHttpStatus());
+        Log.d(TAG, "WebSocket OPEN");
         runOnUiThread(() -> appendMessage("Connected ✓", false));
     }
 
@@ -198,6 +357,30 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
     public void onWebSocketMessage(String message) {
         runOnUiThread(() -> {
             Log.d(TAG, "WS message: " + message);
+
+            try {
+                JSONObject json = new JSONObject(message);
+                String content = json.optString("content", json.optString("message", ""));
+                int senderId = json.optInt("senderUserId",
+                        json.optInt("senderId", json.optInt("sender_id", -1)));
+
+                if (!content.isEmpty()) {
+                    boolean isSent = (senderId == currentUserId);
+
+                    // Detect echo
+                    if (!isSent && lastSentMessage != null && content.equals(lastSentMessage)) {
+                        isSent = true;
+                    }
+
+                    if (isSent) {
+                        lastSentMessage = null;
+                        return;
+                    }
+                    appendMessage(content, false);
+                    return;
+                }
+            } catch (Exception ignored) {
+            }
 
             if (lastSentMessage != null) {
                 if (message.equals(lastSentMessage) || message.contains(lastSentMessage)) {
@@ -220,7 +403,7 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
 
     @Override
     public void onWebSocketClose(int code, String reason, boolean remote) {
-        Log.d(TAG, "WebSocket CLOSED: code=" + code + " reason=" + reason + " remote=" + remote);
+        Log.d(TAG, "WebSocket CLOSED: code=" + code + " reason=" + reason);
         runOnUiThread(() ->
             Toast.makeText(this, "Chat disconnected", Toast.LENGTH_SHORT).show()
         );
@@ -239,6 +422,5 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
     protected void onDestroy() {
         super.onDestroy();
         WebSocketClientManager.getInstance().removeWebSocketEventListener();
-        WebSocketClientManager.getInstance().disconnectWebSocket();
     }
 }
