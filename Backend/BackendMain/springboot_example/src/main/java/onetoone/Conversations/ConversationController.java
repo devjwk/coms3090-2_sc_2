@@ -88,9 +88,19 @@ public class ConversationController {
 
     @PostMapping("/conversations/group")
     public Conversation createGroupConversation(@RequestBody GroupConversationRequest req) {
+        if (req.getGroupId() == null) {
+            throw new RuntimeException("groupId is required");
+        }
+
+        Optional<Conversation> existingConversation = convoRepository.findByGroupId(req.getGroupId());
+        if (existingConversation.isPresent()) {
+            return existingConversation.get();
+        }
+
         Conversation conversation = new Conversation();
         conversation.setType("GROUP");
         conversation.setName(req.getName());
+        conversation.setGroupId(req.getGroupId());
         conversation.setCreatedAt(LocalDateTime.now());
 
         Conversation savedConversation = convoRepository.save(conversation);

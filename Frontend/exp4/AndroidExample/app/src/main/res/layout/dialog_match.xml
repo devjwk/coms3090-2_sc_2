@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:background="#1E1E30"
+    android:paddingStart="32dp"
+    android:paddingEnd="32dp"
+    android:paddingTop="40dp"
+    android:paddingBottom="32dp">
+
+    <!-- Heart icon -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="💜"
+        android:textSize="64sp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="It's a Match!"
+        android:textColor="#7B6FFF"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- Subtitle with matched name -->
+    <TextView
+        android:id="@+id/tvMatchSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="You and someone liked each other"
+        android:textColor="#C4C4D4"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:layout_marginBottom="28dp"/>
+
+    <!-- Send Message button -->
+    <Button
+        android:id="@+id/btnSendMessage"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="💬  Send a Message"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:backgroundTint="#7B6FFF"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- Keep Swiping button -->
+    <Button
+        android:id="@+id/btnKeepSwiping"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Keep Swiping"
+        android:textColor="#9B9BB4"
+        android:textSize="14sp"
+        android:backgroundTint="#2A2A42"/>
+
+</LinearLayout>
+

@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -59,6 +60,11 @@ public class HomeActivity extends AppCompatActivity {
 
         userId   = getIntent().getIntExtra("USER_ID", 1);
         userJson = getIntent().getStringExtra("USER_JSON");
+
+        String wsUrl = "ws://coms-3090-015.class.las.iastate.edu:8080/chat/" + userId;
+        Log.d("HomeActivity", "Connecting WebSocket early: " + wsUrl);
+        WebSocketClientManager.getInstance().setCurrentUserId(userId);
+        WebSocketClientManager.getInstance().connectWebSocket(wsUrl);
 
         tvWelcomeName  = findViewById(R.id.tvWelcomeName);
         tvAvatarInitial  = findViewById(R.id.tvAvatarInitial);
@@ -131,9 +137,8 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         navProfile.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, Login.class);
+            Intent intent = new Intent(HomeActivity.this, SwipeActivity.class);
             intent.putExtra("USER_ID", userId);
-            intent.putExtra("USER_JSON", userJson);
             startActivity(intent);
         });
 
@@ -156,9 +161,8 @@ public class HomeActivity extends AppCompatActivity {
         });
         LinearLayout navChat = findViewById(R.id.navChat);
         navChat.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, ChatActivity.class);
-            intent.putExtra("USERNAME", "haiqa");
-            intent.putExtra("OTHER_USERNAME", "saadi");
+            Intent intent = new Intent(HomeActivity.this, ChatListActivity.class);
+            intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
         btnReport.setOnClickListener(v -> {
