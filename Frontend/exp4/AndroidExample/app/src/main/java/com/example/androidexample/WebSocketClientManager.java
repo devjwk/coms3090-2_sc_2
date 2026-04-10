@@ -48,6 +48,13 @@ public class WebSocketClientManager {
         this.webSocketEventListener = null;
     }
 
+    public void clearMessageQueue() {
+        if (!messageQueue.isEmpty()) {
+            Log.d("WebSocket", "Clearing " + messageQueue.size() + " queued messages (history already loaded)");
+            messageQueue.clear();
+        }
+    }
+
     public void setCurrentUserId(int userId) {
         this.currentUserId = userId;
     }

@@ -258,6 +258,9 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
     }
 
     private void connectWebSocket() {
+        // Clear queued messages — history already has everything
+        WebSocketClientManager.getInstance().clearMessageQueue();
+
         WebSocketClientManager.getInstance().setWebSocketEventListener(this);
 
         String wsUrl = WS_BASE + currentUserId;
