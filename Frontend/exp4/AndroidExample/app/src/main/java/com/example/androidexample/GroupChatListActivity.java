@@ -133,7 +133,7 @@ public class GroupChatListActivity extends AppCompatActivity {
     }
 
     private void fetchMyGroups() {
-        String url = BASE_URL + "/groups";
+        String url = BASE_URL + "/groups/" + currentUserId;
         Log.d(TAG, "GET " + url);
 
         StringRequest request = new StringRequest(Request.Method.GET, url,
