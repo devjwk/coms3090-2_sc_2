@@ -53,16 +53,30 @@ public class WebSocketNotificationActivity extends AppCompatActivity implements 
     @Override
     public void onWebSocketMessage(String message) {
         runOnUiThread(() -> {
-            String currentText = msgTv.getText().toString();
-            String formattedMessage = NotificationFormatter.formatNotification(message);
+            try {
+                org.json.JSONObject json = new org.json.JSONObject(message);
 
-            msgTv.setText(currentText + "\n" + formattedMessage);
+                String type = json.optString("type", "GENERAL");
+                String body = json.optString("message", "New notification");
+                String timestamp = json.optString("timestamp", "");
 
-            Toast.makeText(
-                    getApplicationContext(),
-                    formattedMessage,
-                    Toast.LENGTH_SHORT
-            ).show();
+                String formattedMessage =
+                        NotificationFormatter.formatNotification(type, body, timestamp);
+
+                String currentText = msgTv.getText().toString();
+                msgTv.setText(currentText + "\n" + formattedMessage);
+
+                Toast.makeText(
+                        getApplicationContext(),
+                        formattedMessage,
+                        Toast.LENGTH_SHORT
+                ).show();
+
+            } catch (Exception e) {
+                Log.e("WS_NOTIFICATION", "Parse error: " + e.getMessage());
+                String currentText = msgTv.getText().toString();
+                msgTv.setText(currentText + "\n" + message);
+            }
         });
     }
 
