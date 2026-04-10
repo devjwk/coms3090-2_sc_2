@@ -36,8 +36,10 @@
 
         <activity android:name=".GroupsActivity" />
         <activity android:name=".HomeActivity" />
-        <activity android:name=".GroupRecommendActivity" />
-        <activity android:name=".ChatActivity" />
+        <activity android:name=".GroupRecommendActivity"/>
+        <activity android:name=".ChatActivity"/>
+        <activity android:name=".ReportSubmitActivity"/>
+        <activity android:name=".ModeratorActivity"/>
         <activity android:name=".ChatListActivity" />
         <activity android:name=".GroupChatActivity" />
         <activity android:name=".GroupChatListActivity" />
@@ -49,6 +51,7 @@
             android:name=".WebSocketNotificationActivity"
             android:exported="false" />
 
+>>>>>>> Frontend/exp4/AndroidExample/app/src/main/AndroidManifest.xml
         <activity
             android:name=".MainActivity"
             android:exported="true">
