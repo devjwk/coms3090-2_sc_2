@@ -8,7 +8,13 @@ import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+
+import android.view.View;
+
+import org.java_websocket.handshake.ServerHandshake;
+
 import android.widget.Button;
+
 
 /**
  * Main dashboard activity shown to the user after a successful login.
@@ -43,8 +49,13 @@ public class HomeActivity extends AppCompatActivity {
 
     private TextView tvGroup1Name, tvGroup1Desc, tvGroup2Name, tvGroup2Desc;
 
+<<<<<<< Frontend/exp4/AndroidExample/app/src/main/java/com/example/androidexample/HomeActivity.java
+    private LinearLayout layoutNotificationBanner;
+    private TextView tvNotificationBanner;
+=======
     private Button btnReport;
 
+>>>>>>> Frontend/exp4/AndroidExample/app/src/main/java/com/example/androidexample/HomeActivity.java
     /**
      * Initializes the activity, sets up the layout, retrieves user data from the intent,
      * populates profile views, and configures navigation listeners.
@@ -86,7 +97,13 @@ public class HomeActivity extends AppCompatActivity {
         tvGroup1Desc   = findViewById(R.id.tvGroup1Desc);
         tvGroup2Name   = findViewById(R.id.tvGroup2Name);
         tvGroup2Desc   = findViewById(R.id.tvGroup2Desc);
+
+        layoutNotificationBanner = findViewById(R.id.layoutNotificationBanner);
+        tvNotificationBanner = findViewById(R.id.tvNotificationBanner);
+
+
         btnReport      = findViewById(R.id.btnReport);
+
 
         // Parse and display user information if the JSON data is available
         if (userJson != null && !userJson.isEmpty()) {
@@ -165,6 +182,37 @@ public class HomeActivity extends AppCompatActivity {
             intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
+
+        WebSocketClientManager.getInstance().setWebSocketEventListener(new WebSocketEventListener(){
+            @Override
+            public void onWebSocketOpen(ServerHandshake handshakedata) {
+                android.util.Log.d("HOME_WS","WebSocket Connected");
+            }
+            @Override
+            public void onWebSocketMessage(String message) {
+                android.util.Log.d("HOME_WS", "Received: "+message);
+                runOnUiThread(() -> handleNotificationMessage(message));}
+            @Override
+            public void onWebSocketClose(int code, String reason, boolean remote) {
+                android.util.Log.d("HOME_WS","WebSocket Closed"+reason);
+            }
+            @Override
+            public void onWebSocketError(Exception ex) {
+                android.util.Log.d("HOME_WS","WebSocket Error"+ex.getMessage());
+            }
+        });
+//        //dummy test notification
+//        layoutNotificationBanner.postDelayed(() -> {
+//            String fakeMessage = "{"
+//                    + "\"type\":\"GROUP_JOIN\","
+//                    + "\"message\":\"John joined Coding Club\","
+//                    + "\"timestamp\":\"\""
+//                    + "}";
+//
+//            handleNotificationMessage(fakeMessage);
+//        }, 2000);
+        connectNotificationSocket();
+
         btnReport.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, ReportSubmitActivity.class);
             intent.putExtra("USER_ID", userId);
@@ -173,6 +221,7 @@ public class HomeActivity extends AppCompatActivity {
 
         });
 
+
     }
     private void openGroupRecommendActivity() {
         Intent intent = new Intent(HomeActivity.this, GroupRecommendActivity.class);
@@ -180,4 +229,50 @@ public class HomeActivity extends AppCompatActivity {
         intent.putExtra("USER_JSON", userJson);
         startActivity(intent);
     }
+
+    private void handleNotificationMessage(String message) {
+        try {
+            org.json.JSONObject json = new org.json.JSONObject(message);
+
+            String type = json.optString("type", "GENERAL");
+            String body = json.optString("message", "New notification");
+            String timestamp = json.optString("timestamp", "");
+
+            String formattedMessage =
+                    NotificationFormatter.formatNotification(type, body, timestamp);
+
+            showTopBanner(formattedMessage);
+
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void showTopBanner(String message) {
+        tvNotificationBanner.setText(message);
+        layoutNotificationBanner.setVisibility(View.VISIBLE);
+
+        layoutNotificationBanner.removeCallbacks(hideBannerRunnable);
+        layoutNotificationBanner.postDelayed(hideBannerRunnable, 3000);
+    }
+
+    private final Runnable hideBannerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            layoutNotificationBanner.setVisibility(View.GONE);
+        }
+    };
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        WebSocketClientManager.getInstance().removeWebSocketEventListener();
+    }
+
+    private void connectNotificationSocket() {
+        String wsUrl = "ws://coms-3090-015.class.las.iastate.edu:8080/uver/notify/" + userId;
+        WebSocketClientManager.getInstance().connectWebSocket(wsUrl);
+    }
+
 }
