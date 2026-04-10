@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import android.widget.Button;
+
 /**
  * Main dashboard activity shown to the user after a successful login.
  * This screen displays the user's profile information, including their name,
@@ -39,6 +41,8 @@ public class HomeActivity extends AppCompatActivity {
     private androidx.cardview.widget.CardView cardGroup1, cardGroup2;
 
     private TextView tvGroup1Name, tvGroup1Desc, tvGroup2Name, tvGroup2Desc;
+
+    private Button btnReport;
 
     /**
      * Initializes the activity, sets up the layout, retrieves user data from the intent,
@@ -76,6 +80,7 @@ public class HomeActivity extends AppCompatActivity {
         tvGroup1Desc   = findViewById(R.id.tvGroup1Desc);
         tvGroup2Name   = findViewById(R.id.tvGroup2Name);
         tvGroup2Desc   = findViewById(R.id.tvGroup2Desc);
+        btnReport      = findViewById(R.id.btnReport);
 
         // Parse and display user information if the JSON data is available
         if (userJson != null && !userJson.isEmpty()) {
@@ -155,6 +160,13 @@ public class HomeActivity extends AppCompatActivity {
             intent.putExtra("USERNAME", "haiqa");
             intent.putExtra("OTHER_USERNAME", "saadi");
             startActivity(intent);
+        });
+        btnReport.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, ReportSubmitActivity.class);
+            intent.putExtra("USER_ID", userId);
+            intent.putExtra("USER_JSON", userJson);
+            startActivity(intent);
+
         });
 
     }
