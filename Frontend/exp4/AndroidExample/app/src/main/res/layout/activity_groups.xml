@@ -78,6 +78,18 @@
             android:paddingEnd="16dp"
             android:backgroundTint="#2A2A42"
             android:layout_marginBottom="12dp"/>
+        <EditText
+            android:id="@+id/etGroupInterests"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="Interests (comma separated)"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555570"
+            android:textSize="15sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="12dp"/>
 
         <Button
             android:id="@+id/btnCreateGroup"
