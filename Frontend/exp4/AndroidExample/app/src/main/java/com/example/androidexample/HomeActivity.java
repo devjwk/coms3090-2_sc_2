@@ -92,7 +92,8 @@ public class HomeActivity extends AppCompatActivity {
             intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
-
+        cardGroup1.setOnClickListener(v -> openGroupRecommendActivity());
+        cardGroup2.setOnClickListener(v -> openGroupRecommendActivity());
 
 
         // 🤝 connect navMembers to GroupMembershipActivity
