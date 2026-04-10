@@ -120,11 +120,11 @@ public class GroupController {
         }
 
         List<Group> groups = memberships.stream()
-                .map(GroupMember::getGroupId)
+                .map(GroupMember::getGroupId) // returns Group
                 .toList();
 
         return ResponseEntity.ok(groups);
-    }
+        }
 
     @PostMapping("/groups/{groupId}/add/{userId}")
     public ResponseEntity<String> addUserToGroup(@PathVariable Long groupId,

@@ -77,7 +77,6 @@ public class GMController {
 
         gmRepository.save(member);
 
-<<<<<<< HEAD
         Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
 
         if (convoOpt.isPresent()) {
@@ -92,17 +91,15 @@ public class GMController {
                 cm.setUserId(userId);
                 convoMemRepository.save(cm);
             }
-=======
-        String groupName = group.getGroupName();
+            String groupName = group.getGroupName();
 
-        List<GroupMember> currentMembers = gmRepository.findByGroupId_groupId(groupId);
-        for (GroupMember gm : currentMembers) {
-            notification.sendNotification(gm.getUserId().getUserId(), "GROUP_JOIN", "A new user has joined " + groupName);
->>>>>>> a3c7646e143ef8427c128fb74f8cb10b649ce364
+            List<GroupMember> currentMembers = gmRepository.findByGroupId_groupId(groupId);
+            for (GroupMember gm : currentMembers) {
+                notification.sendNotification(gm.getUserId().getUserId(), "GROUP_JOIN", "A new user has joined " + groupName);
+            }
         }
-
-        return "{\"message\":\"success\"}";
-    }
+            return "{\"message\":\"success\"}";
+        }
 
     // get - list group members (req: group id)
     // /gm/glist/{id}
