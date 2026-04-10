@@ -43,6 +43,8 @@ public class GroupsActivity extends AppCompatActivity {
 
     private int currentUserId;
 
+    private EditText etGroupInterests;
+
     private Button btnOpenNotifications;
     private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/groups";
 
@@ -66,6 +68,7 @@ public class GroupsActivity extends AppCompatActivity {
         etEditGroupId = findViewById(R.id.etEditGroupId);
         etEditGroupName = findViewById(R.id.etEditGroupName);
         etEditGroupDesc = findViewById(R.id.etEditGroupDesc);
+        etGroupInterests = findViewById(R.id.etGroupInterests);
         btnEditGroup = findViewById(R.id.btnEditGroup);
 
         etDeleteGroupId = findViewById(R.id.etDeleteGroupId);
@@ -87,6 +90,13 @@ public class GroupsActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        Button btnGroupChat = findViewById(R.id.btnGroupChat);
+        btnGroupChat.setOnClickListener(v -> {
+            Intent intent = new Intent(GroupsActivity.this, GroupChatListActivity.class);
+            intent.putExtra("USER_ID", currentUserId);
+            startActivity(intent);
+        });
+
         btnBack.setOnClickListener(v -> finish());
 
         btnOpenNotifications.setOnClickListener(v -> {
@@ -100,6 +110,8 @@ public class GroupsActivity extends AppCompatActivity {
     private void createGroup() {
         String name = etGroupName.getText().toString().trim();
         String desc = etGroupDesc.getText().toString().trim();
+        String interestsText = etGroupInterests.getText().toString().trim();
+
 
         if (name.isEmpty()) {
             Toast.makeText(this, "Group name cannot be empty.", Toast.LENGTH_SHORT).show();
@@ -111,6 +123,18 @@ public class GroupsActivity extends AppCompatActivity {
             body.put("groupName", name);
             body.put("description", desc);
             body.put("createdBy", currentUserId);
+
+            JSONArray interestsArray = new JSONArray();
+            if (!interestsText.isEmpty()) {
+                String[] interests = interestsText.split(",");
+                for (String interest : interests) {
+                    String trimmed = interest.trim();
+                    if(!trimmed.isEmpty()) {
+                        interestsArray.put(trimmed);
+                    }
+                }
+            }
+            body.put("interests", interestsArray);
         } catch (JSONException e) {
             e.printStackTrace();
             return;

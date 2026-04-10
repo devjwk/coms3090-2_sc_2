@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -36,6 +37,10 @@ public class HomeActivity extends AppCompatActivity {
     /** Raw JSON string containing user details passed from the login screen */
     private String userJson;
 
+    private androidx.cardview.widget.CardView cardGroup1, cardGroup2;
+
+    private TextView tvGroup1Name, tvGroup1Desc, tvGroup2Name, tvGroup2Desc;
+
     /**
      * Initializes the activity, sets up the layout, retrieves user data from the intent,
      * populates profile views, and configures navigation listeners.
@@ -52,6 +57,11 @@ public class HomeActivity extends AppCompatActivity {
         userId   = getIntent().getIntExtra("USER_ID", 1);
         userJson = getIntent().getStringExtra("USER_JSON");
 
+        String wsUrl = "ws://coms-3090-015.class.las.iastate.edu:8080/chat/" + userId;
+        Log.d("HomeActivity", "Connecting WebSocket early: " + wsUrl);
+        WebSocketClientManager.getInstance().setCurrentUserId(userId);
+        WebSocketClientManager.getInstance().connectWebSocket(wsUrl);
+
         tvWelcomeName  = findViewById(R.id.tvWelcomeName);
         tvAvatarInitial  = findViewById(R.id.tvAvatarInitial);
         tvProfileInitial = findViewById(R.id.tvProfileInitial);
@@ -66,6 +76,12 @@ public class HomeActivity extends AppCompatActivity {
         navGroups      = findViewById(R.id.navGroups);
         navMembers     = findViewById(R.id.navMembers);
         navMatches     = findViewById(R.id.navMatches);
+        cardGroup1     = findViewById(R.id.cardGroup1);
+        cardGroup2     = findViewById(R.id.cardGroup2);
+        tvGroup1Name   = findViewById(R.id.tvGroup1Name);
+        tvGroup1Desc   = findViewById(R.id.tvGroup1Desc);
+        tvGroup2Name   = findViewById(R.id.tvGroup2Name);
+        tvGroup2Desc   = findViewById(R.id.tvGroup2Desc);
 
         // Parse and display user information if the JSON data is available
         if (userJson != null && !userJson.isEmpty()) {
@@ -94,6 +110,11 @@ public class HomeActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+        tvGroup1Name.setText("Badminton Club");
+        tvGroup1Desc.setText("Weekly badminton sessions");
+        tvGroup2Name.setText("Coding Club");
+        tvGroup2Desc.setText("Let's code together");
+
 
         // Set navigation listeners
         btnEditProfile.setOnClickListener(v -> {
@@ -103,24 +124,22 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        btnSeeAllGroups.setOnClickListener(v -> {
+        navGroups.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, GroupsActivity.class);
-            intent.putExtra("USER_ID", userId);
-            startActivity(intent);
-        });
-
-        navProfile.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, Login.class);
             intent.putExtra("USER_ID", userId);
             intent.putExtra("USER_JSON", userJson);
             startActivity(intent);
         });
 
-        navGroups.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, GroupsActivity.class);
+        navProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, SwipeActivity.class);
             intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
+
+
+        cardGroup1.setOnClickListener(v -> openGroupRecommendActivity());
+        cardGroup2.setOnClickListener(v -> openGroupRecommendActivity());
 
         // 🤝 Navigation to group membership management
         navMembers.setOnClickListener(v -> {
@@ -137,10 +156,16 @@ public class HomeActivity extends AppCompatActivity {
         });
         LinearLayout navChat = findViewById(R.id.navChat);
         navChat.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, ChatActivity.class);
-            intent.putExtra("USERNAME", "haiqa");
-            intent.putExtra("OTHER_USERNAME", "saadi");
+            Intent intent = new Intent(HomeActivity.this, ChatListActivity.class);
+            intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
+
+    }
+    private void openGroupRecommendActivity() {
+        Intent intent = new Intent(HomeActivity.this, GroupRecommendActivity.class);
+        intent.putExtra("USER_ID", userId);
+        intent.putExtra("USER_JSON", userJson);
+        startActivity(intent);
     }
 }

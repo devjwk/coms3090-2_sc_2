@@ -36,7 +36,18 @@
 
         <activity android:name=".GroupsActivity" />
         <activity android:name=".HomeActivity" />
+        <activity android:name=".GroupRecommendActivity" />
         <activity android:name=".ChatActivity" />
+        <activity android:name=".ChatListActivity" />
+        <activity android:name=".GroupChatActivity" />
+        <activity android:name=".GroupChatListActivity" />
+        <activity android:name=".SwipeActivity" />
+        <activity
+            android:name=".WebSocketConnectActivity"
+            android:exported="false" />
+        <activity
+            android:name=".WebSocketNotificationActivity"
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"

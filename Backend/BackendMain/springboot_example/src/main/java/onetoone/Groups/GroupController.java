@@ -135,6 +135,39 @@ public class GroupController {
         return ResponseEntity.ok(savedGroup);
     }
 
+    @PostMapping("/groups/{groupId}/add/{userId}")
+    public ResponseEntity<String> addUserToGroup(@PathVariable Long groupId,
+                                                 @PathVariable Long userId) {
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+        if (convoOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Conversation not found for group");
+        }
+
+        Long conversationId = convoOpt.get().getConversationId();
+
+        boolean exists = convoMemRepository
+                .existsByConversationIdAndUserId(conversationId, userId);
+
+        if (exists) {
+            return ResponseEntity.ok("User already in group");
+        }
+
+        // add user
+        ConversationMember member = new ConversationMember();
+        member.setConversationId(conversationId);
+        member.setUserId(userId);
+
+        convoMemRepository.save(member);
+
+        return ResponseEntity.ok("User added to group");
+    }
+
     @PutMapping("/groups/edit/{id}")
     @Operation(summary = "Update group", description = "Updates group information fields such as name and description.")
     @ApiResponses(value = {
@@ -187,5 +220,29 @@ public class GroupController {
 
         groupRepository.deleteById(id);
         return ResponseEntity.ok("Group deleted");
+    }
+
+    @DeleteMapping("/groups/{groupId}/remove/{userId}")
+    public ResponseEntity<String> removeUserFromGroup(@PathVariable Long groupId,
+                                                      @PathVariable Long userId) {
+
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+        if (convoOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Conversation not found");
+        }
+
+        Long conversationId = convoOpt.get().getConversationId();
+
+        List<ConversationMember> members =
+                convoMemRepository.findByConversationId(conversationId);
+
+        for (ConversationMember m : members) {
+            if (m.getUserId().equals(userId)) {
+                convoMemRepository.delete(m);
+                return ResponseEntity.ok("User removed");
+            }
+        }
+
+        return ResponseEntity.status(404).body("User not in group");
     }
 }
