@@ -36,7 +36,6 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin      = findViewById(R.id.login_login_btn);
         btnSignup     = findViewById(R.id.login_signup_btn);
         btnDeleteUser = findViewById(R.id.login_delete_user_btn);
-
         btnLogin.setOnClickListener(v -> loginUser());
 
         btnSignup.setOnClickListener(v ->
