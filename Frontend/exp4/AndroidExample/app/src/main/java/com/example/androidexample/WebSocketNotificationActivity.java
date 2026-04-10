@@ -54,8 +54,6 @@ public class WebSocketNotificationActivity extends AppCompatActivity implements 
     public void onWebSocketMessage(String message) {
         runOnUiThread(() -> {
             try {
-                String currentText = msgTv.getText().toString();
-
                 org.json.JSONObject json = new org.json.JSONObject(message);
 
                 String type = json.optString("type", "GENERAL");
@@ -65,6 +63,7 @@ public class WebSocketNotificationActivity extends AppCompatActivity implements 
                 String formattedMessage =
                         NotificationFormatter.formatNotification(type, body, timestamp);
 
+                String currentText = msgTv.getText().toString();
                 msgTv.setText(currentText + "\n" + formattedMessage);
 
                 Toast.makeText(
@@ -74,7 +73,9 @@ public class WebSocketNotificationActivity extends AppCompatActivity implements 
                 ).show();
 
             } catch (Exception e) {
-                msgTv.setText(msgTv.getText().toString() + "\n[Invalid notification] " + message);
+                Log.e("WS_NOTIFICATION", "Parse error: " + e.getMessage());
+                String currentText = msgTv.getText().toString();
+                msgTv.setText(currentText + "\n" + message);
             }
         });
     }
