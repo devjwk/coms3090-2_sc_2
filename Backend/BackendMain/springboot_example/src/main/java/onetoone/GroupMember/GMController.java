@@ -1,5 +1,9 @@
 package onetoone.GroupMember;
 
+import onetoone.Conversations.Conversation;
+import onetoone.Conversations.ConvoRepository;
+import onetoone.ConverstaionMembers.ConversationMember;
+import onetoone.ConverstaionMembers.ConvoMemRepository;
 import onetoone.Groups.Group;
 import onetoone.Groups.GroupRepository;
 import onetoone.Users.User;
@@ -32,6 +36,12 @@ public class GMController {
     @Autowired
     private GroupRepository groupRepository;
 
+    @Autowired
+    private ConvoRepository convoRepository;
+
+    @Autowired
+    private ConvoMemRepository convoMemRepository;
+
     record GroupInfo(Long groupId, String groupName) {}
     record UserInfo(Long userId, String displayName, String groupName, Long groupId) {}
 
@@ -63,6 +73,22 @@ public class GMController {
         member.setIs_moderator(mod);
 
         gmRepository.save(member);
+
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+
+        if (convoOpt.isPresent()) {
+            Long conversationId = convoOpt.get().getConversationId();
+
+            boolean exists = convoMemRepository
+                    .existsByConversationIdAndUserId(conversationId, userId);
+
+            if (!exists) {
+                ConversationMember cm = new ConversationMember();
+                cm.setConversationId(conversationId);
+                cm.setUserId(userId);
+                convoMemRepository.save(cm);
+            }
+        }
 
         return "{\"message\":\"success\"}";
     }

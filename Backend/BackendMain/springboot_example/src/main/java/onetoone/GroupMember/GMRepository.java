@@ -12,4 +12,5 @@ import java.util.Optional;
 public interface GMRepository extends JpaRepository<GroupMember, Long> {
     List<GroupMember> findByGroupId_groupId(Long groupId);
     List<GroupMember> findByUserId_userId(Long userId);
+    List<GroupMember> findByUserId(Long userId);
 }

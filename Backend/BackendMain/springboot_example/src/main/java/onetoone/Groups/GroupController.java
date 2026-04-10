@@ -4,6 +4,8 @@ import onetoone.Conversations.Conversation;
 import onetoone.Conversations.ConvoRepository;
 import onetoone.ConverstaionMembers.ConversationMember;
 import onetoone.ConverstaionMembers.ConvoMemRepository;
+import onetoone.GroupMember.GMRepository;
+import onetoone.GroupMember.GroupMember;
 import onetoone.Users.User;
 import onetoone.Users.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,9 @@ public class GroupController {
 
     @Autowired
     ConvoMemRepository convoMemRepository;
+
+    @Autowired
+    GMRepository groupMemberRepository;
 
     private final String success = "{\"message\":\"success\"}";
     private final String failure = "{\"message\":\"failure\"}";
@@ -105,34 +110,20 @@ public class GroupController {
         return groupRepository.findAll();
     }
 
-    @PostMapping(path = "/groups")
-    @Operation(summary = "Create group", description = "Creates a new user group and its linked conversation.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Group created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input")
-    })
-    public ResponseEntity<Group> createGroup(@RequestBody Group group) {
-        if (group == null) {
-            return ResponseEntity.badRequest().build();
+    @GetMapping(path = "/groups/{userId}")
+    public ResponseEntity<List<Group>> getMyGroups(@PathVariable Long userId) {
+
+        List<GroupMember> memberships = groupMemberRepository.findByUserId(userId);
+
+        if (memberships.isEmpty()) {
+            return ResponseEntity.ok(new ArrayList<>());
         }
 
-        Group savedGroup = groupRepository.save(group);
+        List<Group> groups = memberships.stream()
+                .map(GroupMember::getGroupId)
+                .toList();
 
-        Conversation conversation = new Conversation();
-        conversation.setType("GROUP");
-        conversation.setName(savedGroup.getGroupName());
-        conversation.setGroupId(savedGroup.getGroupId());
-        conversation.setCreatedAt(LocalDateTime.now());
-
-        Conversation savedConversation = convoRepository.save(conversation);
-
-        ConversationMember creator = new ConversationMember();
-        creator.setConversationId(savedConversation.getConversationId());
-        creator.setUserId(savedGroup.getCreatedBy());
-
-        convoMemRepository.save(creator);
-
-        return ResponseEntity.ok(savedGroup);
+        return ResponseEntity.ok(groups);
     }
 
     @PostMapping("/groups/{groupId}/add/{userId}")
@@ -166,6 +157,36 @@ public class GroupController {
         convoMemRepository.save(member);
 
         return ResponseEntity.ok("User added to group");
+    }
+
+    @PostMapping(path = "/groups")
+    @Operation(summary = "Create group", description = "Creates a new user group and its linked conversation.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Group created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input")
+    })
+    public ResponseEntity<Group> createGroup(@RequestBody Group group) {
+        if (group == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Group savedGroup = groupRepository.save(group);
+
+        Conversation conversation = new Conversation();
+        conversation.setType("GROUP");
+        conversation.setName(savedGroup.getGroupName());
+        conversation.setGroupId(savedGroup.getGroupId());
+        conversation.setCreatedAt(LocalDateTime.now());
+
+        Conversation savedConversation = convoRepository.save(conversation);
+
+        ConversationMember creator = new ConversationMember();
+        creator.setConversationId(savedConversation.getConversationId());
+        creator.setUserId(savedGroup.getCreatedBy());
+
+        convoMemRepository.save(creator);
+
+        return ResponseEntity.ok(savedGroup);
     }
 
     @PutMapping("/groups/edit/{id}")
