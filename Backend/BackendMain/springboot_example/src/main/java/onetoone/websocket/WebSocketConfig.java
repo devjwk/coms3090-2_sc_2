@@ -1,10 +1,12 @@
 package onetoone.websocket;
 
+import onetoone.Notifications.NotificationHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 
@@ -14,12 +16,15 @@ import org.springframework.web.socket.server.standard.ServerEndpointExporter;
  * the /chat endpoint handler is registered with SPRING
  * so that requests to ws:// will be honored.
  *
- * Also handles the notification stuff (/notesocket and /uver) -s4c
+ * Also handles the notification stuff (/uver) -s4c
  *
  */
 @Configuration
-@EnableWebSocketMessageBroker
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
+    @Autowired
+    private NotificationHandler notificationHandler;
+
     @Bean
     public ServerEndpointExporter serverEndpointExporter(){
         return new ServerEndpointExporter();
@@ -27,15 +32,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     //notification things
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/uver");
-        config.setApplicationDestinationPrefixes("/app");
-    }
-
-    @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/notesocket")
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry.addHandler(notificationHandler, "/uver/notify/{userId}")
+                .setAllowedOriginPatterns("*");
     }
 }

@@ -48,7 +48,6 @@ public class GroupController {
     @GetMapping(path = "/groups")
     @Operation(summary = "Get all groups", description = "Returns a list of all user groups.")
     public List<Group> getAllGroups() {
-        notification.sendNotification(1L, "Testing");
         return GroupRepository.findAll();
     }
 

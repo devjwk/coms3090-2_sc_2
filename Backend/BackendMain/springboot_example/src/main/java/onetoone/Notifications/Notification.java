@@ -1,23 +1,16 @@
 package onetoone.Notifications;
 
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class Notification {
-    private final SimpMessagingTemplate messagingTemplate;
-
-    public Notification(SimpMessagingTemplate messagingTemplate) {
-        this.messagingTemplate = messagingTemplate;
-    }
+    @Autowired
+    private NotificationHandler notificationHandler;
 
     // Send to a specific user
-    public void sendNotification(Long userId, String message) {
-        messagingTemplate.convertAndSend("/uver/notify/" + userId, message);
-    }
-
-    // Send to every user
-    public void broadcast(String message) {
-        messagingTemplate.convertAndSend("/uver/notify", message);
+    public void sendNotification(Long userId, String type, String message) {
+        NotificationFormat cargo = new NotificationFormat(type, message);
+        notificationHandler.sendNotification(userId, cargo);
     }
 }

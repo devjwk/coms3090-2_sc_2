@@ -82,6 +82,11 @@ public class MatchController {
         Match match = matchOptional.get();
         match.setStatus(req.getStatus());
 
+        if (req.getStatus() == MatchStatus.ACCEPTED) {
+            notification.sendNotification(match.getUser1Id(), "MATCH_CREATED", "You have a new match!");
+            notification.sendNotification(match.getUser2Id(), "MATCH_CREATED", "You have a new match!");
+        }
+
         MatchRepository.save(match);
 
         return ResponseEntity.ok(match);
