@@ -282,7 +282,7 @@ public class ChatListActivity extends AppCompatActivity {
 
 
     private void fetchAllGroups() {
-        String url = BASE_URL + "/groups";
+        String url = BASE_URL + "/groups/me/" + currentUserId;
         Log.d(TAG, "GET groups: " + url);
 
         StringRequest request = new StringRequest(Request.Method.GET, url,
