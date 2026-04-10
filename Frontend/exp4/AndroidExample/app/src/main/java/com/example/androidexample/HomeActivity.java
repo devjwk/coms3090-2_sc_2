@@ -4,12 +4,17 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
 
 import android.view.View;
 
 import org.java_websocket.handshake.ServerHandshake;
+
+import android.widget.Button;
+
 
 /**
  * Main dashboard activity shown to the user after a successful login.
@@ -44,8 +49,13 @@ public class HomeActivity extends AppCompatActivity {
 
     private TextView tvGroup1Name, tvGroup1Desc, tvGroup2Name, tvGroup2Desc;
 
+<<<<<<< Frontend/exp4/AndroidExample/app/src/main/java/com/example/androidexample/HomeActivity.java
     private LinearLayout layoutNotificationBanner;
     private TextView tvNotificationBanner;
+=======
+    private Button btnReport;
+
+>>>>>>> Frontend/exp4/AndroidExample/app/src/main/java/com/example/androidexample/HomeActivity.java
     /**
      * Initializes the activity, sets up the layout, retrieves user data from the intent,
      * populates profile views, and configures navigation listeners.
@@ -61,6 +71,11 @@ public class HomeActivity extends AppCompatActivity {
 
         userId   = getIntent().getIntExtra("USER_ID", 1);
         userJson = getIntent().getStringExtra("USER_JSON");
+
+        String wsUrl = "ws://coms-3090-015.class.las.iastate.edu:8080/chat/" + userId;
+        Log.d("HomeActivity", "Connecting WebSocket early: " + wsUrl);
+        WebSocketClientManager.getInstance().setCurrentUserId(userId);
+        WebSocketClientManager.getInstance().connectWebSocket(wsUrl);
 
         tvWelcomeName  = findViewById(R.id.tvWelcomeName);
         tvAvatarInitial  = findViewById(R.id.tvAvatarInitial);
@@ -82,8 +97,12 @@ public class HomeActivity extends AppCompatActivity {
         tvGroup1Desc   = findViewById(R.id.tvGroup1Desc);
         tvGroup2Name   = findViewById(R.id.tvGroup2Name);
         tvGroup2Desc   = findViewById(R.id.tvGroup2Desc);
+
         layoutNotificationBanner = findViewById(R.id.layoutNotificationBanner);
         tvNotificationBanner = findViewById(R.id.tvNotificationBanner);
+
+
+        btnReport      = findViewById(R.id.btnReport);
 
 
         // Parse and display user information if the JSON data is available
@@ -135,9 +154,8 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         navProfile.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, Login.class);
+            Intent intent = new Intent(HomeActivity.this, SwipeActivity.class);
             intent.putExtra("USER_ID", userId);
-            intent.putExtra("USER_JSON", userJson);
             startActivity(intent);
         });
 
@@ -160,11 +178,11 @@ public class HomeActivity extends AppCompatActivity {
         });
         LinearLayout navChat = findViewById(R.id.navChat);
         navChat.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, ChatActivity.class);
-            intent.putExtra("USERNAME", "haiqa");
-            intent.putExtra("OTHER_USERNAME", "saadi");
+            Intent intent = new Intent(HomeActivity.this, ChatListActivity.class);
+            intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
+
         WebSocketClientManager.getInstance().setWebSocketEventListener(new WebSocketEventListener(){
             @Override
             public void onWebSocketOpen(ServerHandshake handshakedata) {
@@ -194,6 +212,16 @@ public class HomeActivity extends AppCompatActivity {
 //            handleNotificationMessage(fakeMessage);
 //        }, 2000);
         connectNotificationSocket();
+
+        btnReport.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, ReportSubmitActivity.class);
+            intent.putExtra("USER_ID", userId);
+            intent.putExtra("USER_JSON", userJson);
+            startActivity(intent);
+
+        });
+
+
     }
     private void openGroupRecommendActivity() {
         Intent intent = new Intent(HomeActivity.this, GroupRecommendActivity.class);

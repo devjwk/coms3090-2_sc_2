@@ -4,6 +4,8 @@ import onetoone.Conversations.Conversation;
 import onetoone.Conversations.ConvoRepository;
 import onetoone.ConverstaionMembers.ConversationMember;
 import onetoone.ConverstaionMembers.ConvoMemRepository;
+import onetoone.GroupMember.GMRepository;
+import onetoone.GroupMember.GroupMember;
 import onetoone.Users.User;
 import onetoone.Users.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,9 @@ public class GroupController {
 
     @Autowired
     ConvoMemRepository convoMemRepository;
+
+    @Autowired
+    GMRepository groupMemberRepository;
 
     private final String success = "{\"message\":\"success\"}";
     private final String failure = "{\"message\":\"failure\"}";
@@ -103,6 +108,55 @@ public class GroupController {
     @Operation(summary = "Get all groups", description = "Returns a list of all user groups.")
     public List<Group> getAllGroups() {
         return groupRepository.findAll();
+    }
+
+    @GetMapping(path = "/groups/{userId}")
+    public ResponseEntity<List<Group>> getMyGroups(@PathVariable Long userId) {
+
+        List<GroupMember> memberships = groupMemberRepository.findByUserId(userId);
+
+        if (memberships.isEmpty()) {
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+
+        List<Group> groups = memberships.stream()
+                .map(GroupMember::getGroupId) // returns Group
+                .toList();
+
+        return ResponseEntity.ok(groups);
+        }
+
+    @PostMapping("/groups/{groupId}/add/{userId}")
+    public ResponseEntity<String> addUserToGroup(@PathVariable Long groupId,
+                                                 @PathVariable Long userId) {
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+        if (convoOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Conversation not found for group");
+        }
+
+        Long conversationId = convoOpt.get().getConversationId();
+
+        boolean exists = convoMemRepository
+                .existsByConversationIdAndUserId(conversationId, userId);
+
+        if (exists) {
+            return ResponseEntity.ok("User already in group");
+        }
+
+        // add user
+        ConversationMember member = new ConversationMember();
+        member.setConversationId(conversationId);
+        member.setUserId(userId);
+
+        convoMemRepository.save(member);
+
+        return ResponseEntity.ok("User added to group");
     }
 
     @PostMapping(path = "/groups")
@@ -187,5 +241,29 @@ public class GroupController {
 
         groupRepository.deleteById(id);
         return ResponseEntity.ok("Group deleted");
+    }
+
+    @DeleteMapping("/groups/{groupId}/remove/{userId}")
+    public ResponseEntity<String> removeUserFromGroup(@PathVariable Long groupId,
+                                                      @PathVariable Long userId) {
+
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+        if (convoOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Conversation not found");
+        }
+
+        Long conversationId = convoOpt.get().getConversationId();
+
+        List<ConversationMember> members =
+                convoMemRepository.findByConversationId(conversationId);
+
+        for (ConversationMember m : members) {
+            if (m.getUserId().equals(userId)) {
+                convoMemRepository.delete(m);
+                return ResponseEntity.ok("User removed");
+            }
+        }
+
+        return ResponseEntity.status(404).body("User not in group");
     }
 }

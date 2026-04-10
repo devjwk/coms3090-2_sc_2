@@ -256,6 +256,17 @@
             android:textSize="15sp"
             android:textStyle="bold"
             android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="12dp"/>
+
+        <Button
+            android:id="@+id/btnGroupChat"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="💬  Open Group Chats"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:backgroundTint="#2A2A42"
             android:layout_marginBottom="32dp"/>
 
         <!-- BACK -->
