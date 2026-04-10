@@ -6,6 +6,7 @@ import onetoone.ConverstaionMembers.ConversationMember;
 import onetoone.ConverstaionMembers.ConvoMemRepository;
 import onetoone.Groups.Group;
 import onetoone.Groups.GroupRepository;
+import onetoone.Notifications.Notification;
 import onetoone.Users.User;
 import onetoone.Users.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,8 @@ public class GMController {
 
     @Autowired
     private GroupRepository groupRepository;
+    @Autowired
+    private Notification notification;
 
     @Autowired
     private ConvoRepository convoRepository;
@@ -74,6 +77,7 @@ public class GMController {
 
         gmRepository.save(member);
 
+<<<<<<< HEAD
         Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
 
         if (convoOpt.isPresent()) {
@@ -88,6 +92,13 @@ public class GMController {
                 cm.setUserId(userId);
                 convoMemRepository.save(cm);
             }
+=======
+        String groupName = group.getGroupName();
+
+        List<GroupMember> currentMembers = gmRepository.findByGroupId_groupId(groupId);
+        for (GroupMember gm : currentMembers) {
+            notification.sendNotification(gm.getUserId().getUserId(), "GROUP_JOIN", "A new user has joined " + groupName);
+>>>>>>> a3c7646e143ef8427c128fb74f8cb10b649ce364
         }
 
         return "{\"message\":\"success\"}";
@@ -202,9 +213,23 @@ public class GMController {
             @ApiResponse(responseCode = "404", description = "Member not found")
     })
     String removeMember(@Parameter(description = "ID of the member to remove", required = true) @PathVariable Long id){
+
+        Optional<GroupMember> gmOptional = gmRepository.findById(id);
+        if (gmOptional.isEmpty()) {
+            return "{\"message\":\"failure\"}";
+        }
+
+        GroupMember leaving = gmOptional.get();
+        String groupName = leaving.getGroupId().getGroupName();
+        Long groupId = leaving.getGroupId().getGroupId();
+
         gmRepository.deleteById(id);
+
+        List<GroupMember> remainingMembers = gmRepository.findByGroupId_groupId(groupId);
+        for (GroupMember gm : remainingMembers) {
+            notification.sendNotification(gm.getUserId().getUserId(), "GROUP_LEAVE", "A user has left " + groupName);
+        }
+
         return "{\"message\":\"success\"}";
     }
-
-    // Comment for merge rq
 }

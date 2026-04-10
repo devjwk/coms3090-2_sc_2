@@ -70,6 +70,7 @@
                 android:layout_height="52dp"
                 android:layout_weight="1"
                 android:text="Join"
+                android:visibility="gone"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -82,6 +83,7 @@
                 android:layout_height="52dp"
                 android:layout_weight="1"
                 android:text="Check Status"
+                android:visibility="gone"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -94,6 +96,7 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:text="Leave Group"
+            android:visibility="gone"
             android:textColor="#FF4B4B"
             android:textSize="14sp"
             android:textStyle="bold"
@@ -107,6 +110,7 @@
             android:orientation="vertical"
             android:background="#1E1E30"
             android:padding="16dp"
+            android:visibility="gone"
             android:layout_marginBottom="24dp">
 
             <TextView
