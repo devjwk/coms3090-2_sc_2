@@ -10,6 +10,17 @@
     android:paddingBottom="4dp">
 
     <TextView
+        android:id="@+id/tvSenderName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="#7B6FFF"
+        android:textStyle="bold"
+        android:paddingStart="4dp"
+        android:paddingBottom="2dp"
+        android:visibility="gone" />
+
+    <TextView
         android:id="@+id/tvMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

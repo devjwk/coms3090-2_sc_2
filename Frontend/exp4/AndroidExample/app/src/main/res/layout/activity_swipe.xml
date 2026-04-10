@@ -185,13 +185,13 @@
             android:id="@+id/btnDislike"
             android:layout_width="0dp"
             android:layout_height="62dp"
+            android:layout_marginEnd="8dp"
             android:layout_weight="1"
+            android:backgroundTint="#1E1E30"
             android:text="✕  Pass"
             android:textColor="#FF5C5C"
             android:textSize="17sp"
-            android:textStyle="bold"
-            android:backgroundTint="#1E1E30"
-            android:layout_marginEnd="8dp"/>
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnLike"

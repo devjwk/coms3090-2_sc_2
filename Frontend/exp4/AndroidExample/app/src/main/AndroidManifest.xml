@@ -38,6 +38,8 @@
         <activity android:name=".HomeActivity" />
         <activity android:name=".ChatActivity" />
         <activity android:name=".ChatListActivity" />
+        <activity android:name=".GroupChatActivity" />
+        <activity android:name=".GroupChatListActivity" />
         <activity android:name=".SwipeActivity" />
         <activity
             android:name=".WebSocketConnectActivity"

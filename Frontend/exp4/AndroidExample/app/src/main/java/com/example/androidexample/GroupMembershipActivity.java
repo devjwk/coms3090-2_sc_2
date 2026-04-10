@@ -20,10 +20,6 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Activity for managing group memberships.
- * Aligned with backend requirements: Join, List, Update, and Leave group.
- */
 public class GroupMembershipActivity extends AppCompatActivity {
 
     private EditText etGroupId, etTargetUserId;
@@ -31,6 +27,8 @@ public class GroupMembershipActivity extends AppCompatActivity {
     private TextView tvMembershipInfo;
 
     private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080/gm";
+    // Prefer authoritative groups endpoint when available
+    private static final String GROUPS_BASE = "http://coms-3090-015.class.las.iastate.edu:8080/groups";
 
     private int myUserId;
     private boolean isCurrentMod = false; 
@@ -94,8 +92,78 @@ public class GroupMembershipActivity extends AppCompatActivity {
             return;
         }
         long targetGid = Long.parseLong(gidStr);
+        // First try the authoritative /groups/{id} endpoint which typically returns
+        // a JSON object with members array or userIds list. If that fails, fall back
+        // to the legacy gm/glist endpoint.
+        String groupsUrl = GROUPS_BASE + "/" + targetGid;
 
-        // Updated to use /gm/glist/{groupId} which returns UserInfo records
+        StringRequest groupReq = new StringRequest(Request.Method.GET, groupsUrl,
+                response -> {
+                    try {
+                        JSONObject groupObj = new JSONObject(response);
+
+                        // Try members array first
+                        if (groupObj.has("members") && !groupObj.isNull("members")) {
+                            org.json.JSONArray members = groupObj.optJSONArray("members");
+                            if (members != null) {
+                                boolean found = false;
+                                for (int i = 0; i < members.length(); i++) {
+                                    JSONObject m = members.getJSONObject(i);
+                                    long uid = m.optLong("userId", m.optLong("id", m.optLong("userid", -1)));
+                                    if (uid == userIdToFind) {
+                                        String dName = m.optString("displayName", m.optString("name", "N/A"));
+                                        tvMembershipInfo.setText("RECORD FOUND!\nUser ID: " + uid + "\nDisplay Name: " + dName);
+                                        tvMembershipInfo.setTextColor(0xFF7B6FFF);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (!found) {
+                                    tvMembershipInfo.setText("User " + userIdToFind + " is not in Group " + targetGid);
+                                    tvMembershipInfo.setTextColor(0xFFFF4B4B);
+                                }
+                                return;
+                            }
+                        }
+
+                        // Next try userIds array
+                        if (groupObj.has("userIds") && !groupObj.isNull("userIds")) {
+                            org.json.JSONArray uids = groupObj.optJSONArray("userIds");
+                            if (uids != null) {
+                                boolean found = false;
+                                for (int i = 0; i < uids.length(); i++) {
+                                    long uid = uids.optLong(i, -1);
+                                    if (uid == userIdToFind) {
+                                        tvMembershipInfo.setText("RECORD FOUND!\nUser ID: " + uid);
+                                        tvMembershipInfo.setTextColor(0xFF7B6FFF);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (!found) {
+                                    tvMembershipInfo.setText("User " + userIdToFind + " is not in Group " + targetGid);
+                                    tvMembershipInfo.setTextColor(0xFFFF4B4B);
+                                }
+                                return;
+                            }
+                        }
+
+                        // If we couldn't find members inside the returned object, fall back
+                        fetchMembershipFromGmList(targetGid, userIdToFind);
+                    } catch (JSONException e) {
+                        // Parse error - fallback
+                        fetchMembershipFromGmList(targetGid, userIdToFind);
+                    }
+                },
+                error -> {
+                    // If /groups failed, fallback to legacy endpoint
+                    fetchMembershipFromGmList(targetGid, userIdToFind);
+                });
+
+        VolleySingleton.getInstance(this).addToRequestQueue(groupReq);
+    }
+
+    private void fetchMembershipFromGmList(long targetGid, int userIdToFind) {
         String url = BASE_URL + "/glist/" + targetGid;
 
         JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
@@ -104,8 +172,6 @@ public class GroupMembershipActivity extends AppCompatActivity {
                         boolean found = false;
                         for (int i = 0; i < response.length(); i++) {
                             JSONObject obj = response.getJSONObject(i);
-                            
-                            // Robust parsing for UserInfo record fields: userId, displayName, groupName, groupId
                             long uid = obj.optLong("userId", obj.optLong("userid", -1));
 
                             if (uid == userIdToFind) {
