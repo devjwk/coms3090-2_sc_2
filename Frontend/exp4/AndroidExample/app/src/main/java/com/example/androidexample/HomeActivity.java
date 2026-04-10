@@ -7,17 +7,47 @@ import android.os.Bundle;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+/**
+ * Main dashboard activity shown to the user after a successful login.
+ * This screen displays the user's profile information, including their name,
+ * email, bio, and hobbies. It also serves as a navigation hub to access
+ * groups, group memberships, and matches.
+ */
 public class HomeActivity extends AppCompatActivity {
 
+    /** TextViews for displaying user greeting and initials */
     private TextView tvWelcomeName, tvAvatarInitial, tvProfileInitial;
+
+    /** TextViews for displaying profile details: name, email, and bio */
     private TextView tvProfileName, tvProfileEmail, tvProfileBio;
+
+    /** TextViews for displaying up to two hobbies of the user */
     private TextView tvHobby1, tvHobby2;
+
+    /** Interactive text elements used as buttons for profile editing and viewing all groups */
     private TextView btnEditProfile, btnSeeAllGroups;
+
+    /** Bottom navigation bar items represented as clickable layouts */
     private LinearLayout navProfile, navGroups, navMembers, navMatches;
 
+    /** Unique identifier for the logged-in user */
     private int userId;
+
+    /** Raw JSON string containing user details passed from the login screen */
     private String userJson;
 
+    private androidx.cardview.widget.CardView cardGroup1, cardGroup2;
+
+    private TextView tvGroup1Name, tvGroup1Desc, tvGroup2Name, tvGroup2Desc;
+
+    /**
+     * Initializes the activity, sets up the layout, retrieves user data from the intent,
+     * populates profile views, and configures navigation listeners.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *                           previously being shut down then this Bundle contains the data it most
+     *                           recently supplied in onSaveInstanceState(Bundle).
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,7 +70,14 @@ public class HomeActivity extends AppCompatActivity {
         navGroups      = findViewById(R.id.navGroups);
         navMembers     = findViewById(R.id.navMembers);
         navMatches     = findViewById(R.id.navMatches);
+        cardGroup1     = findViewById(R.id.cardGroup1);
+        cardGroup2     = findViewById(R.id.cardGroup2);
+        tvGroup1Name   = findViewById(R.id.tvGroup1Name);
+        tvGroup1Desc   = findViewById(R.id.tvGroup1Desc);
+        tvGroup2Name   = findViewById(R.id.tvGroup2Name);
+        tvGroup2Desc   = findViewById(R.id.tvGroup2Desc);
 
+        // Parse and display user information if the JSON data is available
         if (userJson != null && !userJson.isEmpty()) {
             try {
                 org.json.JSONObject jo = new org.json.JSONObject(userJson);
@@ -67,7 +104,13 @@ public class HomeActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+        tvGroup1Name.setText("Badminton Club");
+        tvGroup1Desc.setText("Weekly badminton sessions");
+        tvGroup2Name.setText("Coding Club");
+        tvGroup2Desc.setText("Let's code together");
 
+
+        // Set navigation listeners
         btnEditProfile.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, Login.class);
             intent.putExtra("USER_ID", userId);
@@ -75,9 +118,10 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        btnSeeAllGroups.setOnClickListener(v -> {
+        navGroups.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, GroupsActivity.class);
             intent.putExtra("USER_ID", userId);
+            intent.putExtra("USER_JSON", userJson);
             startActivity(intent);
         });
 
@@ -87,23 +131,18 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        navGroups.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, GroupsActivity.class);
-            intent.putExtra("USER_ID", userId);
-            startActivity(intent);
-        });
+
         cardGroup1.setOnClickListener(v -> openGroupRecommendActivity());
         cardGroup2.setOnClickListener(v -> openGroupRecommendActivity());
 
-
-        // 🤝 connect navMembers to GroupMembershipActivity
+        // 🤝 Navigation to group membership management
         navMembers.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, GroupMembershipActivity.class);
             intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
 
-        // 🔥 connect match button to  MatchesActivity
+        // 🔥 Navigation to matches management
         navMatches.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, MatchesActivity.class);
             intent.putExtra("USER_ID", userId);
@@ -115,5 +154,12 @@ public class HomeActivity extends AppCompatActivity {
             intent.putExtra("USER_ID", userId);
             startActivity(intent);
         });
+
+    }
+    private void openGroupRecommendActivity() {
+        Intent intent = new Intent(HomeActivity.this, GroupRecommendActivity.class);
+        intent.putExtra("USER_ID", userId);
+        intent.putExtra("USER_JSON", userJson);
+        startActivity(intent);
     }
 }
