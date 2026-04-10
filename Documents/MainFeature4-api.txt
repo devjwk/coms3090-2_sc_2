@@ -1,0 +1,178 @@
+Main Feature 4: Group Recommend
+
+To: JJ
+
+⸻
+
+Overview
+
+This document outlines the backend API requirements for implementing Main Feature 4: Group Recommend, based on the planned frontend structure.
+
+The frontend will divide this feature into two main components:
+	1.	Group Search Tab (manual discovery)
+	2.	Group Recommend Tab (personalized recommendations)
+
+⸻
+
+1. Group Search API
+
+Endpoint
+
+GET /groups
+
+Purpose
+
+Used for:
+	•	Keyword-based search
+	•	Category filtering
+	•	Sorting results
+	•	Applying additional filters
+
+Expected Query Parameters
+	•	keyword → search input (name, description, keywords)
+	•	category → group category (Tech, Sports, etc.)
+	•	sort → sorting method (mostMembers, newest, bestMatch, etc.)
+	•	minMembers, maxMembers → member count filter
+	•	activityLevel → optional
+	•	visibility → optional
+	•	meetingType → optional
+
+Example
+
+GET /groups?keyword=coding&category=Tech&sort=mostMembers
+
+Expected Response Fields
+	•	groupId
+	•	groupName
+	•	description
+	•	category
+	•	keywords
+	•	memberCount
+	•	activityLevel
+	•	visibility
+	•	meetingType
+	•	imageUrl
+
+⸻
+
+2. Group Detail API
+
+Endpoint
+
+GET /groups/{groupId}
+
+Purpose
+	•	Retrieve detailed information when a group card is clicked
+
+Expected Data
+	•	Full group info
+	•	Metadata (createdAt, activity info, etc.)
+	•	Join availability
+
+⸻
+
+3. User Interests APIs
+
+Get User Interests
+
+GET /users/{userId}/interests
+
+Used for:
+	•	Displaying user interest tags in Recommend Tab
+
+Example Response:
+{
+“userId”: 12,
+“interests”: [“coding”, “fitness”, “hiking”]
+}
+
+⸻
+
+Update User Interests
+
+PUT /users/{userId}/interests
+
+Used for:
+	•	Editing interests from frontend
+
+Example Body:
+{
+“interests”: [“coding”, “gaming”, “music”]
+}
+
+⸻
+
+4. Recommendation API
+
+Endpoint
+
+GET /groups/recommend/{userId}
+
+Purpose
+	•	Return personalized group recommendations
+
+Expected Logic
+	•	Compare user interests with group keywords
+	•	Calculate similarity (shared keywords)
+	•	Rank groups based on match
+
+Expected Response Example
+
+[
+{
+“groupId”: 3,
+“groupName”: “ISU Coding Society”,
+“category”: “Tech”,
+“keywords”: [“coding”, “tech”],
+“matchedKeywords”: [“coding”, “tech”],
+“matchScore”: 87,
+“memberCount”: 94
+}
+]
+
+⸻
+
+5. Optional APIs
+
+Categories
+
+GET /groups/categories
+	•	Used for dynamic category dropdown
+
+Join Group
+
+POST /groups/{groupId}/join
+	•	Used for Join button functionality
+
+⸻
+
+Frontend Implementation Context
+
+Group Search Tab
+	•	Manual exploration
+	•	Keyword search + category + sort + filters
+	•	Displays results as group cards
+
+Group Recommend Tab
+	•	Personalized suggestions
+	•	Based on user interests
+	•	Displays:
+	•	matched keywords
+	•	match score
+	•	Supports interest editing and refresh
+
+⸻
+
+Summary
+
+To support this feature, the backend should ideally provide:
+	•	Group search with filtering and sorting
+	•	Group detail retrieval
+	•	User interest management (get/update)
+	•	Recommendation system based on interest matching
+
+This allows the frontend to clearly separate:
+	•	Search-based discovery
+	•	Recommendation-based discovery
+
+and connect both flows smoothly.
