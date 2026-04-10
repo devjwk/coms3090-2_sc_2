@@ -168,18 +168,19 @@ public class HomeActivity extends AppCompatActivity {
         WebSocketClientManager.getInstance().setWebSocketEventListener(new WebSocketEventListener(){
             @Override
             public void onWebSocketOpen(ServerHandshake handshakedata) {
-
+                android.util.Log.d("HOME_WS","WebSocket Connected");
             }
             @Override
             public void onWebSocketMessage(String message) {
+                android.util.Log.d("HOME_WS", "Received: "+message);
                 runOnUiThread(() -> handleNotificationMessage(message));}
             @Override
             public void onWebSocketClose(int code, String reason, boolean remote) {
-
+                android.util.Log.d("HOME_WS","WebSocket Closed"+reason);
             }
             @Override
             public void onWebSocketError(Exception ex) {
-
+                android.util.Log.d("HOME_WS","WebSocket Error"+ex.getMessage());
             }
         });
 //        //dummy test notification
@@ -242,9 +243,8 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void connectNotificationSocket() {
-        // backend endpoint confirmed later
-        // String wsUrl = "ws://.../notifications/" + userId;
-        // WebSocketClientManager.getInstance().connectWebSocket(wsUrl);
+        String wsUrl = "ws://coms-3090-015.class.las.iastate.edu:8080/uver/notify/" + userId;
+        WebSocketClientManager.getInstance().connectWebSocket(wsUrl);
     }
 
 }
