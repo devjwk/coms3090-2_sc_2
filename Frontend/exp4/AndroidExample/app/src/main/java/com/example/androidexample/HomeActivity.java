@@ -49,13 +49,13 @@ public class HomeActivity extends AppCompatActivity {
 
     private TextView tvGroup1Name, tvGroup1Desc, tvGroup2Name, tvGroup2Desc;
 
-<<<<<<< Frontend/exp4/AndroidExample/app/src/main/java/com/example/androidexample/HomeActivity.java
+
     private LinearLayout layoutNotificationBanner;
     private TextView tvNotificationBanner;
-=======
+
     private Button btnReport;
 
->>>>>>> Frontend/exp4/AndroidExample/app/src/main/java/com/example/androidexample/HomeActivity.java
+
     /**
      * Initializes the activity, sets up the layout, retrieves user data from the intent,
      * populates profile views, and configures navigation listeners.
