@@ -1,5 +1,9 @@
 package onetoone.GroupMember;
 
+import onetoone.Conversations.Conversation;
+import onetoone.Conversations.ConvoRepository;
+import onetoone.ConverstaionMembers.ConversationMember;
+import onetoone.ConverstaionMembers.ConvoMemRepository;
 import onetoone.Groups.Group;
 import onetoone.Groups.GroupRepository;
 import onetoone.Notifications.Notification;
@@ -35,6 +39,12 @@ public class GMController {
     @Autowired
     private Notification notification;
 
+    @Autowired
+    private ConvoRepository convoRepository;
+
+    @Autowired
+    private ConvoMemRepository convoMemRepository;
+
     record GroupInfo(Long groupId, String groupName) {}
     record UserInfo(Long userId, String displayName, String groupName, Long groupId) {}
 
@@ -67,15 +77,29 @@ public class GMController {
 
         gmRepository.save(member);
 
-        String groupName = group.getGroupName();
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
 
-        List<GroupMember> currentMembers = gmRepository.findByGroupId_groupId(groupId);
-        for (GroupMember gm : currentMembers) {
-            notification.sendNotification(gm.getUserId().getUserId(), "GROUP_JOIN", "A new user has joined " + groupName);
+        if (convoOpt.isPresent()) {
+            Long conversationId = convoOpt.get().getConversationId();
+
+            boolean exists = convoMemRepository
+                    .existsByConversationIdAndUserId(conversationId, userId);
+
+            if (!exists) {
+                ConversationMember cm = new ConversationMember();
+                cm.setConversationId(conversationId);
+                cm.setUserId(userId);
+                convoMemRepository.save(cm);
+            }
+            String groupName = group.getGroupName();
+
+            List<GroupMember> currentMembers = gmRepository.findByGroupId_groupId(groupId);
+            for (GroupMember gm : currentMembers) {
+                notification.sendNotification(gm.getUserId().getUserId(), "GROUP_JOIN", "A new user has joined " + groupName);
+            }
         }
-
-        return "{\"message\":\"success\"}";
-    }
+            return "{\"message\":\"success\"}";
+        }
 
     // get - list group members (req: group id)
     // /gm/glist/{id}
