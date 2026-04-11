@@ -136,6 +136,7 @@ public class SwipeActivity extends AppCompatActivity {
             fetchNextSwipe();
         });
     }
+    //hello
 
     private void onSwipeLeft() {
         if (isLoading || currentMatchId < 0) return;
@@ -493,11 +494,19 @@ public class SwipeActivity extends AppCompatActivity {
     private void showMatchDialog(String matchedName, int matchedUserId) {
         if (isFinishing() || isDestroyed()) return;
 
+        // Proactively create the conversation so chat is ready
+        String url = BASE_URL + "/conversations/direct";
+        JSONObject body = new JSONObject();
+
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_match, null);
 
         TextView tvSubtitle = dialogView.findViewById(R.id.tvMatchSubtitle);
         Button btnSendMessage = dialogView.findViewById(R.id.btnSendMessage);
         Button btnKeepSwiping = dialogView.findViewById(R.id.btnKeepSwiping);
+
+        // Disable send message button until ready
+        btnSendMessage.setEnabled(false);
+        btnSendMessage.setText("Preparing chat...");
 
         String subtitle = matchedName.isEmpty()
                 ? "You both liked each other!"
@@ -525,6 +534,27 @@ public class SwipeActivity extends AppCompatActivity {
         btnKeepSwiping.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
+
+        // Now make the POST request to create the conversation
+        try {
+            body.put("user1Id", currentUserId);
+            body.put("user2Id", matchedUserId);
+        } catch (Exception ignored) {}
+        StringRequest req = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    Log.d("SwipeActivity", "Proactively created conversation: " + response);
+                    // Enable the button now
+                    btnSendMessage.setEnabled(true);
+                    btnSendMessage.setText("Go to Message");
+                },
+                error -> {
+                    Log.e("SwipeActivity", "Failed to proactively create conversation: " + error);
+                    btnSendMessage.setEnabled(true);
+                    btnSendMessage.setText("Go to Message");
+                    Toast.makeText(SwipeActivity.this, "Could not prepare chat. Try again.", Toast.LENGTH_SHORT).show();
+                });
+        req.setShouldCache(false);
+        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);
 
         // Animate the dialog in with a scale + fade
         View decorView = dialog.getWindow().getDecorView();
