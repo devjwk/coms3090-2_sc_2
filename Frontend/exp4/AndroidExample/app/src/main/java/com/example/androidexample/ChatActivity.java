@@ -201,8 +201,10 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                     String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : "";
                     Log.e(TAG, "Primary error status: " + status + " body: " + errBody);
                     if ((status == 403 || status == 401 || status == 404) && errBody.toLowerCase().contains("not in this conversation")) {
-                        Toast.makeText(this, "You are not a member of this conversation. Please try rematching or contact support.", Toast.LENGTH_LONG).show();
-                        Log.e(TAG, "User " + currentUserId + " is not a member of conversation " + conversationId + ". Backend response: " + errBody);
+                        // Backend may still return a "not in this conversation" message, but
+                        // membership enforcement was removed. Proceed to fallback and allow sending.
+                        Log.w(TAG, "Membership warning from backend; proceeding despite message: " + errBody);
+                        loadChatHistoryFallback();
                         return;
                     }
                     Log.d(TAG, "Trying fallback history URL...");
@@ -237,8 +239,11 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                     String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : "";
                     Log.e(TAG, "Fallback error status: " + status + " body: " + errBody);
                     if ((status == 403 || status == 401 || status == 404) && errBody.toLowerCase().contains("not in this conversation")) {
-                        Toast.makeText(this, "You are not a member of this conversation. Please try rematching or contact support.", Toast.LENGTH_LONG).show();
-                        Log.e(TAG, "User " + currentUserId + " is not a member of conversation " + conversationId + ". Backend response: " + errBody);
+                        // Treat membership warnings as non-fatal (backend removed enforcement)
+                        Log.w(TAG, "Membership warning from backend on fallback; connecting anyway: " + errBody);
+                        connectWebSocket();
+                        // Chat is ready, enable send button
+                        sendBtn.setEnabled(true);
                         return;
                     }
                     Log.d(TAG, "Both history URLs failed — conversation may be new");
@@ -307,6 +312,8 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
         // Clear queued messages — history already has everything
         WebSocketClientManager.getInstance().clearMessageQueue();
 
+        // Ensure WebSocket manager knows who we are (used for echo filtering and queuing)
+        WebSocketClientManager.getInstance().setCurrentUserId(currentUserId);
         WebSocketClientManager.getInstance().setWebSocketEventListener(this);
 
         String wsUrl = WS_BASE + currentUserId;
@@ -324,12 +331,35 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                 Toast.makeText(this, "Message cannot be empty!", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // No need to check conversationId here; sendBtn is only enabled when chat is ready
-            // Remove any fallback Toasts for conversation not loaded
+            // If conversationId is not yet available (new match), don't send — try to create it and retry
+            if (conversationId <= 0) {
+                Log.w(TAG, "Send blocked: conversationId not ready (" + conversationId + ") — fetching/creating conversation");
+                Toast.makeText(this, "Preparing conversation, please wait...", Toast.LENGTH_SHORT).show();
+                // Try to (re)create the direct conversation
+                fetchConversationId();
+                // Ensure websocket is connected or connecting
+                if (!WebSocketClientManager.getInstance().isConnected()) {
+                    WebSocketClientManager.getInstance().connectWebSocket(WS_BASE + currentUserId);
+                }
+                return;
+            }
+
+            // Ensure websocket is connected before sending
+            if (!WebSocketClientManager.getInstance().isConnected()) {
+                Log.w(TAG, "WebSocket not connected when trying to send — attempting reconnect");
+                Toast.makeText(this, "Connecting to chat, please wait...", Toast.LENGTH_SHORT).show();
+                WebSocketClientManager.getInstance().connectWebSocket(WS_BASE + currentUserId);
+                return;
+            }
+
             try {
                 JSONObject jsonMsg = new JSONObject();
                 jsonMsg.put("conversationId", conversationId);
                 jsonMsg.put("content", message);
+
+                // Diagnostic info: log socket state and conversationId
+                Log.d(TAG, "About to send. socketConnected=" + WebSocketClientManager.getInstance().isConnected()
+                        + " conversationId=" + conversationId + " user=" + currentUserId + " -> other=" + otherUserId);
 
                 Log.d(TAG, "Sending: " + jsonMsg);
 
@@ -339,6 +369,7 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                     appendMessage(message, true);
                     msgEtx.setText("");
                 } else {
+                    Log.e(TAG, "sendMessage returned false despite isConnected() == true");
                     Toast.makeText(this, "Not connected. Reconnecting...", Toast.LENGTH_SHORT).show();
                     WebSocketClientManager.getInstance().connectWebSocket(WS_BASE + currentUserId);
                 }
@@ -392,7 +423,7 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
     @Override
     public void onWebSocketOpen(ServerHandshake handshakedata) {
         Log.d(TAG, "WebSocket OPEN");
-        runOnUiThread(() -> appendMessage("Connected ✓", false));
+        // Do not append a user-visible "Connected" system message to chat history
     }
 
     @Override

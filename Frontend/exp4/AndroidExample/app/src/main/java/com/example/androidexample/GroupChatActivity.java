@@ -422,6 +422,15 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
                 },
                 error -> {
                     Log.e(TAG, "Primary history FAILED: " + error);
+                    int status = error.networkResponse != null ? error.networkResponse.statusCode : -1;
+                    String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : "";
+                    Log.e(TAG, "Primary error status: " + status + " body: " + errBody);
+                    if ((status == 403 || status == 401 || status == 404) && errBody.toLowerCase().contains("not in this conversation")) {
+                        Log.w(TAG, "Membership warning from backend; proceeding despite message: " + errBody);
+                        // Try fallback; fallback will also treat membership warnings as non-fatal
+                        loadChatHistoryFallback();
+                        return;
+                    }
                     loadChatHistoryFallback();
                 });
 
@@ -440,6 +449,14 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
                 },
                 error -> {
                     Log.e(TAG, "Fallback also FAILED: " + error);
+                    int status = error.networkResponse != null ? error.networkResponse.statusCode : -1;
+                    String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : "";
+                    Log.e(TAG, "Fallback error status: " + status + " body: " + errBody);
+                    if ((status == 403 || status == 401 || status == 404) && errBody.toLowerCase().contains("not in this conversation")) {
+                        Log.w(TAG, "Membership warning from backend on fallback; connecting anyway: " + errBody);
+                        connectWebSocket();
+                        return;
+                    }
                     connectWebSocket();
                 });
 
@@ -623,9 +640,9 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
                         Log.d(TAG, "Conversation participants parsed: " + partIds);
                         boolean amMember = partIds.contains(currentUserId);
                         if (!amMember) {
-                            Log.w(TAG, "Current user " + currentUserId + " is NOT in conversation " + convId + ". Retrying group conversation creation...");
-                            // Retry group conversation creation to force-add user
-                            fetchGroupConversationIdForceAdd();
+                            // Backend no longer requires strict membership enforcement in many cases.
+                            // Treat missing membership as a warning but do NOT block the user or auto force-add.
+                            Log.w(TAG, "Current user " + currentUserId + " is NOT listed as participant of conversation " + convId + ". Proceeding without forcing membership. Participants: " + partIds);
                         } else {
                             Log.d(TAG, "Current user is a participant of conversation " + convId);
                         }

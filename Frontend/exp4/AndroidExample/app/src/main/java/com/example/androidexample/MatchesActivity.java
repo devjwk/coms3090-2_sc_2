@@ -43,17 +43,17 @@ public class MatchesActivity extends AppCompatActivity {
         tvMatchData = findViewById(R.id.tvMatchData);
         etMatchId = findViewById(R.id.etMatchId);
         etUser2Id = findViewById(R.id.etUser2Id);
-        
+
         btnRefreshMatches = findViewById(R.id.btnRefreshMatches);
         btnCreateMatch = findViewById(R.id.btnCreateMatch);
-        
+
         // 5 Status Buttons Initialization
         btnAcceptMatch = findViewById(R.id.btnAcceptMatch);
         btnRejectMatch = findViewById(R.id.btnRejectMatch);
         btnBlockMatch = findViewById(R.id.btnBlockMatch);
         btnUnmatchMatch = findViewById(R.id.btnUnmatchMatch);
         btnPendingMatch = findViewById(R.id.btnPendingMatch);
-        
+
         btnUnmatch = findViewById(R.id.btnUnmatch);
         btnBackToHome = findViewById(R.id.btnBackToHome);
 
@@ -126,11 +126,11 @@ public class MatchesActivity extends AppCompatActivity {
                         for (int i = 0; i < response.length(); i++) {
                             JSONObject match = response.getJSONObject(i);
                             sb.append("Match ID: ").append(match.optLong("matchId"))
-                              .append("\nUser 1 ID: ").append(match.optLong("user1Id"))
-                              .append("\nUser 2 ID: ").append(match.optLong("user2Id"))
-                              .append("\nStatus: ").append(match.optString("status"))
-                              .append("\nCreated: ").append(match.optString("createdAt"))
-                              .append("\n------------------\n");
+                                    .append("\nUser 1 ID: ").append(match.optLong("user1Id"))
+                                    .append("\nUser 2 ID: ").append(match.optLong("user2Id"))
+                                    .append("\nStatus: ").append(match.optString("status"))
+                                    .append("\nCreated: ").append(match.optString("createdAt"))
+                                    .append("\n------------------\n");
                         }
                         tvMatchData.setText(sb.toString());
                     } catch (JSONException e) {

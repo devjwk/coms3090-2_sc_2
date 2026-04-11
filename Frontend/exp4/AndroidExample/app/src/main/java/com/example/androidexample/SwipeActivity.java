@@ -540,6 +540,7 @@ public class SwipeActivity extends AppCompatActivity {
             body.put("user1Id", currentUserId);
             body.put("user2Id", matchedUserId);
         } catch (Exception ignored) {}
+        final JSONObject postBody = body;
         StringRequest req = new StringRequest(Request.Method.POST, url,
                 response -> {
                     Log.d("SwipeActivity", "Proactively created conversation: " + response);
@@ -552,7 +553,21 @@ public class SwipeActivity extends AppCompatActivity {
                     btnSendMessage.setEnabled(true);
                     btnSendMessage.setText("Go to Message");
                     Toast.makeText(SwipeActivity.this, "Could not prepare chat. Try again.", Toast.LENGTH_SHORT).show();
-                });
+                }) {
+            @Override
+            public byte[] getBody() {
+                try {
+                    return postBody.toString().getBytes("utf-8");
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+
+            @Override
+            public String getBodyContentType() {
+                return "application/json; charset=utf-8";
+            }
+        };
         req.setShouldCache(false);
         VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);
 

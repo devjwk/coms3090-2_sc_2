@@ -10,6 +10,10 @@ import android.widget.TextView;
 
 
 import android.view.View;
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.StringRequest;
+import org.json.JSONArray;
 
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -225,6 +229,27 @@ public class HomeActivity extends AppCompatActivity implements NotificationWebSo
 
             showTopBanner(formattedMessage);
 
+            // If this is a match notification, ensure a direct conversation exists
+            if ("MATCH_CREATED".equals(type) || "MATCH_ACCEPTED".equals(type) || "MATCH_UPDATED".equals(type)) {
+                int matchedUserId = -1;
+                // Common payload keys that might contain the other user's id
+                if (json.has("matchedUserId")) matchedUserId = json.optInt("matchedUserId", -1);
+                else if (json.has("otherUserId")) matchedUserId = json.optInt("otherUserId", -1);
+                else if (json.has("user1Id") && json.has("user2Id")) {
+                    int u1 = json.optInt("user1Id", -1);
+                    int u2 = json.optInt("user2Id", -1);
+                    matchedUserId = (u1 == userId) ? u2 : u1;
+                }
+
+                if (matchedUserId > 0 && matchedUserId != userId) {
+                    // Proactively create/direct the conversation for both users
+                    sendDirectConversationPost(userId, matchedUserId);
+                } else {
+                    // If notification didn't include the matched user id, fetch accepted matches
+                    fetchAcceptedMatchesAndEnsureConversations();
+                }
+            }
+
         }
         catch (Exception e){
             e.printStackTrace();
@@ -237,6 +262,73 @@ public class HomeActivity extends AppCompatActivity implements NotificationWebSo
 
         layoutNotificationBanner.removeCallbacks(hideBannerRunnable);
         layoutNotificationBanner.postDelayed(hideBannerRunnable, 3000);
+    }
+
+    // --- Matches / Conversation helpers ---
+    private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080";
+
+    /**
+     * Ensures a direct conversation exists for every ACCEPTED match for this user.
+     * If the backend already has a conversation this POST should be idempotent.
+     */
+    private void fetchAcceptedMatchesAndEnsureConversations() {
+        String url = BASE_URL + "/matches/user/" + userId;
+        JsonArrayRequest req = new JsonArrayRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        for (int i = 0; i < response.length(); i++) {
+                            org.json.JSONObject match = response.getJSONObject(i);
+                            String status = match.optString("status", "");
+                            if (status == null) status = "";
+                            if ("ACCEPTED".equalsIgnoreCase(status) || "MATCHED".equalsIgnoreCase(status)) {
+                                int u1 = match.optInt("user1Id", -1);
+                                int u2 = match.optInt("user2Id", -1);
+                                if (u1 > 0 && u2 > 0) {
+                                    int other = (u1 == userId) ? u2 : u1;
+                                    if (other > 0) sendDirectConversationPost(userId, other);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.e("HomeActivity", "Error parsing matches response: " + e.getMessage());
+                    }
+                },
+                error -> Log.e("HomeActivity", "Failed to fetch matches: " + error)
+        );
+        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);
+    }
+
+    /**
+     * POST /conversations/direct with both user IDs to ensure the conversation exists
+     * and both users are added as participants.
+     */
+    private void sendDirectConversationPost(int user1Id, int user2Id) {
+        String url = BASE_URL + "/conversations/direct";
+        org.json.JSONObject body = new org.json.JSONObject();
+        try {
+            body.put("user1Id", user1Id);
+            body.put("user2Id", user2Id);
+        } catch (Exception e) {
+            Log.e("HomeActivity", "Error building request body", e);
+            return;
+        }
+
+        StringRequest request = new StringRequest(Request.Method.POST, url,
+                response -> Log.d("HomeActivity", "Ensured direct conversation: " + response),
+                error -> Log.e("HomeActivity", "Failed to ensure direct conversation: " + error)
+        ) {
+            @Override
+            public byte[] getBody() {
+                return body.toString().getBytes();
+            }
+
+            @Override
+            public String getBodyContentType() {
+                return "application/json; charset=utf-8";
+            }
+        };
+        request.setShouldCache(false);
+        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
     }
 
     private final Runnable hideBannerRunnable = new Runnable() {
