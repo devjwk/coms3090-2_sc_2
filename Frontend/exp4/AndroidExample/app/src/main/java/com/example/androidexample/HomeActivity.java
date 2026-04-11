@@ -22,7 +22,7 @@ import android.widget.Button;
  * email, bio, and hobbies. It also serves as a navigation hub to access
  * groups, group memberships, and matches.
  */
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity extends AppCompatActivity implements NotificationWebSocketListener {
 
     /** TextViews for displaying user greeting and initials */
     private TextView tvWelcomeName, tvAvatarInitial, tvProfileInitial;
@@ -180,24 +180,9 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        WebSocketClientManager.getInstance().setWebSocketEventListener(new WebSocketEventListener(){
-            @Override
-            public void onWebSocketOpen(ServerHandshake handshakedata) {
-                android.util.Log.d("HOME_WS","WebSocket Connected");
-            }
-            @Override
-            public void onWebSocketMessage(String message) {
-                android.util.Log.d("HOME_WS", "Received: "+message);
-                runOnUiThread(() -> handleNotificationMessage(message));}
-            @Override
-            public void onWebSocketClose(int code, String reason, boolean remote) {
-                android.util.Log.d("HOME_WS","WebSocket Closed"+reason);
-            }
-            @Override
-            public void onWebSocketError(Exception ex) {
-                android.util.Log.d("HOME_WS","WebSocket Error"+ex.getMessage());
-            }
-        });
+        NotificationWebSocketManager.getInstance().setNotificationWebSocketListener(this);
+        connectNotificationSocket();
+
 //        //dummy test notification
 //        layoutNotificationBanner.postDelayed(() -> {
 //            String fakeMessage = "{"
@@ -208,7 +193,7 @@ public class HomeActivity extends AppCompatActivity {
 //
 //            handleNotificationMessage(fakeMessage);
 //        }, 2000);
-        connectNotificationSocket();
+
 
         btnReport.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, ReportSubmitActivity.class);
@@ -264,12 +249,31 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        WebSocketClientManager.getInstance().removeWebSocketEventListener();
+        NotificationWebSocketManager.getInstance().removeNotificationWebSocketListener();
     }
 
     private void connectNotificationSocket() {
         String wsUrl = "ws://coms-3090-015.class.las.iastate.edu:8080/uver/notify/" + userId;
-        WebSocketClientManager.getInstance().connectWebSocket(wsUrl);
+        NotificationWebSocketManager.getInstance().connectWebSocket(wsUrl);
+    }
+    @Override
+    public void onNotificationOpen(ServerHandshake handshakedata) {
+        Log.d("HOME_WS", "Notification WebSocket Connected");
     }
 
+    @Override
+    public void onNotificationMessage(String message) {
+        Log.d("HOME_WS", "Notification Received: " + message);
+        runOnUiThread(() -> handleNotificationMessage(message));
+    }
+
+    @Override
+    public void onNotificationClose(int code, String reason, boolean remote) {
+        Log.d("HOME_WS", "Notification WebSocket Closed: " + reason);
+    }
+
+    @Override
+    public void onNotificationError(Exception ex) {
+        Log.e("HOME_WS", "Notification WebSocket Error: " + ex.getMessage());
+    }
 }
