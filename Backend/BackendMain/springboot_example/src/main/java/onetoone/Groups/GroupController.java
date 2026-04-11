@@ -110,10 +110,10 @@ public class GroupController {
         return groupRepository.findAll();
     }
 
-    @GetMapping(path = "/groups/{userId}")
+    @GetMapping(path = "/groups/me/{userId}")
     public ResponseEntity<List<Group>> getMyGroups(@PathVariable Long userId) {
 
-        List<GroupMember> memberships = groupMemberRepository.findByUserId(userId);
+        List<GroupMember> memberships = groupMemberRepository.findByUserId_userId(userId);
 
         if (memberships.isEmpty()) {
             return ResponseEntity.ok(new ArrayList<>());
