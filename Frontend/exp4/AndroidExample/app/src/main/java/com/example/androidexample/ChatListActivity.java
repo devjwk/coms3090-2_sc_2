@@ -291,6 +291,7 @@ public class ChatListActivity extends AppCompatActivity {
                     try {
                         JSONArray arr = new JSONArray(response);
                         List<GroupInfo> groups = new ArrayList<>();
+                        java.util.HashSet<Integer> seenGroupIds = new java.util.HashSet<>();
 
                         for (int i = 0; i < arr.length(); i++) {
                             JSONObject obj = arr.getJSONObject(i);
@@ -300,7 +301,10 @@ public class ChatListActivity extends AppCompatActivity {
                                     obj.optString("groupname",
                                             obj.optString("group_name", "Group " + gid)));
                             String desc = obj.optString("description", "");
-                            if (gid > 0) groups.add(new GroupInfo(gid, name, desc));
+                            if (gid > 0 && !seenGroupIds.contains(gid)) {
+                                groups.add(new GroupInfo(gid, name, desc));
+                                seenGroupIds.add(gid);
+                            }
                         }
 
                         if (groups.isEmpty()) {
@@ -510,4 +514,3 @@ public class ChatListActivity extends AppCompatActivity {
         return (int) (value * getResources().getDisplayMetrics().density);
     }
 }
-

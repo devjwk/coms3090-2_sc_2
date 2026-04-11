@@ -73,6 +73,8 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         tvGroupName   = findViewById(R.id.tvGroupName);
         tvMemberCount = findViewById(R.id.tvMemberCount);
 
+        sendBtn.setEnabled(true); // Always enable send button immediately
+
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
         recyclerChat.setLayoutManager(layoutManager);
@@ -621,11 +623,9 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
                         Log.d(TAG, "Conversation participants parsed: " + partIds);
                         boolean amMember = partIds.contains(currentUserId);
                         if (!amMember) {
-                            Log.w(TAG, "Current user " + currentUserId + " is NOT in conversation " + convId);
-                            runOnUiThread(() -> {
-                                Toast.makeText(this, "You are not a participant on the server for this conversation. Messaging disabled.", Toast.LENGTH_LONG).show();
-                                sendBtn.setEnabled(false);
-                            });
+                            Log.w(TAG, "Current user " + currentUserId + " is NOT in conversation " + convId + ". Retrying group conversation creation...");
+                            // Retry group conversation creation to force-add user
+                            fetchGroupConversationIdForceAdd();
                         } else {
                             Log.d(TAG, "Current user is a participant of conversation " + convId);
                         }
@@ -641,7 +641,71 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
                         } catch (Exception ignored) {}
                     }
                 });
+        VolleySingleton.getInstance(this).addToRequestQueue(request);
+    }
 
+    // Force re-create group conversation with current user included
+    private void fetchGroupConversationIdForceAdd() {
+        String url = BASE_URL + "/conversations/group";
+        List<Integer> userIds = new ArrayList<>();
+        if (!memberUserIds.contains(currentUserId)) {
+            userIds.add(currentUserId);
+        }
+        userIds.addAll(memberUserIds);
+        Collections.sort(userIds);
+        JSONObject body = new JSONObject();
+        try {
+            body.put("groupId", groupId);
+            body.put("name", groupName != null ? groupName : "Group " + groupId);
+            JSONArray idsArray = new JSONArray();
+            for (int uid : userIds) {
+                idsArray.put(uid);
+            }
+            body.put("userIds", idsArray);
+        } catch (Exception e) {
+            Log.e(TAG, "Error building body (force add)", e);
+            connectWebSocket();
+            return;
+        }
+        Log.d(TAG, "FORCE Step 2: POST " + url + " body=" + body);
+        StringRequest request = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    Log.d(TAG, "FORCE Conversation response: " + response);
+                    try {
+                        JSONObject json = new JSONObject(response);
+                        conversationId = json.optInt("conversationId",
+                                json.optInt("id",
+                                        json.optInt("conversation_id", -1)));
+                    } catch (Exception e) {
+                        try {
+                            conversationId = Integer.parseInt(response.trim());
+                        } catch (NumberFormatException nfe) {
+                            Log.e(TAG, "Could not parse conversationId from: " + response);
+                        }
+                    }
+                    Log.d(TAG, "FORCE Got conversationId = " + conversationId);
+                    if (conversationId > 0) {
+                        cacheConversationId(groupId, conversationId);
+                        // After force-adding, check again
+                        fetchConversationDetails(conversationId);
+                    } else {
+                        // Only show error if still not a participant
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "You are not a participant on the server for this conversation.", Toast.LENGTH_LONG).show();
+                        });
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "FORCE Failed to create group conversation: " + error);
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "You are not a participant on the server for this conversation.", Toast.LENGTH_LONG).show();
+                    });
+                }) {
+            @Override
+            public byte[] getBody() { return body.toString().getBytes(); }
+            @Override
+            public String getBodyContentType() { return "application/json"; }
+        };
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
@@ -661,10 +725,10 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
                 Toast.makeText(this, "Message cannot be empty!", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (conversationId <= 0) {
-                Toast.makeText(this, "Chat not ready — no conversationId", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            //if (conversationId <= 0) {
+              //  Toast.makeText(this, "Chat not ready — no conversationId", Toast.LENGTH_SHORT).show();
+               // return;
+            //}
             try {
                 JSONObject jsonMsg = new JSONObject();
                 jsonMsg.put("conversationId", conversationId);

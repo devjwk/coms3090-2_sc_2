@@ -24,6 +24,8 @@ import java.util.List;
 public class ChatActivity extends AppCompatActivity implements WebSocketEventListener {
 
     private static final String TAG = "ChatActivity";
+    private static final int MAX_CONVO_RETRIES = 2;
+    private int convoTries = 0;
 
     private Button sendBtn, backBtn;
     private EditText msgEtx;
@@ -63,6 +65,9 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
         chatAdapter = new ChatAdapter(messageList);
         recyclerChat.setAdapter(chatAdapter);
 
+        // Disable send button until chat is ready
+        sendBtn.setEnabled(false);
+
         backBtn.setOnClickListener(v -> {
             WebSocketClientManager.getInstance().removeWebSocketEventListener();
             finish();
@@ -78,12 +83,16 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
             Toast.makeText(this, "No chat partner specified", Toast.LENGTH_SHORT).show();
             finish();
         }
+
+        // Optionally show a loading message in chat
+        appendMessage("Preparing chat...", false);
     }
 
 
     private void fetchConversationId() {
+        convoTries++;
         String url = BASE_URL + "/conversations/direct";
-        Log.d(TAG, "POST " + url + " with user1Id=" + currentUserId + " user2Id=" + otherUserId);
+        Log.d(TAG, "POST " + url + " with user1Id=" + currentUserId + " user2Id=" + otherUserId + " (try " + convoTries + ")");
 
         JSONObject body = new JSONObject();
         try {
@@ -112,15 +121,38 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                             Log.e(TAG, "Could not parse conversationId from: " + response);
                         }
                     }
+                    if (conversationId <= 0) {
+                        Log.e(TAG, "No valid conversationId returned from backend for users " + currentUserId + " and " + otherUserId + ". Response: " + response);
+                        if (convoTries < MAX_CONVO_RETRIES) {
+                            Log.d(TAG, "Retrying fetchConversationId (try " + (convoTries+1) + ")");
+                            fetchConversationId();
+                        } else {
+                            Toast.makeText(this, "Could not establish conversation (no valid ID returned)", Toast.LENGTH_LONG).show();
+                        }
+                        return;
+                    }
                     loadChatHistoryThenConnect();
                 },
                 error -> {
                     Log.e(TAG, "Failed to get conversationId: " + error);
                     if (error.networkResponse != null) {
+                        String errBody = new String(error.networkResponse.data);
                         Log.e(TAG, "Status: " + error.networkResponse.statusCode
-                                + " Body: " + new String(error.networkResponse.data));
+                                + " Body: " + errBody);
+                        if (convoTries < MAX_CONVO_RETRIES) {
+                            Log.d(TAG, "Retrying fetchConversationId (try " + (convoTries+1) + ")");
+                            fetchConversationId();
+                        } else {
+                            Toast.makeText(this, "Could not establish conversation: " + errBody, Toast.LENGTH_LONG).show();
+                        }
+                    } else {
+                        if (convoTries < MAX_CONVO_RETRIES) {
+                            Log.d(TAG, "Retrying fetchConversationId (try " + (convoTries+1) + ")");
+                            fetchConversationId();
+                        } else {
+                            Toast.makeText(this, "Could not establish conversation (network error)", Toast.LENGTH_LONG).show();
+                        }
                     }
-                    Toast.makeText(this, "Could not establish conversation", Toast.LENGTH_SHORT).show();
                     connectWebSocket();
                 }) {
             @Override
@@ -160,12 +192,18 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                         Log.d(TAG, "Loaded " + loaded + " history messages from primary URL");
                         connectWebSocket();
                     }
+                    // Chat is ready, enable send button
+                    sendBtn.setEnabled(true);
                 },
                 error -> {
                     Log.e(TAG, "Primary history URL FAILED: " + error);
-                    if (error.networkResponse != null) {
-                        Log.e(TAG, "Primary error status: " + error.networkResponse.statusCode
-                                + " body: " + new String(error.networkResponse.data));
+                    int status = error.networkResponse != null ? error.networkResponse.statusCode : -1;
+                    String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : "";
+                    Log.e(TAG, "Primary error status: " + status + " body: " + errBody);
+                    if ((status == 403 || status == 401 || status == 404) && errBody.toLowerCase().contains("not in this conversation")) {
+                        Toast.makeText(this, "You are not a member of this conversation. Please try rematching or contact support.", Toast.LENGTH_LONG).show();
+                        Log.e(TAG, "User " + currentUserId + " is not a member of conversation " + conversationId + ". Backend response: " + errBody);
+                        return;
                     }
                     Log.d(TAG, "Trying fallback history URL...");
                     loadChatHistoryFallback();
@@ -190,15 +228,23 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                         Log.d(TAG, "Loaded " + loaded + " history messages from fallback URL");
                     }
                     connectWebSocket();
+                    // Chat is ready, enable send button
+                    sendBtn.setEnabled(true);
                 },
                 error -> {
                     Log.e(TAG, "Fallback history URL also FAILED: " + error);
-                    if (error.networkResponse != null) {
-                        Log.e(TAG, "Fallback error status: " + error.networkResponse.statusCode
-                                + " body: " + new String(error.networkResponse.data));
+                    int status = error.networkResponse != null ? error.networkResponse.statusCode : -1;
+                    String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : "";
+                    Log.e(TAG, "Fallback error status: " + status + " body: " + errBody);
+                    if ((status == 403 || status == 401 || status == 404) && errBody.toLowerCase().contains("not in this conversation")) {
+                        Toast.makeText(this, "You are not a member of this conversation. Please try rematching or contact support.", Toast.LENGTH_LONG).show();
+                        Log.e(TAG, "User " + currentUserId + " is not a member of conversation " + conversationId + ". Backend response: " + errBody);
+                        return;
                     }
                     Log.d(TAG, "Both history URLs failed — conversation may be new");
                     connectWebSocket();
+                    // Chat is ready, enable send button
+                    sendBtn.setEnabled(true);
                 });
 
         VolleySingleton.getInstance(this).addToRequestQueue(request);
@@ -278,12 +324,8 @@ public class ChatActivity extends AppCompatActivity implements WebSocketEventLis
                 Toast.makeText(this, "Message cannot be empty!", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            if (conversationId <= 0) {
-                Toast.makeText(this, "Chat not ready — no conversationId", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
+            // No need to check conversationId here; sendBtn is only enabled when chat is ready
+            // Remove any fallback Toasts for conversation not loaded
             try {
                 JSONObject jsonMsg = new JSONObject();
                 jsonMsg.put("conversationId", conversationId);
