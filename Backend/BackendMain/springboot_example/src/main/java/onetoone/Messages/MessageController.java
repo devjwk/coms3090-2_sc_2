@@ -20,12 +20,6 @@ public class MessageController {
     public List<Messages> getMessagesForConversation(@PathVariable Long conversationId,
                                                      @PathVariable Long userId) {
 
-        boolean allowed = convoMemRepository.existsByConversationIdAndUserId(conversationId, userId);
-
-        if (!allowed) {
-            throw new RuntimeException("User is not in this conversation");
-        }
-
         return messagesRepository.findByConversationIdOrderBySentAtAsc(conversationId);
     }
 }
