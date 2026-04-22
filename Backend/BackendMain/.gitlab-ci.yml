@@ -7,16 +7,16 @@ maven-build:
   tags:
     - jj_tag
   script:
-    - cd springboot_example
+    - cd BackendMain
     - mvn package
   artifacts:
     paths:
-      - springboot_example/target/*.jar
+      - BackendMain/springboot_example/target/*.jar
   only:
     refs:
       - JJ_CICD
     changes:
-      - springboot_example/**/*
+      - BackendMain/**/*
 
 maven-test:
   stage: maventest
@@ -29,4 +29,4 @@ maven-test:
     refs:
       - JJ_CICD
     changes:
-      - springboot_example/**/*
+      - BackendMain/**/*
