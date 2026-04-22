@@ -9,11 +9,14 @@ maven-build:
   script:
     - cd springboot_example
     - mvn package
+  artifacts:
+    paths:
+      - springboot_example/target/*.jar
   only:
     refs:
       - JJ_CICD
     changes:
-      - springboot_example/**/*
+      - springboot_example/*
 
 maven-test:
   stage: maventest
@@ -26,4 +29,4 @@ maven-test:
     refs:
       - JJ_CICD
     changes:
-      - springboot_example/**/*
+      - springboot_example/*
