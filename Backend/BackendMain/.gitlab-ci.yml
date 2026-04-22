@@ -7,7 +7,7 @@ maven-build:
   tags:
     - jj_tag
   script:
-    - cd Backend
+    - cd Backend/BackendMain/springboot_example
     - mvn package
   artifacts:
     paths:
