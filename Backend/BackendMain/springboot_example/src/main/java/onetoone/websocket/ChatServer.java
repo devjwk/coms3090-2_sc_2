@@ -118,7 +118,6 @@ public class ChatServer {
         );
 
         if (!allowed) {
-            session.getBasicRemote().sendText("You are not in this conversation");
             return;
         }
 

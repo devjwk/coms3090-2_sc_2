@@ -1,0 +1,29 @@
+stages:
+  - mavenbuild
+  - maventest
+
+maven-build:
+  stage: mavenbuild
+  tags:
+    - jj_tag
+  script:
+    - cd springboot_example
+    - mvn package
+  only:
+    refs:
+      - JJ_CICD
+    changes:
+      - springboot_example/**/*
+
+maven-test:
+  stage: maventest
+  tags:
+    - jj_tag
+  script:
+    - cd springboot_example
+    - mvn test
+  only:
+    refs:
+      - JJ_CICD
+    changes:
+      - springboot_example/**/*
