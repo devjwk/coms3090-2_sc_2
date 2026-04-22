@@ -9,9 +9,6 @@ maven-build:
   script:
     - cd Backend/BackendMain/springboot_example
     - mvn package
-  artifacts:
-    paths:
-      - Backend/BackendMain/springboot_example/target/*.jar
   only:
     refs:
       - JJ_CICD
@@ -29,4 +26,4 @@ maven-test:
     refs:
       - JJ_CICD
     changes:
-      - Backend/BackendMain/**/*
+      - Backend/**/*
