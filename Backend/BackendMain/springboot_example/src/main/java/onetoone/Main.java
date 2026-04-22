@@ -8,7 +8,7 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 class Main {
-    // pipeline test
+    // pipeline test dwasd
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
     }
