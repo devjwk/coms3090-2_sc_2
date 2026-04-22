@@ -34,6 +34,10 @@ public class ChatListActivity extends AppCompatActivity {
     private TextView tvEmptyState;
     private Button tabDirect, tabGroups;
     private int currentUserId;
+    private ModeratorSessionManager moderatorSessionManager;
+    private int moderatorId = -1;
+    private boolean isModeratorLoggedIn = false;
+    private final java.util.Set<Integer> moderatedGroupIds = new java.util.HashSet<>();
 
     private boolean isDirectTab = true;
     private boolean directLoaded = false;
@@ -49,6 +53,7 @@ public class ChatListActivity extends AppCompatActivity {
         int groupId;
         String groupName;
         String description;
+        boolean canModerate;
         List<String> memberNames = new ArrayList<>();
         List<Integer> memberIds = new ArrayList<>();
         GroupInfo(int id, String name, String desc) {
@@ -64,6 +69,14 @@ public class ChatListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_chat_list);
 
         currentUserId      = getIntent().getIntExtra("USER_ID", 1);
+        moderatorSessionManager = new ModeratorSessionManager(this);
+        ModeratorAccount moderatorAccount = moderatorSessionManager.getSession();
+        if (moderatorAccount != null) {
+            moderatorId = moderatorAccount.getModeratorId();
+            isModeratorLoggedIn = moderatorId > 0;
+            moderatedGroupIds.clear();
+            moderatedGroupIds.addAll(moderatorAccount.getAssignedGroups());
+        }
         chatListContainer  = findViewById(R.id.chatListContainer);
         groupListContainer = findViewById(R.id.groupListContainer);
         scrollDirect       = findViewById(R.id.scrollDirect);
@@ -302,7 +315,9 @@ public class ChatListActivity extends AppCompatActivity {
                                             obj.optString("group_name", "Group " + gid)));
                             String desc = obj.optString("description", "");
                             if (gid > 0 && !seenGroupIds.contains(gid)) {
-                                groups.add(new GroupInfo(gid, name, desc));
+                                GroupInfo group = new GroupInfo(gid, name, desc);
+                                group.canModerate = isModeratorLoggedIn && moderatedGroupIds.contains(gid);
+                                groups.add(group);
                                 seenGroupIds.add(gid);
                             }
                         }
@@ -419,6 +434,8 @@ public class ChatListActivity extends AppCompatActivity {
     private void buildGroupCards(List<GroupInfo> groups) {
         groupListContainer.removeAllViews();
 
+        addModeratorHubCard();
+
         for (GroupInfo g : groups) {
             LinearLayout card = new LinearLayout(this);
             card.setOrientation(LinearLayout.HORIZONTAL);
@@ -479,6 +496,36 @@ public class ChatListActivity extends AppCompatActivity {
             arrow.setTextSize(22);
             card.addView(arrow);
 
+            if (g.canModerate) {
+                TextView manageChip = new TextView(this);
+                manageChip.setText("Manage");
+                manageChip.setTextColor(Color.WHITE);
+                manageChip.setTextSize(11);
+                manageChip.setPadding(dp(10), dp(6), dp(10), dp(6));
+                manageChip.setBackgroundColor(Color.parseColor("#5A4DFF"));
+
+                LinearLayout.LayoutParams chipParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+                chipParams.setMargins(dp(8), 0, dp(8), 0);
+                manageChip.setLayoutParams(chipParams);
+
+                manageChip.setOnClickListener(v -> {
+                    Intent manageIntent;
+                    if (isModeratorLoggedIn && moderatorId > 0) {
+                        manageIntent = new Intent(ChatListActivity.this, ModeratorGroupManagementActivity.class);
+                        manageIntent.putExtra("MODERATOR_ID", moderatorId);
+                        manageIntent.putExtra("GROUP_ID", g.groupId);
+                        manageIntent.putExtra("GROUP_NAME", g.groupName);
+                    } else {
+                        manageIntent = new Intent(ChatListActivity.this, ModeratorLoginActivity.class);
+                    }
+                    startActivity(manageIntent);
+                });
+                card.addView(manageChip);
+            }
+
             final int gId = g.groupId;
             final String gName = g.groupName;
             card.setOnClickListener(v -> {
@@ -491,6 +538,74 @@ public class ChatListActivity extends AppCompatActivity {
 
             groupListContainer.addView(card);
         }
+    }
+
+    private void addModeratorHubCard() {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setPadding(dp(16), dp(14), dp(16), dp(14));
+        card.setBackgroundColor(Color.parseColor("#2A2147"));
+
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        cardParams.setMargins(dp(12), dp(4), dp(12), dp(10));
+        card.setLayoutParams(cardParams);
+
+        TextView icon = new TextView(this);
+        icon.setText("🛡");
+        icon.setTextSize(22);
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        iconParams.setMargins(0, 0, dp(12), 0);
+        icon.setLayoutParams(iconParams);
+        card.addView(icon);
+
+        LinearLayout textCol = new LinearLayout(this);
+        textCol.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1
+        );
+        textCol.setLayoutParams(textParams);
+
+        TextView title = new TextView(this);
+        title.setText("Moderator Hub");
+        title.setTextColor(Color.WHITE);
+        title.setTextSize(16);
+        title.setTypeface(null, android.graphics.Typeface.BOLD);
+        textCol.addView(title);
+
+        TextView subtitle = new TextView(this);
+        subtitle.setText(isModeratorLoggedIn ? "Manage groups, members, events, and announcements"
+                : "Sign in as moderator to manage groups");
+        subtitle.setTextColor(Color.parseColor("#D1CCFF"));
+        subtitle.setTextSize(12);
+        textCol.addView(subtitle);
+
+        card.addView(textCol);
+
+        TextView arrow = new TextView(this);
+        arrow.setText("›");
+        arrow.setTextColor(Color.parseColor("#B8AFFF"));
+        arrow.setTextSize(22);
+        card.addView(arrow);
+
+        card.setOnClickListener(v -> {
+            Intent intent;
+            if (isModeratorLoggedIn && moderatorId > 0) {
+                intent = new Intent(ChatListActivity.this, ModeratorDashboardActivity.class);
+                intent.putExtra("MODERATOR_ID", moderatorId);
+            } else {
+                intent = new Intent(ChatListActivity.this, ModeratorLoginActivity.class);
+            }
+            startActivity(intent);
+        });
+
+        groupListContainer.addView(card);
     }
 
 

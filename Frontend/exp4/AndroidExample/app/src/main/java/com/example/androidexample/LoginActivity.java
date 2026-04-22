@@ -46,7 +46,7 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(new Intent(LoginActivity.this, DeleteUserActivity.class)));
 
         btnModerator.setOnClickListener(v ->
-                startActivity(new Intent(LoginActivity.this, ModeratorActivity.class))
+                startActivity(new Intent(LoginActivity.this, ModeratorLoginActivity.class))
                 );
     }
 
