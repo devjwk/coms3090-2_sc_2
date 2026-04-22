@@ -50,8 +50,6 @@
         <activity
             android:name=".WebSocketNotificationActivity"
             android:exported="false" />
-
->>>>>>> Frontend/exp4/AndroidExample/app/src/main/AndroidManifest.xml
         <activity
             android:name=".MainActivity"
             android:exported="true">
