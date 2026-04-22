@@ -23,7 +23,7 @@ maven-test:
   tags:
     - jj_tag
   script:
-    - cd springboot_example
+    - cd BackendMain/springboot_example
     - mvn test
   only:
     refs:
