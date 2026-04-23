@@ -1,17 +1,17 @@
 stages:
   - androidbuild
-  - androidtest 
-  
+  - androidtest
+
 android-build:
   image: afirefly/android-ci:java17
   stage: androidbuild
   tags:
-   - haiqanas_tag        
+    - haiqanas_tag
   before_script:
     - export GRADLE_USER_HOME=`pwd`/.gradle
-    - chmod +x ./Frontend/gradlew
+    - chmod +x ./Frontend/exp4/AndroidExample/gradlew
   script:
-    - cd Frontend        
+    - cd Frontend/exp4/AndroidExample
     - ./gradlew build
   only:
     refs:
@@ -23,12 +23,12 @@ android-test:
   image: afirefly/android-ci:java17
   stage: androidtest
   tags:
-    - haiqanas_tag       
+    - haiqanas_tag
   before_script:
     - export GRADLE_USER_HOME=`pwd`/.gradle
-    - chmod +x ./Frontend/gradlew
+    - chmod +x ./Frontend/exp4/AndroidExample/gradlew
   script:
-    - cd Frontend        
+    - cd Frontend/exp4/AndroidExample
     - ./gradlew test
   only:
     refs:
