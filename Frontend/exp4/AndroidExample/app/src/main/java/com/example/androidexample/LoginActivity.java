@@ -20,7 +20,7 @@ import java.net.URLEncoder;
 public class LoginActivity extends AppCompatActivity {
 
     private EditText etUsername, etPassword;
-    private Button btnLogin, btnSignup, btnDeleteUser, btnModerator;
+    private Button btnLogin, btnSignup, btnDeleteUser, btnModerator, btnModeratorLogin;
 
     private static final String LOGIN_URL = "http://coms-3090-015.class.las.iastate.edu:8080/login";
     //private static final String LOGIN_URL = "http://10.0.2.2:3002/login";
@@ -37,6 +37,7 @@ public class LoginActivity extends AppCompatActivity {
         btnSignup     = findViewById(R.id.login_signup_btn);
         btnDeleteUser = findViewById(R.id.login_delete_user_btn);
         btnModerator  = findViewById(R.id.login_moderator_btn);
+        btnModeratorLogin = findViewById(R.id.login_moderator_login_btn);
         btnLogin.setOnClickListener(v -> loginUser());
 
         btnSignup.setOnClickListener(v ->
@@ -46,8 +47,12 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(new Intent(LoginActivity.this, DeleteUserActivity.class)));
 
         btnModerator.setOnClickListener(v ->
-                startActivity(new Intent(LoginActivity.this, ModeratorLoginActivity.class))
+                startActivity(new Intent(LoginActivity.this, ModeratorActivity.class))
                 );
+
+        btnModeratorLogin.setOnClickListener(v ->
+                startActivity(new Intent(LoginActivity.this, ModeratorLoginActivity.class))
+        );
     }
 
     private void loginUser() {
