@@ -238,6 +238,42 @@ public class GroupController {
         return ResponseEntity.ok(savedGroup);
     }
 
+    @PutMapping("/moderators/{moderatorId}/groups/{groupId}/members/{userId}/approve")
+    public ResponseEntity<String> approveMember(@PathVariable Long moderatorId,
+                                                @PathVariable Long groupId,
+                                                @PathVariable Long userId) {
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Group group = groupOpt.get();
+
+        if (!moderatorId.equals(group.getModeratorId())) {
+            return ResponseEntity.status(403).body("You do not control this group");
+        }
+
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+        if (convoOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Conversation not found");
+        }
+
+        Long conversationId = convoOpt.get().getConversationId();
+
+        boolean alreadyInConversation =
+                convoMemRepository.existsByConversationIdAndUserId(conversationId, userId);
+
+        if (!alreadyInConversation) {
+            ConversationMember member = new ConversationMember();
+            member.setConversationId(conversationId);
+            member.setUserId(userId);
+            convoMemRepository.save(member);
+        }
+
+        return ResponseEntity.ok("Member approved");
+    }
+
     @DeleteMapping("/groups/{id}")
     @Operation(summary = "Delete group", description = "Deletes a user group by ID and its linked conversation.")
     @ApiResponses(value = {
@@ -257,6 +293,42 @@ public class GroupController {
 
         groupRepository.deleteById(id);
         return ResponseEntity.ok("Group deleted");
+    }
+
+    @DeleteMapping("/moderators/{moderatorId}/groups/{groupId}/members/{userId}")
+    public ResponseEntity<String> removeMemberAsModerator(@PathVariable Long moderatorId,
+                                                          @PathVariable Long groupId,
+                                                          @PathVariable Long userId) {
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Group group = groupOpt.get();
+
+        if (!moderatorId.equals(group.getModeratorId())) {
+            return ResponseEntity.status(403).body("You do not control this group");
+        }
+
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+        if (convoOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Conversation not found");
+        }
+
+        Long conversationId = convoOpt.get().getConversationId();
+
+        List<ConversationMember> members =
+                convoMemRepository.findByConversationId(conversationId);
+
+        for (ConversationMember m : members) {
+            if (m.getUserId().equals(userId)) {
+                convoMemRepository.delete(m);
+                return ResponseEntity.ok("Member removed");
+            }
+        }
+
+        return ResponseEntity.status(404).body("User not in group");
     }
 
     @DeleteMapping("/groups/{groupId}/remove/{userId}")
