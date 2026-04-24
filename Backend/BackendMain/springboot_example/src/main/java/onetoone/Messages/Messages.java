@@ -20,6 +20,10 @@ public class Messages {
 
     private LocalDateTime sentAt;
 
+    private Boolean removed = false;
+    private Long removedBy;
+    private String removedReason;
+
     public Messages() {}
 
     // ===== GETTERS + SETTERS =====
@@ -63,4 +67,14 @@ public class Messages {
     public void setSentAt(LocalDateTime sentAt) {
         this.sentAt = sentAt;
     }
+
+    public void setRemoved(boolean rm) {
+        this.removed = rm;
+    }
+
+    public String setRemovedBy(Long mod){this.removedBy = mod;}
+    public void setRemovedReason(String reason) {
+        this.removedReason = reason;
+    }
+
 }
