@@ -109,6 +109,8 @@ public class GroupController {
         return ResponseEntity.ok(groupOptional.get());
     }
 
+
+
     @GetMapping(path = "/groups")
     @Operation(summary = "Get all groups", description = "Returns a list of all user groups.")
     public List<Group> getAllGroups() {
