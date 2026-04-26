@@ -34,8 +34,9 @@ public class GroupMember {
     @Column(name = "joined_at", nullable = false, updatable = false)
     private Instant joined_at;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private MembershipStatus status;
 
     // =============================== Getters and Setters for each field ================================== //
 
@@ -49,8 +50,5 @@ public class GroupMember {
     public void setGroupId(Group groupId) { this.groupId = groupId; }
 
     public Instant getJoinedAt() { return joined_at; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
 
 }
