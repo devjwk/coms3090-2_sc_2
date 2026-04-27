@@ -73,7 +73,6 @@ public class GMController {
         member.setUserId(user);
         member.setGroupId(group);
         member.setStatus(MembershipStatus.PENDING);
-        member.setIs_moderator(false);
 
         gmRepository.save(member);
 
