@@ -9,12 +9,12 @@
     <!-- Top bar -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="68dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="#1E1E30"
         android:paddingStart="8dp"
-        android:paddingEnd="16dp">
+        android:paddingEnd="12dp">
 
         <Button
             android:id="@+id/backBtn"
@@ -60,11 +60,24 @@
                 android:id="@+id/tvMemberCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Loading members..."
-                android:textColor="#7B6FFF"
+                android:text="Tap to view members"
+                android:textColor="#9E97FF"
                 android:textSize="13sp"/>
 
         </LinearLayout>
+
+        <Button
+            android:id="@+id/btnManageGroupChat"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Manage"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:backgroundTint="#7B6FFF"
+            android:visibility="gone" />
 
     </LinearLayout>
 
@@ -102,7 +115,7 @@
         <Button
             android:id="@+id/sendBtn"
             android:layout_width="84dp"
-            android:layout_height="72dp"
+            android:layout_height="56dp"
             android:text="Send"
             android:textColor="#FFFFFF"
             android:textSize="15sp"
@@ -112,4 +125,3 @@
     </LinearLayout>
 
 </LinearLayout>
-

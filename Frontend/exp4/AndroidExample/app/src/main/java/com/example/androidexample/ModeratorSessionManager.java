@@ -12,6 +12,7 @@ public class ModeratorSessionManager {
     private static final String PREF_NAME = "moderator_session";
     private static final String KEY_MODERATOR_ID = "moderator_id";
     private static final String KEY_EMAIL = "email";
+    private static final String KEY_DISPLAY_NAME = "display_name";
     private static final String KEY_AUTH_PROVIDER = "auth_provider";
     private static final String KEY_PROVIDER_USER_ID = "provider_user_id";
     private static final String KEY_ROLES = "roles";
@@ -35,6 +36,7 @@ public class ModeratorSessionManager {
         prefs.edit()
                 .putInt(KEY_MODERATOR_ID, account.getModeratorId())
                 .putString(KEY_EMAIL, account.getEmail())
+                .putString(KEY_DISPLAY_NAME, account.getDisplayName())
                 .putString(KEY_AUTH_PROVIDER, account.getAuthProvider())
                 .putString(KEY_PROVIDER_USER_ID, account.getProviderUserId())
                 .putStringSet(KEY_ROLES, new HashSet<>(account.getRoles()))
@@ -50,6 +52,7 @@ public class ModeratorSessionManager {
         }
 
         String email = prefs.getString(KEY_EMAIL, "");
+        String displayName = prefs.getString(KEY_DISPLAY_NAME, "");
         String authProvider = prefs.getString(KEY_AUTH_PROVIDER, "");
         String providerUserId = prefs.getString(KEY_PROVIDER_USER_ID, "");
 
@@ -70,7 +73,7 @@ public class ModeratorSessionManager {
             }
         }
 
-        return new ModeratorAccount(moderatorId, email, authProvider, providerUserId, roles, safePermissions, assignedGroups);
+        return new ModeratorAccount(moderatorId, email, displayName, authProvider, providerUserId, roles, safePermissions, assignedGroups);
     }
 
     public boolean isLoggedIn() {

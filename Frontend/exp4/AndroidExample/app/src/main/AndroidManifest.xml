@@ -54,6 +54,9 @@
             android:name=".ModeratorLoginActivity"
             android:exported="false" />
         <activity
+            android:name=".ModeratorSignupActivity"
+            android:exported="false" />
+        <activity
             android:name=".ModeratorDashboardActivity"
             android:exported="false" />
         <activity

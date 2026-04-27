@@ -3,6 +3,8 @@ package com.example.androidexample;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.Gravity;
@@ -24,6 +26,7 @@ public class ModeratorDashboardActivity extends AppCompatActivity {
     private ModeratorSessionManager sessionManager;
 
     private int moderatorId;
+    private int currentUserId;
 
     private TextView tvModeratorProfile;
     private TextView tvModeratorPermissions;
@@ -42,6 +45,7 @@ public class ModeratorDashboardActivity extends AppCompatActivity {
         sessionManager = new ModeratorSessionManager(this);
 
         moderatorId = getIntent().getIntExtra("MODERATOR_ID", sessionManager.getModeratorId());
+        currentUserId = getIntent().getIntExtra("USER_ID", moderatorId);
         if (moderatorId <= 0) {
             Toast.makeText(this, "No moderator session found", Toast.LENGTH_SHORT).show();
             finish();
@@ -73,7 +77,12 @@ public class ModeratorDashboardActivity extends AppCompatActivity {
 
     private void applyPermissionGates() {
         Set<String> permissions = sessionManager.getPermissions();
-        boolean canCreate = permissions.contains(ModeratorPermissions.CREATE_GROUP);
+
+        // Fallback: some backend responses do not include permissions yet.
+        // If empty, keep moderator actions usable instead of hard-disabling UI.
+        boolean hasPermissionPayload = permissions != null && !permissions.isEmpty();
+        boolean canCreate = !hasPermissionPayload || permissions.contains(ModeratorPermissions.CREATE_GROUP);
+
         btnCreateModeratorGroup.setEnabled(canCreate);
         btnCreateModeratorGroup.setAlpha(canCreate ? 1f : 0.5f);
     }
@@ -136,37 +145,52 @@ public class ModeratorDashboardActivity extends AppCompatActivity {
         for (ModeratorManagedGroup group : groups) {
             LinearLayout card = new LinearLayout(this);
             card.setOrientation(LinearLayout.VERTICAL);
-            card.setPadding(dp(12), dp(12), dp(12), dp(12));
-            card.setBackgroundColor(0xFF1E1E30);
+            card.setPadding(dp(14), dp(14), dp(14), dp(14));
+
+            GradientDrawable background = new GradientDrawable(
+                    GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{Color.parseColor("#282844"), Color.parseColor("#1E1E30")}
+            );
+            background.setCornerRadius(dp(14));
+            background.setStroke(dp(1), Color.parseColor("#39395A"));
+            card.setBackground(background);
 
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
             );
-            params.setMargins(0, 0, 0, dp(10));
+            params.setMargins(0, 0, 0, dp(12));
             card.setLayoutParams(params);
+            card.setElevation(dp(2));
 
             TextView tvName = new TextView(this);
             tvName.setText(group.getGroupName() + "  (#" + group.getGroupId() + ")");
             tvName.setTextColor(0xFFFFFFFF);
-            tvName.setTextSize(16);
+            tvName.setTextSize(17);
+            tvName.setTypeface(null, android.graphics.Typeface.BOLD);
 
             TextView tvDesc = new TextView(this);
-            tvDesc.setText(group.getDescription());
-            tvDesc.setTextColor(0xFFB0B0C0);
+            String description = group.getDescription() == null ? "No description yet." : group.getDescription();
+            tvDesc.setText(description);
+            tvDesc.setTextColor(0xFFBFC0D4);
+            tvDesc.setTextSize(13);
+            tvDesc.setPadding(0, dp(4), 0, dp(10));
 
             TextView tvOpen = new TextView(this);
-            tvOpen.setText("Open Group Management");
-            tvOpen.setTextColor(0xFF7B6FFF);
+            tvOpen.setText("Open Group Chat");
+            tvOpen.setTextColor(0xFF8D83FF);
             tvOpen.setGravity(Gravity.END);
+            tvOpen.setTextSize(13);
 
             card.addView(tvName);
             card.addView(tvDesc);
             card.addView(tvOpen);
 
             card.setOnClickListener(v -> {
-                Intent intent = new Intent(ModeratorDashboardActivity.this, ModeratorGroupManagementActivity.class);
+                Intent intent = new Intent(ModeratorDashboardActivity.this, GroupChatActivity.class);
+                intent.putExtra("USER_ID", currentUserId > 0 ? currentUserId : moderatorId);
                 intent.putExtra("MODERATOR_ID", moderatorId);
+                intent.putExtra("IS_MODERATOR", true);
                 intent.putExtra("GROUP_ID", group.getGroupId());
                 intent.putExtra("GROUP_NAME", group.getGroupName());
                 startActivity(intent);
@@ -212,4 +236,3 @@ public class ModeratorDashboardActivity extends AppCompatActivity {
         return (int) (value * getResources().getDisplayMetrics().density);
     }
 }
-

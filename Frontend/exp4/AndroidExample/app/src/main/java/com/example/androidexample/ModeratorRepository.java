@@ -48,13 +48,13 @@ public class ModeratorRepository {
 
     public void loginModerator(android.content.Context context,
                                String email,
-                               String password,
+                               String passwordHash,
                                ModeratorAccountCallback callback) {
         String url = BASE_URL + "/login";
         JSONObject body = new JSONObject();
         try {
             body.put("email", email);
-            body.put("password", password);
+            body.put("passwordHash", passwordHash);
         } catch (JSONException e) {
             callback.onError("Failed to build request body");
             return;
@@ -62,18 +62,28 @@ public class ModeratorRepository {
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,
                 response -> {
-                    JSONObject accountJson = response.optJSONObject("moderator");
-                    if (accountJson == null) {
-                        accountJson = response;
+                    try {
+                        JSONObject accountJson = response.optJSONObject("moderator");
+                        if (accountJson == null) {
+                            accountJson = response;
+                        }
+                        ModeratorAccount account = ModeratorAccount.fromJson(accountJson);
+                        if (account.getModeratorId() <= 0) {
+                            callback.onError("Invalid moderator ID in response");
+                            return;
+                        }
+                        callback.onSuccess(account);
+                    } catch (Exception e) {
+                        callback.onError("Error parsing login response: " + e.getMessage());
                     }
-                    ModeratorAccount account = ModeratorAccount.fromJson(accountJson);
-                    if (account.getModeratorId() <= 0) {
-                        callback.onError("Invalid moderator response");
-                        return;
-                    }
-                    callback.onSuccess(account);
                 },
-                error -> callback.onError("Login failed"));
+                error -> {
+                    String errorMsg = "Login failed";
+                    if (error != null && error.networkResponse != null) {
+                        errorMsg += " (HTTP " + error.networkResponse.statusCode + ")";
+                    }
+                    callback.onError(errorMsg);
+                });
 
         VolleySingleton.getInstance(context).addToRequestQueue(request);
     }
@@ -136,6 +146,46 @@ public class ModeratorRepository {
                 callback::onSuccess,
                 error -> callback.onError("Failed to create group"));
         VolleySingleton.getInstance(context).addToRequestQueue(request);
+    }
+
+    public void editGroup(android.content.Context context,
+                          int moderatorId,
+                          int groupId,
+                          String groupName,
+                          String description,
+                          List<String> interests,
+                          JsonObjectCallback callback) {
+        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId;
+        JSONObject body = new JSONObject();
+        try {
+            body.put("groupName", groupName);
+            body.put("description", description);
+            JSONArray interestArray = new JSONArray();
+            if (interests != null) {
+                for (String interest : interests) {
+                    if (interest != null && !interest.trim().isEmpty()) {
+                        interestArray.put(interest.trim());
+                    }
+                }
+            }
+            body.put("interests", interestArray);
+        } catch (JSONException e) {
+            callback.onError("Failed to build group payload");
+            return;
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, url, body,
+                callback::onSuccess,
+                error -> callback.onError("Failed to update group"));
+        VolleySingleton.getInstance(context).addToRequestQueue(request);
+    }
+
+    public void deleteGroup(android.content.Context context,
+                            int moderatorId,
+                            int groupId,
+                            ActionCallback callback) {
+        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId;
+        sendAction(context, Request.Method.DELETE, url, null, callback, "Failed to delete group");
     }
 
     public void getGroupDetails(android.content.Context context,
@@ -231,8 +281,8 @@ public class ModeratorRepository {
         String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/events";
         JSONObject body = new JSONObject();
         try {
-            body.put("title", title);
-            body.put("scheduledAt", when);
+            String eventText = (when == null || when.trim().isEmpty()) ? title : (title + " - " + when);
+            body.put("event", eventText);
         } catch (JSONException e) {
             callback.onError("Failed to build event payload");
             return;
@@ -245,16 +295,113 @@ public class ModeratorRepository {
                                 int groupId,
                                 String announcement,
                                 ActionCallback callback) {
-        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements/pin";
+        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements";
         JSONObject body = new JSONObject();
         try {
-            body.put("message", announcement);
-            body.put("pinned", true);
+            body.put("announcement", announcement);
         } catch (JSONException e) {
             callback.onError("Failed to build announcement payload");
             return;
         }
         sendAction(context, Request.Method.POST, url, body, callback, "Failed to pin announcement");
+    }
+
+    public void joinGroupRequest(android.content.Context context,
+                                 int userId,
+                                 int groupId,
+                                 ActionCallback callback) {
+        String url = ROOT_URL + "/gm/join";
+        JSONObject body = new JSONObject();
+        try {
+            body.put("user_id", userId);
+            body.put("group_id", groupId);
+        } catch (JSONException e) {
+            callback.onError("Failed to build join request body");
+            return;
+        }
+        sendAction(context, Request.Method.POST, url, body, callback, "Failed to join group");
+    }
+
+    public void leaveGroup(android.content.Context context,
+                           int membershipId,
+                           ActionCallback callback) {
+        String url = ROOT_URL + "/gm/leave/" + membershipId;
+        sendAction(context, Request.Method.DELETE, url, null, callback, "Failed to leave group");
+    }
+
+    public void getGroupMembersPublic(android.content.Context context,
+                                      int groupId,
+                                      JsonArrayCallback callback) {
+        String url = ROOT_URL + "/gm/glist/" + groupId;
+        getArray(context, url, "Failed to load group members", callback);
+    }
+
+    public void getUserGroups(android.content.Context context,
+                              int userId,
+                              JsonArrayCallback callback) {
+        String url = ROOT_URL + "/gm/ulist/" + userId;
+        getArray(context, url, "Failed to load user groups", callback);
+    }
+
+    public void getAllGroups(android.content.Context context,
+                             JsonArrayCallback callback) {
+        String url = ROOT_URL + "/groups";
+        getArray(context, url, "Failed to load all groups", callback);
+    }
+
+    public void getGroupById(android.content.Context context,
+                             int groupId,
+                             JsonObjectCallback callback) {
+        String url = ROOT_URL + "/groups/" + groupId;
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                callback::onSuccess,
+                error -> callback.onError("Failed to load group"));
+        VolleySingleton.getInstance(context).addToRequestQueue(request);
+    }
+
+    public void signupModerator(android.content.Context context,
+                                String email,
+                                String passwordHash,
+                                String displayName,
+                                ModeratorAccountCallback callback) {
+        String url = BASE_URL;
+        JSONObject body = new JSONObject();
+        try {
+            body.put("displayName", displayName);
+            body.put("email", email);
+            body.put("passwordHash", passwordHash);
+            body.put("active", true);
+        } catch (JSONException e) {
+            callback.onError("Failed to build request body");
+            return;
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,
+                response -> {
+                    try {
+                        JSONObject accountJson = response.optJSONObject("moderator");
+                        if (accountJson == null) {
+                            accountJson = response;
+                        }
+                        ModeratorAccount account = ModeratorAccount.fromJson(accountJson);
+                        if (account.getModeratorId() <= 0) {
+                            callback.onError("Invalid moderator ID in response");
+                            return;
+                        }
+                        callback.onSuccess(account);
+                    } catch (Exception e) {
+                        callback.onError("Error parsing signup response: " + e.getMessage());
+                    }
+                },
+                error -> {
+                    String errorMsg = "Signup failed";
+                    if (error != null && error.networkResponse != null) {
+                        errorMsg += " (HTTP " + error.networkResponse.statusCode + ")";
+                    }
+                    callback.onError(errorMsg);
+                });
+
+        VolleySingleton.getInstance(context).addToRequestQueue(request);
     }
 
     private void getArray(android.content.Context context,

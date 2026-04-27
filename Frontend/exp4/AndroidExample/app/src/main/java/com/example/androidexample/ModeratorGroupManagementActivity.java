@@ -106,10 +106,13 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
     private void applyPermissionGates() {
         Set<String> permissions = sessionManager.getPermissions();
 
-        boolean canManageMembers = permissions.contains(ModeratorPermissions.APPROVE_REMOVE_MEMBERS);
-        boolean canModerate = permissions.contains(ModeratorPermissions.MODERATE_CONVERSATIONS);
-        boolean canSchedule = permissions.contains(ModeratorPermissions.SCHEDULE_EVENTS);
-        boolean canPin = permissions.contains(ModeratorPermissions.PIN_ANNOUNCEMENTS);
+        // Fallback for backends that do not send permissions yet.
+        boolean hasPermissionPayload = permissions != null && !permissions.isEmpty();
+
+        boolean canManageMembers = !hasPermissionPayload || permissions.contains(ModeratorPermissions.APPROVE_REMOVE_MEMBERS);
+        boolean canModerate = !hasPermissionPayload || permissions.contains(ModeratorPermissions.MODERATE_CONVERSATIONS);
+        boolean canSchedule = !hasPermissionPayload || permissions.contains(ModeratorPermissions.SCHEDULE_EVENTS);
+        boolean canPin = !hasPermissionPayload || permissions.contains(ModeratorPermissions.PIN_ANNOUNCEMENTS);
 
         setButtonState(btnApproveMember, canManageMembers);
         setButtonState(btnRemoveMember, canManageMembers);
@@ -358,4 +361,3 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
         }
     }
 }
-

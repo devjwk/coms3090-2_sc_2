@@ -5,6 +5,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -36,7 +37,7 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
     private static final String TAG = "GroupChatActivity";
     private static final String PREFS_NAME = "GroupChatPrefs";
 
-    private Button sendBtn, backBtn;
+    private Button sendBtn, backBtn, btnManageGroupChat;
     private EditText msgEtx;
     private RecyclerView recyclerChat;
     private TextView tvGroupName, tvMemberCount;
@@ -50,6 +51,8 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
 
     private int currentUserId;
     private int groupId;
+    private int moderatorId = -1;
+    private boolean isModeratorView = false;
     private int conversationId = -1;
     private String groupName;
     private String lastSentMessage = null;
@@ -65,13 +68,35 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         currentUserId = getIntent().getIntExtra("USER_ID", 1);
         groupId       = getIntent().getIntExtra("GROUP_ID", -1);
         groupName     = getIntent().getStringExtra("GROUP_NAME");
+        moderatorId   = getIntent().getIntExtra("MODERATOR_ID", -1);
+        isModeratorView = getIntent().getBooleanExtra("IS_MODERATOR", false);
 
         sendBtn       = findViewById(R.id.sendBtn);
         backBtn       = findViewById(R.id.backBtn);
+        btnManageGroupChat = findViewById(R.id.btnManageGroupChat);
         msgEtx        = findViewById(R.id.msgEdt);
         recyclerChat  = findViewById(R.id.recyclerChat);
         tvGroupName   = findViewById(R.id.tvGroupName);
         tvMemberCount = findViewById(R.id.tvMemberCount);
+
+        ModeratorSessionManager moderatorSessionManager = new ModeratorSessionManager(this);
+        ModeratorAccount moderatorAccount = moderatorSessionManager.getSession();
+        if (moderatorId <= 0 && moderatorAccount != null) {
+            moderatorId = moderatorAccount.getModeratorId();
+        }
+        boolean showManageButton = isModeratorView || moderatorId > 0;
+        btnManageGroupChat.setVisibility(showManageButton ? View.VISIBLE : View.GONE);
+        btnManageGroupChat.setOnClickListener(v -> {
+            if (moderatorId <= 0) {
+                Toast.makeText(this, "Moderator session required", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Intent manageIntent = new Intent(GroupChatActivity.this, ModeratorGroupManagementActivity.class);
+            manageIntent.putExtra("MODERATOR_ID", moderatorId);
+            manageIntent.putExtra("GROUP_ID", groupId);
+            manageIntent.putExtra("GROUP_NAME", groupName);
+            startActivity(manageIntent);
+        });
 
         sendBtn.setEnabled(true); // Always enable send button immediately
 
@@ -82,7 +107,8 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         recyclerChat.setAdapter(chatAdapter);
 
         tvGroupName.setText(groupName != null ? groupName : "Group Chat");
-        tvMemberCount.setVisibility(View.GONE);
+        tvMemberCount.setVisibility(View.VISIBLE);
+        tvMemberCount.setOnClickListener(v -> showMembersDialog());
 
         backBtn.setOnClickListener(v -> {
             WebSocketClientManager.getInstance().removeWebSocketEventListener();

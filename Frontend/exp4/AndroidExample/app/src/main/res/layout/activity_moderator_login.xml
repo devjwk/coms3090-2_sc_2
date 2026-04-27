@@ -48,6 +48,16 @@
         android:layout_marginBottom="10dp" />
 
     <Button
+        android:id="@+id/btnModeratorSignup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Create New Moderator Account"
+        android:textAllCaps="false"
+        android:textColor="#7B6FFF"
+        android:backgroundTint="#1E1E30"
+        android:layout_marginBottom="10dp" />
+
+    <Button
         android:id="@+id/btnModeratorLoginBack"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

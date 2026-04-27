@@ -11,6 +11,7 @@ import java.util.Set;
 public class ModeratorAccount {
     private final int moderatorId;
     private final String email;
+    private final String displayName;
     private final String authProvider;
     private final String providerUserId;
     private final List<String> roles;
@@ -19,6 +20,7 @@ public class ModeratorAccount {
 
     public ModeratorAccount(int moderatorId,
                             String email,
+                            String displayName,
                             String authProvider,
                             String providerUserId,
                             List<String> roles,
@@ -26,6 +28,7 @@ public class ModeratorAccount {
                             List<Integer> assignedGroups) {
         this.moderatorId = moderatorId;
         this.email = email;
+        this.displayName = displayName;
         this.authProvider = authProvider;
         this.providerUserId = providerUserId;
         this.roles = roles != null ? roles : new ArrayList<>();
@@ -39,6 +42,10 @@ public class ModeratorAccount {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     public String getAuthProvider() {
@@ -68,6 +75,7 @@ public class ModeratorAccount {
     public static ModeratorAccount fromJson(JSONObject json) {
         int id = json.optInt("moderatorId", json.optInt("id", -1));
         String email = json.optString("email", "");
+        String displayName = json.optString("displayName", "");
         String authProvider = json.optString("authProvider", "");
         String providerUserId = json.optString("providerUserId", "");
 
@@ -107,7 +115,7 @@ public class ModeratorAccount {
             }
         }
 
-        return new ModeratorAccount(id, email, authProvider, providerUserId, roles, permissions, assignedGroups);
+        return new ModeratorAccount(id, email, displayName, authProvider, providerUserId, roles, permissions, assignedGroups);
     }
 }
 

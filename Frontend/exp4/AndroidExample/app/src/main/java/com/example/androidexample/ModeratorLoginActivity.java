@@ -26,21 +26,23 @@ public class ModeratorLoginActivity extends AppCompatActivity {
         etModeratorPassword = findViewById(R.id.etModeratorPassword);
         Button btnModeratorLogin = findViewById(R.id.btnModeratorLogin);
         Button btnBack = findViewById(R.id.btnModeratorLoginBack);
+        Button btnSignup = findViewById(R.id.btnModeratorSignup);
 
         btnModeratorLogin.setOnClickListener(v -> loginModerator());
         btnBack.setOnClickListener(v -> finish());
+        btnSignup.setOnClickListener(v -> startActivity(new Intent(ModeratorLoginActivity.this, ModeratorSignupActivity.class)));
     }
 
     private void loginModerator() {
         String email = etModeratorEmail.getText().toString().trim();
-        String password = etModeratorPassword.getText().toString().trim();
+        String passwordHash = etModeratorPassword.getText().toString().trim();
 
-        if (email.isEmpty() || password.isEmpty()) {
+        if (email.isEmpty() || passwordHash.isEmpty()) {
             Toast.makeText(this, "Enter moderator credentials", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        repository.loginModerator(this, email, password, new ModeratorRepository.ModeratorAccountCallback() {
+        repository.loginModerator(this, email, passwordHash, new ModeratorRepository.ModeratorAccountCallback() {
             @Override
             public void onSuccess(ModeratorAccount account) {
                 sessionManager.saveSession(account);
