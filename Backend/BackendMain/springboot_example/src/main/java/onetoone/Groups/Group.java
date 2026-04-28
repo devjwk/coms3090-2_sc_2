@@ -14,9 +14,13 @@ import java.util.List;
 @Table(name = "groups")
 public class Group {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long groupId;
+
+    @Column(name = "moderator_id")
+    private Long moderatorId;
 
     @Column(nullable = false, unique = true)
     private String groupName;
@@ -33,9 +37,6 @@ public class Group {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(nullable = false, updatable = false)
-    private Long createdBy;
-
     // =============================== Getters and Setters for each field ================================== //
 
     public Long getGroupId() { return groupId; }
@@ -49,9 +50,6 @@ public class Group {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
-
-    public Long getCreatedBy() { return createdBy; }
-    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
 
     public List<String> getInterests() { return interests; }
     public void setInterests(List<String> interests) { this.interests = interests; }

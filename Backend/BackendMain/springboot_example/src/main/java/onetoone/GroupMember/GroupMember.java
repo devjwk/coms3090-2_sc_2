@@ -37,9 +37,6 @@ public class GroupMember {
     @Column(nullable = false)
     private String status;
 
-    @Column(nullable = false)
-    private Boolean is_moderator;
-
     // =============================== Getters and Setters for each field ================================== //
 
     public Long getMembershipId() { return membershipId; }
@@ -56,6 +53,4 @@ public class GroupMember {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    public Boolean getModStatus() { return is_moderator; }
-    public void setModStatus(Boolean modStatus) { is_moderator = modStatus; }
 }

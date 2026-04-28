@@ -59,7 +59,6 @@ public class GMController {
     String joinGroup(@RequestBody Map<String, Object> body) {
         Long userId = ((Number) body.get("user_id")).longValue();
         Long groupId = ((Number) body.get("group_id")).longValue();
-        Boolean mod = (Boolean) body.get("is_moderator");
 
         User user = userRepository.findById(userId).orElse(null);
         Group group = groupRepository.findById(groupId).orElse(null);
@@ -73,7 +72,6 @@ public class GMController {
         member.setUserId(user);
         member.setGroupId(group);
         member.setStatus("active");
-        member.setIs_moderator(mod);
 
         gmRepository.save(member);
 
@@ -177,30 +175,6 @@ public class GMController {
         return "{\"message\":\"success\"}";
     }
 
-    // put - update moderator status (req: membership id)
-    // /gm/modstat/{id}
-    @PutMapping(path = "/gm/modstat/{id}")
-    @Operation(summary = "Update mod status", description = "Updates whether a member is a group moderator or not.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Updated"),
-            @ApiResponse(responseCode = "404", description = "Group member not found")
-    })
-    String updateModStatus(@Parameter(description = "ID of the member to update", required = true) @PathVariable Long id, @RequestBody Map<String, Boolean> body){
-        Optional<GroupMember> gmOptional = gmRepository.findById(id);
-
-        if (gmOptional.isEmpty()) {
-            return "{\"message\":\"failure\"}";
-        }
-
-        Boolean modStat = body.get("is_moderator");
-
-        GroupMember member = gmOptional.get();
-
-        member.setModStatus(modStat);
-        gmRepository.save(member);
-
-        return "{\"message\":\"success\"}";
-    }
 
     // del - leave group (req: membership id)
     @DeleteMapping(path = "/gm/leave/{id}")
