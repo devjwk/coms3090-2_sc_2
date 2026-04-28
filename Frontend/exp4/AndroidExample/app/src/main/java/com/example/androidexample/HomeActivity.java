@@ -104,7 +104,12 @@ public class HomeActivity extends AppCompatActivity implements NotificationWebSo
 
 
         btnReport      = findViewById(R.id.btnReport);
+        Button btnNotificationCenter = findViewById(R.id.btnNotificationCenter);
 
+        btnNotificationCenter.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, NotificationActivity.class);
+            startActivity(intent);
+        });
 
         // Parse and display user information if the JSON data is available
         if (userJson != null && !userJson.isEmpty()) {
@@ -356,6 +361,7 @@ public class HomeActivity extends AppCompatActivity implements NotificationWebSo
     @Override
     public void onNotificationMessage(String message) {
         Log.d("HOME_WS", "Notification Received: " + message);
+        NotificationWebSocketManager.addNotificationToHistory(message);
         runOnUiThread(() -> handleNotificationMessage(message));
     }
 
