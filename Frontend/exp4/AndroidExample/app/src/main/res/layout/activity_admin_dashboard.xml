@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F0F1A">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvAdminDashboardTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Admin Dashboard"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvAdminDashboardSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Manage moderator approvals, reports, account status, settings, and analytics."
+            android:textColor="#CCCCCC"
+            android:textSize="14sp"
+            android:layout_marginBottom="20dp" />
+
+        <Button
+            android:id="@+id/btnModeratorRequests"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pending Moderator Requests"
+            android:textAllCaps="false"
+            android:backgroundTint="#7B6FFF"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnReportedUsers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Reported Users / Safety Violations"
+            android:textAllCaps="false"
+            android:backgroundTint="#1E1E30"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnSuspendedAccounts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Disable or Suspend Accounts"
+            android:textAllCaps="false"
+            android:backgroundTint="#1E1E30"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnUsageAnalytics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Usage Analytics"
+            android:textAllCaps="false"
+            android:backgroundTint="#1E1E30"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnAppSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="App-wide Settings"
+            android:textAllCaps="false"
+            android:backgroundTint="#1E1E30"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="24dp" />
+
+        <TextView
+            android:id="@+id/tvAdminDashboardNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Note: Some admin tools are placeholders until backend endpoints are connected."
+            android:textColor="#AAAAAA"
+            android:textSize="13sp"
+            android:layout_marginBottom="16dp" />
+
+        <Button
+            android:id="@+id/btnBackAdminDashboard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Back"
+            android:textAllCaps="false"
+            android:backgroundTint="#444444"
+            android:textColor="#FFFFFF" />
+
+    </LinearLayout>
+</ScrollView>
