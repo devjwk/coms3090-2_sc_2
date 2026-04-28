@@ -96,8 +96,8 @@ public class GMController {
 
         return ResponseEntity.ok(users);
     }
+
     // get - list groups a user is in (req: user id)
-    // /gm/ulist/{id}
     @GetMapping(path = "/gm/ulist/{id}")
     ResponseEntity<List<GroupInfo>> listUserGroups(@PathVariable Long id) {
         List<GroupMember> memberships =

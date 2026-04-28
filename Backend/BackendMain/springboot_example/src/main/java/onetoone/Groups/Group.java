@@ -75,4 +75,12 @@ public class Group {
     public void setAnnouncements(String announcements) {
         this.announcements = announcements;
     }
+
+    public Long getModeratorId() {
+        return moderatorId;
+    }
+
+    public void setModeratorId(Long moderatorId) {
+        this.moderatorId = moderatorId;
+    }
 }

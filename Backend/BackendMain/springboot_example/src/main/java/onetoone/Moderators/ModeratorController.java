@@ -1,14 +1,23 @@
 package onetoone.Moderators;
 
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import onetoone.Conversations.Conversation;
+import onetoone.Conversations.ConvoRepository;
 import onetoone.GroupMember.GMRepository;
 import onetoone.GroupMember.GroupMember;
 import onetoone.GroupMember.MembershipStatus;
 import onetoone.Groups.Group;
 import onetoone.Groups.GroupRepository;
+import onetoone.Messages.MessagesRepository;
+import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import onetoone.Messages.Messages;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +34,12 @@ public class ModeratorController {
 
     @Autowired
     private GMRepository GMRepository;
+
+    @Autowired
+    private ConvoRepository convoRepository;
+
+    @Autowired
+    private MessagesRepository messagesRepository;
 
     @PostMapping
     public ResponseEntity<Moderator> createModerator(@RequestBody Moderator moderator) {
@@ -175,7 +190,39 @@ public class ModeratorController {
         return ResponseEntity.ok(groups);
     }
 
+    @GetMapping("/{moderatorId}/groups/{groupId}/messages")
+    public ResponseEntity<?> getGroupMessagesForModerator(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId) {
 
+        Optional<Moderator> modOpt = moderatorRepository.findById(moderatorId);
+        if (modOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Moderator not found");
+        }
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Group group = groupOpt.get();
+
+        if (group.getModeratorId() == null || !group.getModeratorId().equals(moderatorId)) {
+            return ResponseEntity.status(403).body("Moderator is not assigned to this group");
+        }
+
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+        if (convoOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Conversation not found for group");
+        }
+
+        Long conversationId = convoOpt.get().getConversationId();
+
+        List<Messages> messages =
+                messagesRepository.findByConversationIdOrderBySentAtAsc(conversationId);
+
+        return ResponseEntity.ok(messages);
+    }
 
 
 
