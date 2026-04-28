@@ -6,12 +6,15 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NotificationWebSocketManager {
 
     private static NotificationWebSocketManager instance;
     private NotificationSocketClient webSocketClient;
     private NotificationWebSocketListener listener;
+    private static List<NotificationItem> notificationHistory = new ArrayList<>();
 
     private NotificationWebSocketManager() {}
 
@@ -21,7 +24,25 @@ public class NotificationWebSocketManager {
         }
         return instance;
     }
+    public static void addNotificationToHistory(String message) {
+        //1.New notification item
+        NotificationItem newItem = new NotificationItem(message);
+        //2.new notification located at the top of the list
+        notificationHistory.add(0, newItem);
+        //3.Make sure the list doesn't exceed 20 items
+        if (notificationHistory.size() > 20) {
+            notificationHistory.remove(notificationHistory.size() - 1);
+        }
+        Log.d("NotifyWS", "History updated. Current size: "+ notificationHistory.size());
+    }
 
+    public static List<NotificationItem> getNotificationHistory() {
+        return notificationHistory;
+    }
+
+    public static void clearNotificationHistory() {
+        notificationHistory.clear();
+    }
     public void setNotificationWebSocketListener(NotificationWebSocketListener listener) {
         this.listener = listener;
     }
@@ -81,6 +102,8 @@ public class NotificationWebSocketManager {
         @Override
         public void onMessage(String message) {
             Log.d("NotifyWS", "Received: " + message);
+            // Handle the notification message
+            addNotificationToHistory(message);
             if (listener != null) {
                 listener.onNotificationMessage(message);
             }

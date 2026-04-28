@@ -44,6 +44,8 @@
         <activity android:name=".GroupChatActivity" />
         <activity android:name=".GroupChatListActivity" />
         <activity android:name=".SwipeActivity" />
+        <activity android:name=".NotificationActivity"
+            android:exported="false" />
         <activity
             android:name=".WebSocketConnectActivity"
             android:exported="false" />
