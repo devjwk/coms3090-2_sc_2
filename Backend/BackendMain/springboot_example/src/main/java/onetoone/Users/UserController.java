@@ -2,6 +2,8 @@ package onetoone.Users;
 import java.util.List;
 import java.util.Optional;
 
+import onetoone.Reports.Report;
+import onetoone.Reports.ReportStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import static onetoone.Users.UserStatus.NEED_APPROVAL;
 
 
 @RestController
@@ -46,6 +50,17 @@ public class UserController {
         return ResponseEntity.ok(userOptional.get());
     }
 
+    @GetMapping(path = "/users/count")
+    ResponseEntity<Long> getUserCount() {
+        long count = UserRepository.count();
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping(path = "/users/count/pending")
+    ResponseEntity<Long> getNeedApprovalCount() {
+        long count = UserRepository.countByStatus(NEED_APPROVAL);
+        return ResponseEntity.ok(count);
+    }
 
     @PostMapping(path = "/users")
     @Operation(summary = "Create user", description = "Creates a new user account.")
@@ -56,6 +71,9 @@ public class UserController {
     String createUser(@Parameter(description = "Information for a new user", required = true)@RequestBody User User){
         if (User == null)
             return failure;
+
+        User.setStatus(NEED_APPROVAL);
+
         UserRepository.save(User);
         return success;
     }
@@ -109,6 +127,9 @@ public class UserController {
         if (userReq.getAge() != null) {
             user.setAge(userReq.getAge());
         }
+        if (userReq.getStatus() != null) {
+            user.setStatus(userReq.getStatus());
+        }
 
         //save
         UserRepository.save(user);
@@ -120,7 +141,8 @@ public class UserController {
     @Operation(summary = "User login", description = "Authenticates a user using email and password hash.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Login successful"),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+            @ApiResponse(responseCode = "401", description = "Invalid credentials"),
+            @ApiResponse(responseCode = "403", description = "Account access not open")
     })
     ResponseEntity<?> login(@Parameter(description = "User email", required = true) @RequestParam String email, @Parameter(description = "User password hash", required = true) @RequestParam String passwordHash) {
         if (email == null || email.isEmpty()) {
@@ -140,6 +162,21 @@ public class UserController {
             return ResponseEntity.status(401).body(failure);
         }
 
+        if (user.getStatus().equals(UserStatus.SUSPENDED) || user.getStatus().equals(UserStatus.DISABLED)) {
+            return ResponseEntity.status(403).body("User account disabled or suspended.");
+        }
+        if (user.getStatus().equals(NEED_APPROVAL)) {
+            return ResponseEntity.status(403).body("New user account currently undergoing review. Check back later.");
+        }
+        if (user.getStatus().equals(UserStatus.DECLINED)) {
+            return ResponseEntity.status(403).body("New user account was not approved. Please use an Iowa State University email address when registering.");
+        }
+
         return ResponseEntity.ok(user);
+    }
+
+    @GetMapping("/reports/status/{status}")
+    public List<User> getUsersByStatus(@PathVariable UserStatus status) {
+        return UserRepository.findByStatus(status);
     }
 }
