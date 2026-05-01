@@ -3,8 +3,12 @@ package onetoone.Moderators;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import onetoone.Announcements.Announcement;
+import onetoone.Announcements.AnnouncementRepository;
 import onetoone.Conversations.Conversation;
 import onetoone.Conversations.ConvoRepository;
+import onetoone.Events.GroupEvent;
+import onetoone.Events.GroupEventRepository;
 import onetoone.GroupMember.GMRepository;
 import onetoone.GroupMember.GroupMember;
 import onetoone.GroupMember.MembershipStatus;
@@ -40,6 +44,12 @@ public class ModeratorController {
 
     @Autowired
     private MessagesRepository messagesRepository;
+
+    @Autowired
+    private GroupEventRepository groupEventRepository;
+
+    @Autowired
+    private AnnouncementRepository announcementRepository;
 
     @PostMapping
     public ResponseEntity<Moderator> createModerator(@RequestBody Moderator moderator) {
@@ -96,32 +106,6 @@ public class ModeratorController {
                 );
 
         return ResponseEntity.ok(pendingMembers);
-    }
-
-    @GetMapping("/{moderatorId}/groups/{groupId}/events")
-    public ResponseEntity<?> getGroupEvents(@PathVariable Long moderatorId,
-                                            @PathVariable Long groupId) {
-
-        Optional<Group> groupOpt = groupRepository.findById(groupId);
-
-        if (groupOpt.isEmpty()) {
-            return ResponseEntity.status(404).body("Group not found");
-        }
-
-        return ResponseEntity.ok(groupOpt.get().getEvents());
-    }
-
-    @GetMapping("/{moderatorId}/groups/{groupId}/announcements")
-    public ResponseEntity<?> getGroupAnnouncements(@PathVariable Long moderatorId,
-                                                   @PathVariable Long groupId) {
-
-        Optional<Group> groupOpt = groupRepository.findById(groupId);
-
-        if (groupOpt.isEmpty()) {
-            return ResponseEntity.status(404).body("Group not found");
-        }
-
-        return ResponseEntity.ok(groupOpt.get().getAnnouncements());
     }
 
     @PostMapping("/login")
@@ -224,15 +208,14 @@ public class ModeratorController {
         return ResponseEntity.ok(messages);
     }
 
+    // ================= EVENTS =================
 
-
-
-    /// -----------------------------------------------------------------------------------------------
     @PostMapping("/{moderatorId}/groups/{groupId}/events")
-    public ResponseEntity<?> createGroupEvent(@PathVariable Long moderatorId,
-                                              @PathVariable Long groupId,
-                                              @RequestBody Map<String, String> body) {
-
+    public ResponseEntity<?> createEvent(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId,
+            @RequestBody GroupEvent event
+    ) {
         Optional<Group> groupOpt = groupRepository.findById(groupId);
 
         if (groupOpt.isEmpty()) {
@@ -245,30 +228,17 @@ public class ModeratorController {
             return ResponseEntity.status(403).body("You do not control this group");
         }
 
-        String eventText = body.get("event");
+        event.setGroupId(groupId);
+        event.setModeratorId(moderatorId);
 
-        if (eventText == null || eventText.isBlank()) {
-            return ResponseEntity.badRequest().body("Event text required");
-        }
-
-        String currentEvents = group.getEvents();
-
-        if (currentEvents == null || currentEvents.isBlank()) {
-            group.setEvents(eventText);
-        } else {
-            group.setEvents(currentEvents + "\n" + eventText);
-        }
-
-        groupRepository.save(group);
-
-        return ResponseEntity.ok(group.getEvents());
+        return ResponseEntity.ok(groupEventRepository.save(event));
     }
 
-    @PostMapping("/{moderatorId}/groups/{groupId}/announcements")
-    public ResponseEntity<?> createGroupAnnouncement(@PathVariable Long moderatorId,
-                                                     @PathVariable Long groupId,
-                                                     @RequestBody Map<String, String> body) {
-
+    @GetMapping("/{moderatorId}/groups/{groupId}/events")
+    public ResponseEntity<?> getEvents(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId
+    ) {
         Optional<Group> groupOpt = groupRepository.findById(groupId);
 
         if (groupOpt.isEmpty()) {
@@ -281,22 +251,218 @@ public class ModeratorController {
             return ResponseEntity.status(403).body("You do not control this group");
         }
 
-        String announcementText = body.get("announcement");
+        return ResponseEntity.ok(groupEventRepository.findByGroupId(groupId));
+    }
 
-        if (announcementText == null || announcementText.isBlank()) {
-            return ResponseEntity.badRequest().body("Announcement text required");
+    @GetMapping("/{moderatorId}/groups/{groupId}/events/{eventId}")
+    public ResponseEntity<?> getOneEvent(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId,
+            @PathVariable Long eventId
+    ) {
+        Optional<GroupEvent> eventOpt = groupEventRepository.findById(eventId);
+
+        if (eventOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Event not found");
         }
 
-        String currentAnnouncements = group.getAnnouncements();
+        GroupEvent event = eventOpt.get();
 
-        if (currentAnnouncements == null || currentAnnouncements.isBlank()) {
-            group.setAnnouncements(announcementText);
-        } else {
-            group.setAnnouncements(currentAnnouncements + "\n" + announcementText);
+        if (!event.getGroupId().equals(groupId)) {
+            return ResponseEntity.status(403).body("Event does not belong to this group");
         }
 
-        groupRepository.save(group);
+        return ResponseEntity.ok(event);
+    }
 
-        return ResponseEntity.ok(group.getAnnouncements());
+    @PutMapping("/{moderatorId}/groups/{groupId}/events/{eventId}")
+    public ResponseEntity<?> updateEvent(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId,
+            @PathVariable Long eventId,
+            @RequestBody GroupEvent updatedEvent
+    ) {
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Group group = groupOpt.get();
+
+        if (!moderatorId.equals(group.getModeratorId())) {
+            return ResponseEntity.status(403).body("You do not control this group");
+        }
+
+        Optional<GroupEvent> eventOpt = groupEventRepository.findById(eventId);
+
+        if (eventOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Event not found");
+        }
+
+        GroupEvent event = eventOpt.get();
+
+        if (!event.getGroupId().equals(groupId)) {
+            return ResponseEntity.status(403).body("Event does not belong to this group");
+        }
+
+        event.setTitle(updatedEvent.getTitle());
+        event.setDescription(updatedEvent.getDescription());
+        event.setLocation(updatedEvent.getLocation());
+        event.setEventTime(updatedEvent.getEventTime());
+
+        return ResponseEntity.ok(groupEventRepository.save(event));
+    }
+
+    @DeleteMapping("/{moderatorId}/groups/{groupId}/events/{eventId}")
+    public ResponseEntity<?> deleteEvent(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId,
+            @PathVariable Long eventId
+    ) {
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Group group = groupOpt.get();
+
+        if (!moderatorId.equals(group.getModeratorId())) {
+            return ResponseEntity.status(403).body("You do not control this group");
+        }
+
+        Optional<GroupEvent> eventOpt = groupEventRepository.findById(eventId);
+
+        if (eventOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Event not found");
+        }
+
+        GroupEvent event = eventOpt.get();
+
+        if (!event.getGroupId().equals(groupId)) {
+            return ResponseEntity.status(403).body("Event does not belong to this group");
+        }
+
+        groupEventRepository.delete(event);
+
+        return ResponseEntity.ok("Event deleted");
+    }
+
+
+// ================= ANNOUNCEMENTS =================
+
+    @PostMapping("/{moderatorId}/groups/{groupId}/announcements")
+    public ResponseEntity<?> createAnnouncement(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId,
+            @RequestBody Announcement announcement
+    ) {
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Group group = groupOpt.get();
+
+        if (!moderatorId.equals(group.getModeratorId())) {
+            return ResponseEntity.status(403).body("You do not control this group");
+        }
+
+        announcement.setGroupId(groupId);
+        announcement.setModeratorId(moderatorId);
+        announcement.setPinned(false);
+
+        return ResponseEntity.ok(announcementRepository.save(announcement));
+    }
+
+    @GetMapping("/{moderatorId}/groups/{groupId}/announcements")
+    public ResponseEntity<?> getAnnouncements(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId
+    ) {
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Group group = groupOpt.get();
+
+        if (!moderatorId.equals(group.getModeratorId())) {
+            return ResponseEntity.status(403).body("You do not control this group");
+        }
+
+        return ResponseEntity.ok(announcementRepository.findByGroupId(groupId));
+    }
+
+    @PutMapping("/{moderatorId}/groups/{groupId}/announcements/{announcementId}/pin")
+    public ResponseEntity<?> pinAnnouncement(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId,
+            @PathVariable Long announcementId
+    ) {
+        Optional<Announcement> announcementOpt = announcementRepository.findById(announcementId);
+
+        if (announcementOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Announcement not found");
+        }
+
+        Announcement announcement = announcementOpt.get();
+
+        if (!announcement.getGroupId().equals(groupId)) {
+            return ResponseEntity.status(403).body("Announcement does not belong to this group");
+        }
+
+        announcement.setPinned(true);
+
+        return ResponseEntity.ok(announcementRepository.save(announcement));
+    }
+
+    @PutMapping("/{moderatorId}/groups/{groupId}/announcements/{announcementId}/unpin")
+    public ResponseEntity<?> unpinAnnouncement(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId,
+            @PathVariable Long announcementId
+    ) {
+        Optional<Announcement> announcementOpt = announcementRepository.findById(announcementId);
+
+        if (announcementOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Announcement not found");
+        }
+
+        Announcement announcement = announcementOpt.get();
+
+        if (!announcement.getGroupId().equals(groupId)) {
+            return ResponseEntity.status(403).body("Announcement does not belong to this group");
+        }
+
+        announcement.setPinned(false);
+
+        return ResponseEntity.ok(announcementRepository.save(announcement));
+    }
+
+    @DeleteMapping("/{moderatorId}/groups/{groupId}/announcements/{announcementId}")
+    public ResponseEntity<?> deleteAnnouncement(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId,
+            @PathVariable Long announcementId
+    ) {
+        Optional<Announcement> announcementOpt = announcementRepository.findById(announcementId);
+
+        if (announcementOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Announcement not found");
+        }
+
+        Announcement announcement = announcementOpt.get();
+
+        if (!announcement.getGroupId().equals(groupId)) {
+            return ResponseEntity.status(403).body("Announcement does not belong to this group");
+        }
+
+        announcementRepository.delete(announcement);
+
+        return ResponseEntity.ok("Announcement deleted");
     }
 }
