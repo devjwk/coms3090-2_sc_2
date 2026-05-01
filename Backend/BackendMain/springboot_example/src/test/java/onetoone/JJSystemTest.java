@@ -1,10 +1,12 @@
 package onetoone;
 
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static io.restassured.RestAssured.*;
@@ -12,16 +14,19 @@ import static org.hamcrest.Matchers.*;
 
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class JJSystemTest {
 
     private final int moderatorId = 1;
     private final int groupId = 22;
 
+    @LocalServerPort
+    private int port;
+
     @Before
-    public void setup() {
-        baseURI = "http://localhost";
-        port = 8080;
+    public void setUp() {
+        RestAssured.baseURI = "http://localhost";
+        RestAssured.port = port;
     }
 
     // ================= MODERATOR TESTS =================
