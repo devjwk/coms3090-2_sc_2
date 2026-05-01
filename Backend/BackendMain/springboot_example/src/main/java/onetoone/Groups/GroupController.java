@@ -66,6 +66,42 @@ public class GroupController {
         return userSet.size();
     }
 
+    @GetMapping("/groups/{groupId}/events")
+    public ResponseEntity<?> getGroupEventsForUsers(@PathVariable Long groupId) {
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        String events = groupOpt.get().getEvents();
+
+        if (events == null || events.isBlank()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        return ResponseEntity.ok(events.split("\\n"));
+    }
+
+    @GetMapping("/groups/{groupId}/announcements")
+    public ResponseEntity<?> getGroupAnnouncementsForUsers(@PathVariable Long groupId) {
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        String announcements = groupOpt.get().getAnnouncements();
+
+        if (announcements == null || announcements.isBlank()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        return ResponseEntity.ok(announcements.split("\\n"));
+    }
+
     @GetMapping("/groups/recommend/{userId}")
     public List<Group> recommendGroups(@PathVariable Long userId) {
         Optional<User> userOpt = userRepository.findById(userId);

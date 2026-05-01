@@ -59,7 +59,6 @@ public class MessageController {
         message.setRemoved(true);
         message.setRemovedBy(moderatorId);
         message.setRemovedReason("Removed by moderator");
-        message.setContent("Message removed by moderator");
 
         messagesRepository.save(message);
 
