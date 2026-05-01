@@ -7,10 +7,6 @@ maven-build:
   tags:
     - jj_tag
   script:
-    - export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
-    - export PATH=$JAVA_HOME/bin:$PATH
-    - java -version
-    - javac -version
     - cd Backend/BackendMain/springboot_example
     - mvn package
   only:
@@ -24,10 +20,6 @@ maven-test:
   tags:
     - jj_tag
   script:
-    - export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
-    - export PATH=$JAVA_HOME/bin:$PATH
-    - java -version
-    - javac -version
     - cd Backend/BackendMain/springboot_example
     - mvn test
   only:
