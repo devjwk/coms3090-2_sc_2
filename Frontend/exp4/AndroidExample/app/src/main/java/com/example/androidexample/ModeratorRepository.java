@@ -223,12 +223,60 @@ public class ModeratorRepository {
         getArray(context, url, "Failed to load events", callback);
     }
 
+    public void getGroupEventsForChat(android.content.Context context,
+                                      int groupId,
+                                      int moderatorId,
+                                      JsonArrayCallback callback) {
+        String publicUrl = ROOT_URL + "/groups/" + groupId + "/events";
+        getArray(context, publicUrl, "Failed to load events", new JsonArrayCallback() {
+            @Override
+            public void onSuccess(JSONArray array) {
+                callback.onSuccess(array);
+            }
+
+            @Override
+            public void onError(String error) {
+                if (moderatorId <= 0) {
+                    callback.onError(error);
+                    return;
+                }
+
+                String moderatorUrl = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/events";
+                getArray(context, moderatorUrl, "Failed to load events", callback);
+            }
+        });
+    }
+
     public void getGroupAnnouncements(android.content.Context context,
                                       int moderatorId,
                                       int groupId,
                                       JsonArrayCallback callback) {
         String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements";
         getArray(context, url, "Failed to load announcements", callback);
+    }
+
+    public void getGroupAnnouncementsForChat(android.content.Context context,
+                                             int groupId,
+                                             int moderatorId,
+                                             JsonArrayCallback callback) {
+        String publicUrl = ROOT_URL + "/groups/" + groupId + "/announcements";
+        getArray(context, publicUrl, "Failed to load announcements", new JsonArrayCallback() {
+            @Override
+            public void onSuccess(JSONArray array) {
+                callback.onSuccess(array);
+            }
+
+            @Override
+            public void onError(String error) {
+                if (moderatorId <= 0) {
+                    callback.onError(error);
+                    return;
+                }
+
+                String moderatorUrl = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements";
+                getArray(context, moderatorUrl, "Failed to load announcements", callback);
+            }
+        });
     }
 
     public void approveMember(android.content.Context context,
@@ -256,7 +304,15 @@ public class ModeratorRepository {
         getArray(context, url, "Failed to load messages", callback);
     }
 
-    public void removeMessage(android.content.Context context,
+    public void getModeratorGroupMessages(android.content.Context context,
+                                         int moderatorId,
+                                         int groupId,
+                                         JsonArrayCallback callback) {
+        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/messages";
+        getArray(context, url, "Failed to load group messages", callback);
+    }
+
+   public void removeMessage(android.content.Context context,
                               int moderatorId,
                               int messageId,
                               ActionCallback callback) {
@@ -276,13 +332,17 @@ public class ModeratorRepository {
                               int moderatorId,
                               int groupId,
                               String title,
-                              String when,
+                              String description,
+                              String location,
+                              String eventTime,
                               ActionCallback callback) {
         String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/events";
         JSONObject body = new JSONObject();
         try {
-            String eventText = (when == null || when.trim().isEmpty()) ? title : (title + " - " + when);
-            body.put("event", eventText);
+            body.put("title", title == null ? "" : title.trim());
+            body.put("description", description == null ? "" : description.trim());
+            body.put("location", location == null ? "" : location.trim());
+            body.put("eventTime", eventTime == null ? "" : eventTime.trim());
         } catch (JSONException e) {
             callback.onError("Failed to build event payload");
             return;
@@ -290,20 +350,93 @@ public class ModeratorRepository {
         sendAction(context, Request.Method.POST, url, body, callback, "Failed to schedule event");
     }
 
-    public void pinAnnouncement(android.content.Context context,
-                                int moderatorId,
-                                int groupId,
-                                String announcement,
-                                ActionCallback callback) {
+    public void createAnnouncement(android.content.Context context,
+                                   int moderatorId,
+                                   int groupId,
+                                   String title,
+                                   String content,
+                                   ActionCallback callback) {
         String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements";
         JSONObject body = new JSONObject();
         try {
-            body.put("announcement", announcement);
+            body.put("title", title == null ? "" : title.trim());
+            body.put("content", content == null ? "" : content.trim());
         } catch (JSONException e) {
             callback.onError("Failed to build announcement payload");
             return;
         }
-        sendAction(context, Request.Method.POST, url, body, callback, "Failed to pin announcement");
+        sendAction(context, Request.Method.POST, url, body, callback, "Failed to create announcement");
+    }
+
+    public void pinAnnouncement(android.content.Context context,
+                                int moderatorId,
+                                int groupId,
+                                int announcementId,
+                                ActionCallback callback) {
+        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements/" + announcementId + "/pin";
+        sendAction(context, Request.Method.PUT, url, null, callback, "Failed to pin announcement");
+    }
+
+    public void getEventDetails(android.content.Context context,
+                                int moderatorId,
+                                int groupId,
+                                int eventId,
+                                JsonObjectCallback callback) {
+        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/events/" + eventId;
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                callback::onSuccess,
+                error -> callback.onError("Failed to load event details"));
+        VolleySingleton.getInstance(context).addToRequestQueue(request);
+    }
+
+    public void editEvent(android.content.Context context,
+                          int moderatorId,
+                          int groupId,
+                          int eventId,
+                          String title,
+                          String description,
+                          String location,
+                          String eventTime,
+                          ActionCallback callback) {
+        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/events/" + eventId;
+        JSONObject body = new JSONObject();
+        try {
+            body.put("title", title == null ? "" : title.trim());
+            body.put("description", description == null ? "" : description.trim());
+            body.put("location", location == null ? "" : location.trim());
+            body.put("eventTime", eventTime == null ? "" : eventTime.trim());
+        } catch (JSONException e) {
+            callback.onError("Failed to build event payload");
+            return;
+        }
+        sendAction(context, Request.Method.PUT, url, body, callback, "Failed to edit event");
+    }
+
+    public void deleteEvent(android.content.Context context,
+                            int moderatorId,
+                            int groupId,
+                            int eventId,
+                            ActionCallback callback) {
+        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/events/" + eventId;
+        sendAction(context, Request.Method.DELETE, url, null, callback, "Failed to delete event");
+    }
+
+    public void unpinAnnouncement(android.content.Context context,
+                                  int moderatorId,
+                                  int groupId,
+                                  int announcementId,
+                                  ActionCallback callback) {
+        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements/" + announcementId + "/unpin";
+        sendAction(context, Request.Method.PUT, url, null, callback, "Failed to unpin announcement");
+    }
+
+    public void deleteAnnouncement(android.content.Context context,
+                                   int moderatorId,
+                                   int groupId,
+                                   int announcementId,
+                                   ActionCallback callback) {
+        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements/" + announcementId;
+        sendAction(context, Request.Method.DELETE, url, null, callback, "Failed to delete announcement");
     }
 
     public void joinGroupRequest(android.content.Context context,
@@ -408,10 +541,59 @@ public class ModeratorRepository {
                           String url,
                           String errorMessage,
                           JsonArrayCallback callback) {
-        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
-                callback::onSuccess,
+        StringRequest request = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        JSONArray parsed = extractArrayFromResponse(response);
+                        callback.onSuccess(parsed);
+                    } catch (Exception e) {
+                        callback.onError(errorMessage + ": invalid response format");
+                    }
+                },
                 error -> callback.onError(errorMessage));
         VolleySingleton.getInstance(context).addToRequestQueue(request);
+    }
+
+    private JSONArray extractArrayFromResponse(String response) throws JSONException {
+        if (response == null) {
+            return new JSONArray();
+        }
+
+        String trimmed = response.trim();
+        if (trimmed.startsWith("[")) {
+            return new JSONArray(trimmed);
+        }
+        if (!trimmed.startsWith("{")) {
+            return new JSONArray();
+        }
+
+        JSONObject object = new JSONObject(trimmed);
+        String[] preferredKeys = new String[]{
+                "members", "pendingMembers", "pending_members", "messages",
+                "events", "announcements", "data", "results", "items", "content"
+        };
+        for (String key : preferredKeys) {
+            JSONArray arr = object.optJSONArray(key);
+            if (arr != null) {
+                return arr;
+            }
+        }
+
+        JSONArray names = object.names();
+        if (names != null) {
+            for (int i = 0; i < names.length(); i++) {
+                String key = names.optString(i, "");
+                if (key.isEmpty()) {
+                    continue;
+                }
+                JSONArray arr = object.optJSONArray(key);
+                if (arr != null) {
+                    return arr;
+                }
+            }
+        }
+
+        return new JSONArray();
     }
 
     private void sendAction(android.content.Context context,

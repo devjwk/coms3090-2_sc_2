@@ -45,7 +45,7 @@ public class ModeratorDashboardActivity extends AppCompatActivity {
         sessionManager = new ModeratorSessionManager(this);
 
         moderatorId = getIntent().getIntExtra("MODERATOR_ID", sessionManager.getModeratorId());
-        currentUserId = getIntent().getIntExtra("USER_ID", moderatorId);
+        currentUserId = getIntent().getIntExtra("USER_ID", -1);
         if (moderatorId <= 0) {
             Toast.makeText(this, "No moderator session found", Toast.LENGTH_SHORT).show();
             finish();
@@ -188,7 +188,9 @@ public class ModeratorDashboardActivity extends AppCompatActivity {
 
             card.setOnClickListener(v -> {
                 Intent intent = new Intent(ModeratorDashboardActivity.this, GroupChatActivity.class);
-                intent.putExtra("USER_ID", currentUserId > 0 ? currentUserId : moderatorId);
+                if (currentUserId > 0) {
+                    intent.putExtra("USER_ID", currentUserId);
+                }
                 intent.putExtra("MODERATOR_ID", moderatorId);
                 intent.putExtra("IS_MODERATOR", true);
                 intent.putExtra("GROUP_ID", group.getGroupId());

@@ -67,6 +67,19 @@
         </LinearLayout>
 
         <Button
+            android:id="@+id/btnViewEvents"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Events"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:layout_marginEnd="8dp"
+            android:backgroundTint="#3C3C50" />
+
+        <Button
             android:id="@+id/btnManageGroupChat"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
@@ -79,6 +92,36 @@
             android:backgroundTint="#7B6FFF"
             android:visibility="gone" />
 
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutPinnedAnnouncement"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp"
+        android:background="#25253A"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvPinnedAnnouncementLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pinned announcement"
+            android:textColor="#9E97FF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvPinnedAnnouncement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
