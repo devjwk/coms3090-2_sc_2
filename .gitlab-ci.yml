@@ -18,6 +18,7 @@ maven-build:
       - JJ_CICD
     changes:
       - Backend/**/*
+      - .gitlab-ci.yml
 
 maven-test:
   stage: maventest
@@ -35,3 +36,4 @@ maven-test:
       - JJ_CICD
     changes:
       - Backend/**/*
+      - .gitlab-ci.yml
