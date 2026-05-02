@@ -175,7 +175,7 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
-    @GetMapping("/reports/status/{status}")
+    @GetMapping("/users/status/{status}")
     public List<User> getUsersByStatus(@PathVariable UserStatus status) {
         return UserRepository.findByStatus(status);
     }

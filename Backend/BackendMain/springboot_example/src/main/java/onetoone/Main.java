@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-class Main {
+public class Main {
     // hello
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);

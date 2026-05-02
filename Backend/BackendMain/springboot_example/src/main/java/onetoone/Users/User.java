@@ -48,6 +48,7 @@ public class User {
 
     private Integer age;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private UserStatus status = UserStatus.NEED_APPROVAL;
 
