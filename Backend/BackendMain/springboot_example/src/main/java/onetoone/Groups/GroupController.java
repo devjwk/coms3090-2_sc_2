@@ -6,6 +6,8 @@ import onetoone.ConverstaionMembers.ConversationMember;
 import onetoone.ConverstaionMembers.ConvoMemRepository;
 import onetoone.GroupMember.GMRepository;
 import onetoone.GroupMember.GroupMember;
+import onetoone.Moderators.Moderator;
+import onetoone.Moderators.ModeratorRepository;
 import onetoone.Users.User;
 import onetoone.Users.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,9 @@ public class GroupController {
 
     @Autowired
     GMRepository groupMemberRepository;
+
+    @Autowired
+    ModeratorRepository moderatorRepository;
 
     private final String success = "{\"message\":\"success\"}";
     private final String failure = "{\"message\":\"failure\"}";
@@ -104,6 +109,8 @@ public class GroupController {
         return ResponseEntity.ok(groupOptional.get());
     }
 
+
+
     @GetMapping(path = "/groups")
     @Operation(summary = "Get all groups", description = "Returns a list of all user groups.")
     public List<Group> getAllGroups() {
@@ -159,19 +166,31 @@ public class GroupController {
         return ResponseEntity.ok("User added to group");
     }
 
-    @PostMapping(path = "/groups")
-    @Operation(summary = "Create group", description = "Creates a new user group and its linked conversation.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Group created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input")
-    })
-    public ResponseEntity<Group> createGroup(@RequestBody Group group) {
+    @PostMapping("/moderators/{moderatorId}/groups")
+    @Operation(summary = "Create group as moderator",
+            description = "Only a valid moderator account can create a group. Moderator ID is auto-attached to the group.")
+    public ResponseEntity<?> createGroupForModerator(@PathVariable Long moderatorId,
+                                                     @RequestBody Group group) {
+
         if (group == null) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body("Invalid group body");
         }
 
+        // verify moderator exists
+        Optional<Moderator> moderatorOptional =
+                moderatorRepository.findById(moderatorId);
+
+        if (moderatorOptional.isEmpty()) {
+            return ResponseEntity.status(403).body("Only moderators can create groups");
+        }
+
+        // auto assign moderator ownership
+        group.setModeratorId(moderatorId);
+
+        // save group
         Group savedGroup = groupRepository.save(group);
 
+        // create linked conversation
         Conversation conversation = new Conversation();
         conversation.setType("GROUP");
         conversation.setName(savedGroup.getGroupName());
@@ -180,46 +199,81 @@ public class GroupController {
 
         Conversation savedConversation = convoRepository.save(conversation);
 
-        ConversationMember creator = new ConversationMember();
-        creator.setConversationId(savedConversation.getConversationId());
-        creator.setUserId(savedGroup.getCreatedBy());
+        return ResponseEntity.ok(savedGroup);
+    }
 
-        convoMemRepository.save(creator);
+    @PutMapping("/moderators/{moderatorId}/groups/{groupId}")
+    public ResponseEntity<?> editGroup(@PathVariable Long moderatorId,
+                                       @PathVariable Long groupId,
+                                       @RequestBody Group req) {
+
+        Optional<Moderator> modOpt = moderatorRepository.findById(moderatorId);
+        if (modOpt.isEmpty()) {
+            return ResponseEntity.status(403).body("Moderator not found");
+        }
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Group group = groupOpt.get();
+
+        // verify ownership
+        if (!moderatorId.equals(group.getModeratorId())) {
+            return ResponseEntity.status(403).body("You do not control this group");
+        }
+
+        group.setGroupName(req.getGroupName());
+        group.setDescription(req.getDescription());
+        group.setInterests(req.getInterests());
+
+        Group savedGroup = groupRepository.save(group);
+
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+        if (convoOpt.isPresent()) {
+            Conversation convo = convoOpt.get();
+            convo.setName(savedGroup.getGroupName());
+            convoRepository.save(convo);
+        }
 
         return ResponseEntity.ok(savedGroup);
     }
 
-    @PutMapping("/groups/edit/{id}")
-    @Operation(summary = "Update group", description = "Updates group information fields such as name and description.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Group updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Group not found")
-    })
-    public ResponseEntity<Group> editGroup(
-            @Parameter(description = "ID of the group to update", required = true)
-            @PathVariable Long id,
-            @RequestBody Group req) {
+    @PutMapping("/moderators/{moderatorId}/groups/{groupId}/members/{userId}/approve")
+    public ResponseEntity<String> approveMember(@PathVariable Long moderatorId,
+                                                @PathVariable Long groupId,
+                                                @PathVariable Long userId) {
 
-        Optional<Group> groupOptional = groupRepository.findById(id);
-
-        if (groupOptional.isEmpty()) {
-            return ResponseEntity.notFound().build();
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
         }
 
-        Group group = groupOptional.get();
-        group.setGroupName(req.getGroupName());
-        group.setDescription(req.getDescription());
+        Group group = groupOpt.get();
 
-        Group savedGroup = groupRepository.save(group);
-
-        Optional<Conversation> conversationOptional = convoRepository.findByGroupId(id);
-        if (conversationOptional.isPresent()) {
-            Conversation conversation = conversationOptional.get();
-            conversation.setName(savedGroup.getGroupName());
-            convoRepository.save(conversation);
+        if (!moderatorId.equals(group.getModeratorId())) {
+            return ResponseEntity.status(403).body("You do not control this group");
         }
 
-        return ResponseEntity.ok(savedGroup);
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+        if (convoOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Conversation not found");
+        }
+
+        Long conversationId = convoOpt.get().getConversationId();
+
+        boolean alreadyInConversation =
+                convoMemRepository.existsByConversationIdAndUserId(conversationId, userId);
+
+        if (!alreadyInConversation) {
+            ConversationMember member = new ConversationMember();
+            member.setConversationId(conversationId);
+            member.setUserId(userId);
+            convoMemRepository.save(member);
+        }
+
+        return ResponseEntity.ok("Member approved");
     }
 
     @DeleteMapping("/groups/{id}")
@@ -241,6 +295,42 @@ public class GroupController {
 
         groupRepository.deleteById(id);
         return ResponseEntity.ok("Group deleted");
+    }
+
+    @DeleteMapping("/moderators/{moderatorId}/groups/{groupId}/members/{userId}")
+    public ResponseEntity<String> removeMemberAsModerator(@PathVariable Long moderatorId,
+                                                          @PathVariable Long groupId,
+                                                          @PathVariable Long userId) {
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Group group = groupOpt.get();
+
+        if (!moderatorId.equals(group.getModeratorId())) {
+            return ResponseEntity.status(403).body("You do not control this group");
+        }
+
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+        if (convoOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Conversation not found");
+        }
+
+        Long conversationId = convoOpt.get().getConversationId();
+
+        List<ConversationMember> members =
+                convoMemRepository.findByConversationId(conversationId);
+
+        for (ConversationMember m : members) {
+            if (m.getUserId().equals(userId)) {
+                convoMemRepository.delete(m);
+                return ResponseEntity.ok("Member removed");
+            }
+        }
+
+        return ResponseEntity.status(404).body("User not in group");
     }
 
     @DeleteMapping("/groups/{groupId}/remove/{userId}")
@@ -265,5 +355,35 @@ public class GroupController {
         }
 
         return ResponseEntity.status(404).body("User not in group");
+    }
+
+    @DeleteMapping("/moderators/{moderatorId}/groups/{groupId}")
+    @Operation(summary = "Delete group as moderator",
+            description = "Deletes a group only if the moderator owns that group.")
+    public ResponseEntity<String> deleteGroupAsModerator(@PathVariable Long moderatorId,
+                                                         @PathVariable Long groupId) {
+
+        if (!moderatorRepository.existsById(moderatorId)) {
+            return ResponseEntity.status(403).body("Moderator not found");
+        }
+
+        Optional<Group> groupOptional = groupRepository.findById(groupId);
+
+        if (groupOptional.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        Group group = groupOptional.get();
+
+        if (!moderatorId.equals(group.getModeratorId())) {
+            return ResponseEntity.status(403).body("You do not control this group");
+        }
+
+        Optional<Conversation> conversationOptional = convoRepository.findByGroupId(groupId);
+        conversationOptional.ifPresent(convoRepository::delete);
+
+        groupRepository.deleteById(groupId);
+
+        return ResponseEntity.ok("Group deleted");
     }
 }
