@@ -1,0 +1,162 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > Image</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">onetoone.UserImages</a>
+</div>
+
+<h1>Coverage Summary for Class: Image (onetoone.UserImages)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Image</td>
+<td class="coverageStat">
+  <span class="percent">
+    12.5%
+  </span>
+  <span class="absValue">
+    (1/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    12.5%
+  </span>
+  <span class="absValue">
+    (1/8)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">Image$HibernateInstantiator$C2bIi2pA</td>
+  </tr>
+  <tr>
+    <td class="name">Image$HibernateProxy$6o9BfRXN</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    12.5%
+  </span>
+  <span class="absValue">
+    (1/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    12.5%
+  </span>
+  <span class="absValue">
+    (1/8)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package onetoone.UserImages;
+&nbsp;
+&nbsp;import jakarta.validation.constraints.Email;
+&nbsp;import jakarta.validation.constraints.Pattern;
+&nbsp;import lombok.Getter;
+&nbsp;import lombok.Setter;
+&nbsp;import jakarta.persistence.*;
+&nbsp;import onetoone.Users.User;
+&nbsp;import org.hibernate.annotations.CreationTimestamp;
+&nbsp;
+&nbsp;import java.time.Instant;
+&nbsp;
+&nbsp;@Entity
+&nbsp;@Getter
+&nbsp;@Setter
+&nbsp;@Table(name = &quot;images&quot;)
+<b class="fc">&nbsp;public class Image {</b>
+&nbsp;    @Id
+&nbsp;    @GeneratedValue(strategy = GenerationType.IDENTITY)
+&nbsp;    @Column(name = &quot;image_id&quot;)
+&nbsp;    private Long imageId;
+&nbsp;
+&nbsp;    //user_id FK
+&nbsp;    @ManyToOne
+&nbsp;    @JoinColumn(name = &quot;user_id&quot;, referencedColumnName = &quot;userId&quot;)
+&nbsp;    private User userId;
+&nbsp;
+&nbsp;    @Column(name = &quot;image_link&quot;)
+&nbsp;    private String imageLink;
+&nbsp;
+&nbsp;    @CreationTimestamp
+&nbsp;    @Column(name = &quot;upload_ts&quot;, nullable = false, updatable = false)
+&nbsp;    private Instant uploadTs;
+&nbsp;
+<b class="nc">&nbsp;    public Long getImageId() { return imageId; }</b>
+<b class="nc">&nbsp;    public void setImageId(Long imageId) { this.imageId = imageId; }</b>
+&nbsp;
+<b class="nc">&nbsp;    public User getUserId() { return userId; }</b>
+<b class="nc">&nbsp;    public void setUserId(User userId) { this.userId = userId; }</b>
+&nbsp;
+<b class="nc">&nbsp;    public String getImageLink() { return imageLink; }</b>
+<b class="nc">&nbsp;    public void setImageLink(String imageLink) { this.imageLink = imageLink; }</b>
+&nbsp;
+<b class="nc">&nbsp;    public Instant getUploadTs() { return uploadTs; }</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-05-01 23:01</div>
+</div>
+</body>
+</html>
