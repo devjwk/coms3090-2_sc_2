@@ -1,0 +1,935 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupChatActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">GroupChatActivity.java</span></div><h1>GroupChatActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.app.AlertDialog;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+
+import org.java_websocket.handshake.ServerHandshake;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+<span class="nc" id="L34">public class GroupChatActivity extends AppCompatActivity implements WebSocketEventListener {</span>
+
+    private static final String TAG = &quot;GroupChatActivity&quot;;
+    private static final String PREFS_NAME = &quot;GroupChatPrefs&quot;;
+
+    private Button sendBtn, backBtn;
+    private EditText msgEtx;
+    private RecyclerView recyclerChat;
+    private TextView tvGroupName, tvMemberCount;
+
+    private ChatAdapter chatAdapter;
+<span class="nc" id="L45">    private final List&lt;ChatMessage&gt; messageList = new ArrayList&lt;&gt;();</span>
+
+    // Maps senderId -&gt; display name for group members
+<span class="nc" id="L48">    private final Map&lt;Integer, String&gt; memberNames = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L49">    private final List&lt;Integer&gt; memberUserIds = new ArrayList&lt;&gt;();</span>
+
+    private int currentUserId;
+    private int groupId;
+<span class="nc" id="L53">    private int conversationId = -1;</span>
+    private String groupName;
+<span class="nc" id="L55">    private String lastSentMessage = null;</span>
+
+    private static final String WS_BASE = &quot;ws://coms-3090-015.class.las.iastate.edu:8080/chat/&quot;;
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L62">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L63">        setContentView(R.layout.activity_group_chat);</span>
+
+<span class="nc" id="L65">        currentUserId = getIntent().getIntExtra(&quot;USER_ID&quot;, 1);</span>
+<span class="nc" id="L66">        groupId       = getIntent().getIntExtra(&quot;GROUP_ID&quot;, -1);</span>
+<span class="nc" id="L67">        groupName     = getIntent().getStringExtra(&quot;GROUP_NAME&quot;);</span>
+
+<span class="nc" id="L69">        sendBtn       = findViewById(R.id.sendBtn);</span>
+<span class="nc" id="L70">        backBtn       = findViewById(R.id.backBtn);</span>
+<span class="nc" id="L71">        msgEtx        = findViewById(R.id.msgEdt);</span>
+<span class="nc" id="L72">        recyclerChat  = findViewById(R.id.recyclerChat);</span>
+<span class="nc" id="L73">        tvGroupName   = findViewById(R.id.tvGroupName);</span>
+<span class="nc" id="L74">        tvMemberCount = findViewById(R.id.tvMemberCount);</span>
+
+<span class="nc" id="L76">        sendBtn.setEnabled(true); // Always enable send button immediately</span>
+
+<span class="nc" id="L78">        LinearLayoutManager layoutManager = new LinearLayoutManager(this);</span>
+<span class="nc" id="L79">        layoutManager.setStackFromEnd(true);</span>
+<span class="nc" id="L80">        recyclerChat.setLayoutManager(layoutManager);</span>
+<span class="nc" id="L81">        chatAdapter = new ChatAdapter(messageList);</span>
+<span class="nc" id="L82">        recyclerChat.setAdapter(chatAdapter);</span>
+
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        tvGroupName.setText(groupName != null ? groupName : &quot;Group Chat&quot;);</span>
+<span class="nc" id="L85">        tvMemberCount.setVisibility(View.GONE);</span>
+
+<span class="nc" id="L87">        backBtn.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L88">            WebSocketClientManager.getInstance().removeWebSocketEventListener();</span>
+<span class="nc" id="L89">            finish();</span>
+<span class="nc" id="L90">        });</span>
+
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (groupId &gt; 0) {</span>
+<span class="nc" id="L93">            conversationId = getCachedConversationId(groupId);</span>
+<span class="nc" id="L94">            Log.d(TAG, &quot;Cached conversationId for group &quot; + groupId + &quot; = &quot; + conversationId);</span>
+<span class="nc" id="L95">            startConversationFlow();</span>
+        } else {
+<span class="nc" id="L97">            Toast.makeText(this, &quot;No group specified&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L98">            finish();</span>
+        }
+<span class="nc" id="L100">    }</span>
+
+    private int getCachedConversationId(int gId) {
+<span class="nc" id="L103">        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);</span>
+<span class="nc" id="L104">        return prefs.getInt(&quot;group_conv_&quot; + gId, -1);</span>
+    }
+
+    private void cacheConversationId(int gId, int convId) {
+<span class="nc" id="L108">        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);</span>
+<span class="nc" id="L109">        prefs.edit().putInt(&quot;group_conv_&quot; + gId, convId).apply();</span>
+<span class="nc" id="L110">        Log.d(TAG, &quot;Cached conversationId &quot; + convId + &quot; for group &quot; + gId);</span>
+<span class="nc" id="L111">    }</span>
+
+    private void fetchGroupMembers() {
+<span class="nc" id="L114">        String url = BASE_URL + &quot;/groups/&quot; + groupId;</span>
+<span class="nc" id="L115">        Log.d(TAG, &quot;Step 1: GET group: &quot; + url);</span>
+
+<span class="nc" id="L117">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+<span class="nc" id="L119">                    Log.d(TAG, &quot;Group response: &quot; + response);</span>
+                    try {
+<span class="nc" id="L121">                        JSONObject group = new JSONObject(response);</span>
+<span class="nc" id="L122">                        parseMembersFromGroupJson(group);</span>
+<span class="nc" id="L123">                    } catch (Exception e) {</span>
+<span class="nc" id="L124">                        Log.e(TAG, &quot;Error parsing group response: &quot; + e.getMessage());</span>
+<span class="nc" id="L125">                        fetchGroupMembersFallback();</span>
+<span class="nc" id="L126">                        return;</span>
+<span class="nc" id="L127">                    }</span>
+<span class="nc" id="L128">                    resolveRealNames(0);</span>
+<span class="nc" id="L129">                    startConversationFlow();</span>
+<span class="nc" id="L130">                },</span>
+                error -&gt; {
+<span class="nc" id="L132">                    Log.w(TAG, &quot;GET /groups/&quot; + groupId + &quot; failed, falling back to /gm/glist: &quot; + error);</span>
+<span class="nc" id="L133">                    fetchGroupMembersFallback();</span>
+<span class="nc" id="L134">                });</span>
+
+<span class="nc" id="L136">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L137">    }</span>
+
+    private void fetchGroupMembersFallback() {
+<span class="nc" id="L140">        String url = BASE_URL + &quot;/gm/glist/&quot; + groupId;</span>
+<span class="nc" id="L141">        Log.d(TAG, &quot;Fallback Step 1: GET members: &quot; + url);</span>
+
+<span class="nc" id="L143">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+<span class="nc" id="L145">                    Log.d(TAG, &quot;Members response (fallback): &quot; + response);</span>
+                    try {
+<span class="nc" id="L147">                        JSONArray arr = new JSONArray(response);</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                        for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L149">                            JSONObject obj = arr.getJSONObject(i);</span>
+<span class="nc" id="L150">                            int uid = obj.optInt(&quot;userId&quot;, obj.optInt(&quot;userid&quot;, -1));</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                            if (uid &lt;= 0) continue;</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">                            if (!isMemberActive(obj)) {</span>
+<span class="nc" id="L153">                                Log.d(TAG, &quot;Skipping inactive member: &quot; + uid);</span>
+<span class="nc" id="L154">                                continue;</span>
+                            }
+<span class="nc" id="L156">                            String name = obj.optString(&quot;displayName&quot;,</span>
+<span class="nc" id="L157">                                    obj.optString(&quot;displayname&quot;,</span>
+<span class="nc" id="L158">                                            obj.optString(&quot;name&quot;,</span>
+<span class="nc" id="L159">                                                    obj.optString(&quot;userName&quot;,</span>
+<span class="nc" id="L160">                                                            obj.optString(&quot;username&quot;, &quot;&quot;)))));</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">                            if (name.isEmpty()) name = &quot;User &quot; + uid;</span>
+<span class="nc" id="L162">                            memberNames.put(uid, name);</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                            if (!memberUserIds.contains(uid)) memberUserIds.add(uid);</span>
+                        }
+<span class="nc" id="L165">                        tvMemberCount.setText(memberUserIds.size() + &quot; members · Tap to view&quot;);</span>
+<span class="nc" id="L166">                        Log.d(TAG, &quot;Loaded &quot; + memberUserIds.size() + &quot; members: &quot; + memberUserIds);</span>
+<span class="nc" id="L167">                    } catch (Exception e) {</span>
+<span class="nc" id="L168">                        Log.e(TAG, &quot;Error parsing members (fallback): &quot; + e.getMessage());</span>
+<span class="nc" id="L169">                    }</span>
+<span class="nc" id="L170">                    resolveRealNames(0);</span>
+<span class="nc" id="L171">                    startConversationFlow();</span>
+<span class="nc" id="L172">                },</span>
+                error -&gt; {
+<span class="nc" id="L174">                    Log.e(TAG, &quot;Failed to fetch members (fallback): &quot; + error);</span>
+<span class="nc" id="L175">                    tvMemberCount.setText(&quot;Group Chat&quot;);</span>
+<span class="nc" id="L176">                    startConversationFlow();</span>
+<span class="nc" id="L177">                });</span>
+
+<span class="nc" id="L179">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L180">    }</span>
+
+    private void parseMembersFromGroupJson(JSONObject group) {
+        try {
+<span class="nc bnc" id="L184" title="All 2 branches missed.">            if (group.has(&quot;members&quot;)) {</span>
+<span class="nc" id="L185">                JSONArray members = group.optJSONArray(&quot;members&quot;);</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">                if (members != null) {</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                    for (int i = 0; i &lt; members.length(); i++) {</span>
+<span class="nc" id="L188">                        JSONObject m = members.getJSONObject(i);</span>
+<span class="nc" id="L189">                        int uid = m.optInt(&quot;userId&quot;, m.optInt(&quot;id&quot;, m.optInt(&quot;userid&quot;, -1)));</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">                        if (uid &lt;= 0) continue;</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">                        if (!isMemberActive(m)) {</span>
+<span class="nc" id="L192">                            Log.d(TAG, &quot;Skipping inactive member from /groups: &quot; + uid);</span>
+<span class="nc" id="L193">                            continue;</span>
+                        }
+<span class="nc" id="L195">                        String name = m.optString(&quot;displayName&quot;,</span>
+<span class="nc" id="L196">                                m.optString(&quot;displayname&quot;,</span>
+<span class="nc" id="L197">                                        m.optString(&quot;name&quot;, &quot;&quot;)));</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                        if (name.isEmpty()) name = &quot;User &quot; + uid;</span>
+<span class="nc" id="L199">                        memberNames.put(uid, name);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">                        if (!memberUserIds.contains(uid)) memberUserIds.add(uid);</span>
+                    }
+                }
+            }
+<span class="nc bnc" id="L204" title="All 4 branches missed.">            if (memberUserIds.isEmpty() &amp;&amp; group.has(&quot;userIds&quot;)) {</span>
+<span class="nc" id="L205">                JSONArray arr = group.optJSONArray(&quot;userIds&quot;);</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">                if (arr != null) {</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">                    for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L208">                        int uid = arr.optInt(i, -1);</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                        if (uid &lt;= 0) continue;</span>
+<span class="nc" id="L210">                        memberUserIds.add(uid);</span>
+<span class="nc" id="L211">                        memberNames.put(uid, &quot;User &quot; + uid);</span>
+                    }
+                }
+            }
+<span class="nc bnc" id="L215" title="All 2 branches missed.">            if (memberUserIds.isEmpty()) {</span>
+<span class="nc" id="L216">                org.json.JSONArray names = group.names();</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">                if (names != null) {</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                    for (int ni = 0; ni &lt; names.length(); ni++) {</span>
+                        try {
+<span class="nc" id="L220">                            String key = names.getString(ni);</span>
+<span class="nc" id="L221">                            Object val = group.get(key);</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">                            if (val instanceof JSONArray) {</span>
+<span class="nc" id="L223">                                JSONArray a = (JSONArray) val;</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">                                if (a.length() == 0) continue;</span>
+<span class="nc" id="L225">                                Object first = a.get(0);</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">                                if (first instanceof JSONObject) {</span>
+<span class="nc" id="L227">                                    JSONObject cand = (JSONObject) first;</span>
+<span class="nc bnc" id="L228" title="All 10 branches missed.">                                    if (cand.has(&quot;userId&quot;) || cand.has(&quot;userid&quot;) || cand.has(&quot;id&quot;) || cand.has(&quot;username&quot;) || cand.has(&quot;displayName&quot;)) {</span>
+<span class="nc" id="L229">                                        Log.d(TAG, &quot;Found candidate member array at key='&quot; + key + &quot;'&quot;);</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">                                        for (int i = 0; i &lt; a.length(); i++) {</span>
+<span class="nc" id="L231">                                            JSONObject m = a.getJSONObject(i);</span>
+<span class="nc" id="L232">                                            int uid = m.optInt(&quot;userId&quot;, m.optInt(&quot;id&quot;, m.optInt(&quot;userid&quot;, -1)));</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">                                            if (uid &lt;= 0) continue;</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">                                            if (!isMemberActive(m)) continue;</span>
+<span class="nc" id="L235">                                            String name = m.optString(&quot;displayName&quot;,</span>
+<span class="nc" id="L236">                                                    m.optString(&quot;displayname&quot;,</span>
+<span class="nc" id="L237">                                                            m.optString(&quot;name&quot;, &quot;&quot;)));</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                                            if (name.isEmpty()) name = &quot;User &quot; + uid;</span>
+<span class="nc" id="L239">                                            memberNames.put(uid, name);</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">                                            if (!memberUserIds.contains(uid)) memberUserIds.add(uid);</span>
+                                        }
+<span class="nc" id="L242">                                        break;</span>
+                                    }
+                                }
+                            }
+<span class="nc" id="L246">                        } catch (Exception ignored) {}</span>
+                    }
+                }
+            }
+<span class="nc" id="L250">            runOnUiThread(() -&gt; tvMemberCount.setText(memberUserIds.size() + &quot; members · Tap to view&quot;));</span>
+<span class="nc" id="L251">            Log.d(TAG, &quot;Parsed members from /groups: &quot; + memberUserIds + &quot; names=&quot; + memberNames);</span>
+<span class="nc" id="L252">        } catch (Exception e) {</span>
+<span class="nc" id="L253">            Log.e(TAG, &quot;Error parsing group members: &quot; + e.getMessage());</span>
+<span class="nc" id="L254">        }</span>
+<span class="nc" id="L255">    }</span>
+
+    private void resolveRealNames(int index) {
+<span class="nc bnc" id="L258" title="All 2 branches missed.">        if (index &gt;= memberUserIds.size()) {</span>
+<span class="nc" id="L259">            runOnUiThread(() -&gt; tvMemberCount.setText(memberUserIds.size() + &quot; members · Tap to view&quot;));</span>
+<span class="nc" id="L260">            return;</span>
+        }
+<span class="nc" id="L262">        int uid = memberUserIds.get(index);</span>
+<span class="nc" id="L263">        String url = BASE_URL + &quot;/users/&quot; + uid;</span>
+<span class="nc" id="L264">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L267">                        JSONObject user = new JSONObject(response);</span>
+<span class="nc" id="L268">                        String name = user.optString(&quot;name&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">                        if (name.isEmpty()) name = user.optString(&quot;displayName&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">                        if (!name.isEmpty()) memberNames.put(uid, name);</span>
+<span class="nc" id="L271">                        Log.d(TAG, &quot;Resolved name for user &quot; + uid + &quot; -&gt; &quot; + memberNames.get(uid));</span>
+<span class="nc" id="L272">                    } catch (Exception e) { }</span>
+<span class="nc" id="L273">                    resolveRealNames(index + 1);</span>
+<span class="nc" id="L274">                },</span>
+<span class="nc" id="L275">                error -&gt; resolveRealNames(index + 1));</span>
+<span class="nc" id="L276">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L277">    }</span>
+
+    private void fetchUserNameAndUpdate(int uid) {
+<span class="nc bnc" id="L280" title="All 2 branches missed.">        if (uid &lt;= 0) return;</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">        if (memberNames.containsKey(uid)) return;</span>
+<span class="nc" id="L282">        String url = BASE_URL + &quot;/users/&quot; + uid;</span>
+<span class="nc" id="L283">        Log.d(TAG, &quot;Fetching user name for &quot; + uid + &quot; -&gt; &quot; + url);</span>
+<span class="nc" id="L284">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L287">                        JSONObject user = new JSONObject(response);</span>
+<span class="nc" id="L288">                        String name = user.optString(&quot;name&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">                        if (name.isEmpty()) name = user.optString(&quot;displayName&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">                        if (!name.isEmpty()) {</span>
+<span class="nc" id="L291">                            memberNames.put(uid, name);</span>
+<span class="nc" id="L292">                            Log.d(TAG, &quot;Fetched name for &quot; + uid + &quot; -&gt; &quot; + name);</span>
+<span class="nc" id="L293">                            final String finalName = name;</span>
+<span class="nc" id="L294">                            runOnUiThread(new Runnable() {</span>
+                                @Override
+                                public void run() {
+<span class="nc" id="L297">                                    boolean changed = false;</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                                    for (ChatMessage m : messageList) {</span>
+<span class="nc bnc" id="L299" title="All 4 branches missed.">                                        if (!m.isSent() &amp;&amp; m.getSenderId() == uid) {</span>
+<span class="nc" id="L300">                                            String cur = m.getSenderName();</span>
+<span class="nc bnc" id="L301" title="All 6 branches missed.">                                            if (cur == null || cur.isEmpty() || cur.equals(&quot;User &quot; + uid)) {</span>
+<span class="nc" id="L302">                                                m.setSenderName(finalName);</span>
+<span class="nc" id="L303">                                                changed = true;</span>
+                                            }
+                                        }
+<span class="nc" id="L306">                                    }</span>
+<span class="nc bnc" id="L307" title="All 2 branches missed.">                                    if (changed) chatAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L308">                                    tvMemberCount.setText(memberUserIds.size() + &quot; members · Tap to view&quot;);</span>
+<span class="nc" id="L309">                                }</span>
+                            });
+                        }
+<span class="nc" id="L312">                    } catch (Exception ignored) {}</span>
+<span class="nc" id="L313">                }, error -&gt; {</span>
+<span class="nc" id="L314">                    Log.d(TAG, &quot;Failed to fetch user &quot; + uid + &quot; : &quot; + error);</span>
+<span class="nc" id="L315">                });</span>
+<span class="nc" id="L316">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L317">    }</span>
+
+    private void startConversationFlow() {
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        if (conversationId &gt; 0) {</span>
+<span class="nc" id="L321">            Log.d(TAG, &quot;Step 2: Using cached conversationId = &quot; + conversationId);</span>
+<span class="nc" id="L322">            loadChatHistoryThenConnect();</span>
+        } else {
+<span class="nc" id="L324">            fetchGroupConversationId();</span>
+        }
+<span class="nc" id="L326">    }</span>
+
+    private void fetchGroupConversationId() {
+<span class="nc" id="L329">        String url = BASE_URL + &quot;/conversations/group&quot;;</span>
+<span class="nc" id="L330">        List&lt;Integer&gt; userIds = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">        if (!memberUserIds.contains(currentUserId)) {</span>
+<span class="nc" id="L332">            userIds.add(currentUserId);</span>
+        }
+<span class="nc" id="L334">        userIds.addAll(memberUserIds);</span>
+<span class="nc" id="L335">        Collections.sort(userIds);</span>
+<span class="nc" id="L336">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L338">            body.put(&quot;groupId&quot;, groupId);</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">            body.put(&quot;name&quot;, groupName != null ? groupName : &quot;Group &quot; + groupId);</span>
+<span class="nc" id="L340">            JSONArray idsArray = new JSONArray();</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">            for (int uid : userIds) {</span>
+<span class="nc" id="L342">                idsArray.put(uid);</span>
+<span class="nc" id="L343">            }</span>
+<span class="nc" id="L344">            body.put(&quot;userIds&quot;, idsArray);</span>
+<span class="nc" id="L345">        } catch (Exception e) {</span>
+<span class="nc" id="L346">            Log.e(TAG, &quot;Error building body&quot;, e);</span>
+<span class="nc" id="L347">            connectWebSocket();</span>
+<span class="nc" id="L348">            return;</span>
+<span class="nc" id="L349">        }</span>
+<span class="nc" id="L350">        Log.d(TAG, &quot;Step 2: POST &quot; + url + &quot; body=&quot; + body);</span>
+<span class="nc" id="L351">        StringRequest request = new StringRequest(Request.Method.POST, url,</span>
+                response -&gt; {
+<span class="nc" id="L353">                    Log.d(TAG, &quot;Conversation response: &quot; + response);</span>
+                    try {
+<span class="nc" id="L355">                        JSONObject json = new JSONObject(response);</span>
+<span class="nc" id="L356">                        conversationId = json.optInt(&quot;conversationId&quot;,</span>
+<span class="nc" id="L357">                                json.optInt(&quot;id&quot;,</span>
+<span class="nc" id="L358">                                        json.optInt(&quot;conversation_id&quot;, -1)));</span>
+<span class="nc" id="L359">                    } catch (Exception e) {</span>
+                        try {
+<span class="nc" id="L361">                            conversationId = Integer.parseInt(response.trim());</span>
+<span class="nc" id="L362">                        } catch (NumberFormatException nfe) {</span>
+<span class="nc" id="L363">                            Log.e(TAG, &quot;Could not parse conversationId from: &quot; + response);</span>
+<span class="nc" id="L364">                        }</span>
+<span class="nc" id="L365">                    }</span>
+<span class="nc" id="L366">                    Log.d(TAG, &quot;Got conversationId = &quot; + conversationId);</span>
+<span class="nc bnc" id="L367" title="All 2 branches missed.">                    if (conversationId &gt; 0) {</span>
+<span class="nc" id="L368">                        cacheConversationId(groupId, conversationId);</span>
+<span class="nc" id="L369">                        fetchConversationDetails(conversationId);</span>
+                    }
+<span class="nc" id="L371">                    loadChatHistoryThenConnect();</span>
+<span class="nc" id="L372">                },</span>
+                error -&gt; {
+<span class="nc" id="L374">                    Log.e(TAG, &quot;Failed to create group conversation: &quot; + error);</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">                    if (error.networkResponse != null) {</span>
+<span class="nc" id="L376">                        String errBody = new String(error.networkResponse.data);</span>
+<span class="nc" id="L377">                        Log.e(TAG, &quot;Status: &quot; + error.networkResponse.statusCode + &quot; Body: &quot; + errBody);</span>
+                        try {
+<span class="nc" id="L379">                            JSONObject errJson = new JSONObject(errBody);</span>
+<span class="nc" id="L380">                            int cid = errJson.optInt(&quot;conversationId&quot;, errJson.optInt(&quot;id&quot;, -1));</span>
+<span class="nc bnc" id="L381" title="All 2 branches missed.">                            if (cid &gt; 0) {</span>
+<span class="nc" id="L382">                                conversationId = cid;</span>
+<span class="nc" id="L383">                                cacheConversationId(groupId, conversationId);</span>
+<span class="nc" id="L384">                                Log.d(TAG, &quot;Got conversationId from error response: &quot; + conversationId);</span>
+<span class="nc" id="L385">                                loadChatHistoryThenConnect();</span>
+<span class="nc" id="L386">                                return;</span>
+                            }
+<span class="nc" id="L388">                        } catch (Exception ignored) {}</span>
+                    }
+<span class="nc" id="L390">                    Log.w(TAG, &quot;No conversationId obtained — messages cannot be sent.&quot;);</span>
+<span class="nc" id="L391">                    connectWebSocket();</span>
+<span class="nc" id="L392">                }) {</span>
+            @Override
+<span class="nc" id="L394">            public byte[] getBody() { return body.toString().getBytes(); }</span>
+            @Override
+<span class="nc" id="L396">            public String getBodyContentType() { return &quot;application/json&quot;; }</span>
+        };
+
+<span class="nc" id="L399">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L400">    }</span>
+
+    private void loadChatHistoryThenConnect() {
+<span class="nc bnc" id="L403" title="All 2 branches missed.">        if (conversationId &lt;= 0) {</span>
+<span class="nc" id="L404">            Log.w(TAG, &quot;No valid conversationId (&quot; + conversationId + &quot;), skipping history&quot;);</span>
+<span class="nc" id="L405">            connectWebSocket();</span>
+<span class="nc" id="L406">            return;</span>
+        }
+<span class="nc" id="L408">        String primaryUrl = BASE_URL + &quot;/messages/conversation/&quot; + conversationId + &quot;/user/&quot; + currentUserId;</span>
+<span class="nc" id="L409">        Log.d(TAG, &quot;Step 3: GET (primary) &quot; + primaryUrl);</span>
+
+<span class="nc" id="L411">        StringRequest request = new StringRequest(Request.Method.GET, primaryUrl,</span>
+                response -&gt; {
+<span class="nc" id="L413">                    Log.d(TAG, &quot;Primary history (&quot; + response.length() + &quot; chars)&quot;);</span>
+<span class="nc" id="L414">                    int loaded = parseAndLoadMessages(response);</span>
+<span class="nc bnc" id="L415" title="All 2 branches missed.">                    if (loaded == 0) {</span>
+<span class="nc" id="L416">                        Log.d(TAG, &quot;Primary returned 0, trying fallback...&quot;);</span>
+<span class="nc" id="L417">                        loadChatHistoryFallback();</span>
+                    } else {
+<span class="nc" id="L419">                        Log.d(TAG, &quot;Loaded &quot; + loaded + &quot; messages from primary URL&quot;);</span>
+<span class="nc" id="L420">                        connectWebSocket();</span>
+                    }
+<span class="nc" id="L422">                },</span>
+                error -&gt; {
+<span class="nc" id="L424">                    Log.e(TAG, &quot;Primary history FAILED: &quot; + error);</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">                    int status = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="nc bnc" id="L426" title="All 2 branches missed.">                    String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : &quot;&quot;;</span>
+<span class="nc" id="L427">                    Log.e(TAG, &quot;Primary error status: &quot; + status + &quot; body: &quot; + errBody);</span>
+<span class="nc bnc" id="L428" title="All 8 branches missed.">                    if ((status == 403 || status == 401 || status == 404) &amp;&amp; errBody.toLowerCase().contains(&quot;not in this conversation&quot;)) {</span>
+<span class="nc" id="L429">                        Log.w(TAG, &quot;Membership warning from backend; proceeding despite message: &quot; + errBody);</span>
+                        // Try fallback; fallback will also treat membership warnings as non-fatal
+<span class="nc" id="L431">                        loadChatHistoryFallback();</span>
+<span class="nc" id="L432">                        return;</span>
+                    }
+<span class="nc" id="L434">                    loadChatHistoryFallback();</span>
+<span class="nc" id="L435">                });</span>
+
+<span class="nc" id="L437">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L438">    }</span>
+
+    private void loadChatHistoryFallback() {
+<span class="nc" id="L441">        String fallbackUrl = BASE_URL + &quot;/messages/conversation/&quot; + conversationId;</span>
+<span class="nc" id="L442">        Log.d(TAG, &quot;GET (fallback) &quot; + fallbackUrl);</span>
+
+<span class="nc" id="L444">        StringRequest request = new StringRequest(Request.Method.GET, fallbackUrl,</span>
+                response -&gt; {
+<span class="nc" id="L446">                    int loaded = parseAndLoadMessages(response);</span>
+<span class="nc" id="L447">                    Log.d(TAG, &quot;Fallback loaded &quot; + loaded + &quot; messages&quot;);</span>
+<span class="nc" id="L448">                    connectWebSocket();</span>
+<span class="nc" id="L449">                },</span>
+                error -&gt; {
+<span class="nc" id="L451">                    Log.e(TAG, &quot;Fallback also FAILED: &quot; + error);</span>
+<span class="nc bnc" id="L452" title="All 2 branches missed.">                    int status = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="nc bnc" id="L453" title="All 2 branches missed.">                    String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : &quot;&quot;;</span>
+<span class="nc" id="L454">                    Log.e(TAG, &quot;Fallback error status: &quot; + status + &quot; body: &quot; + errBody);</span>
+<span class="nc bnc" id="L455" title="All 8 branches missed.">                    if ((status == 403 || status == 401 || status == 404) &amp;&amp; errBody.toLowerCase().contains(&quot;not in this conversation&quot;)) {</span>
+<span class="nc" id="L456">                        Log.w(TAG, &quot;Membership warning from backend on fallback; connecting anyway: &quot; + errBody);</span>
+<span class="nc" id="L457">                        connectWebSocket();</span>
+<span class="nc" id="L458">                        return;</span>
+                    }
+<span class="nc" id="L460">                    connectWebSocket();</span>
+<span class="nc" id="L461">                });</span>
+
+<span class="nc" id="L463">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L464">    }</span>
+
+    private int parseAndLoadMessages(String response) {
+        try {
+<span class="nc" id="L468">            JSONArray arr = new JSONArray(response);</span>
+<span class="nc bnc" id="L469" title="All 2 branches missed.">            if (arr.length() &gt; 0) {</span>
+<span class="nc" id="L470">                Log.d(TAG, &quot;FIRST MSG JSON: &quot; + arr.getJSONObject(0).toString());</span>
+            }
+<span class="nc bnc" id="L472" title="All 2 branches missed.">            for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L473">                JSONObject obj = arr.getJSONObject(i);</span>
+<span class="nc" id="L474">                long id = obj.optLong(&quot;messageId&quot;, obj.optLong(&quot;id&quot;, 0));</span>
+<span class="nc" id="L475">                String content = obj.optString(&quot;content&quot;, obj.optString(&quot;message&quot;, &quot;&quot;));</span>
+<span class="nc" id="L476">                String timestamp = obj.optString(&quot;sentAt&quot;, obj.optString(&quot;timestamp&quot;, &quot;&quot;));</span>
+<span class="nc" id="L477">                int senderId = extractUserId(obj, &quot;sender&quot;, &quot;senderUserId&quot;, &quot;senderId&quot;, &quot;sender_id&quot;, &quot;fromId&quot;);</span>
+<span class="nc" id="L478">                int receiverId = extractUserId(obj, &quot;receiver&quot;, &quot;receiverUserId&quot;, &quot;receiverId&quot;, &quot;receiver_id&quot;, &quot;toId&quot;);</span>
+
+<span class="nc bnc" id="L480" title="All 2 branches missed.">                if (i &lt; 3) {</span>
+<span class="nc" id="L481">                    Log.d(TAG, &quot;MSG[&quot; + i + &quot;] senderId=&quot; + senderId + &quot; currentUserId=&quot; + currentUserId</span>
+<span class="nc" id="L482">                            + &quot; keys=&quot; + obj.keys().toString() + &quot; raw=&quot; + obj.toString().substring(0, Math.min(200, obj.toString().length())));</span>
+                }
+
+<span class="nc bnc" id="L485" title="All 2 branches missed.">                boolean isSent = (senderId == currentUserId);</span>
+<span class="nc" id="L486">                ChatMessage msg = new ChatMessage(id, senderId, receiverId, content, timestamp, isSent);</span>
+<span class="nc bnc" id="L487" title="All 2 branches missed.">                if (!isSent) {</span>
+<span class="nc" id="L488">                    String extracted = extractSenderName(obj, senderId);</span>
+<span class="nc bnc" id="L489" title="All 4 branches missed.">                    if (extracted != null &amp;&amp; !extracted.isEmpty()) {</span>
+<span class="nc" id="L490">                        msg.setSenderName(extracted);</span>
+<span class="nc bnc" id="L491" title="All 2 branches missed.">                    } else if (memberNames.containsKey(senderId)) {</span>
+<span class="nc" id="L492">                        msg.setSenderName(memberNames.get(senderId));</span>
+                    } else {
+<span class="nc" id="L494">                        msg.setSenderName(&quot;User &quot; + senderId);</span>
+<span class="nc" id="L495">                        fetchUserNameAndUpdate(senderId);</span>
+                    }
+                }
+<span class="nc" id="L498">                messageList.add(msg);</span>
+            }
+<span class="nc" id="L500">            chatAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L501">            scrollToBottom();</span>
+<span class="nc" id="L502">            return arr.length();</span>
+<span class="nc" id="L503">        } catch (Exception e) {</span>
+<span class="nc" id="L504">            Log.e(TAG, &quot;Error parsing history: &quot; + e.getMessage());</span>
+<span class="nc" id="L505">            return 0;</span>
+        }
+    }
+
+    private int extractUserId(JSONObject obj, String objectKey, String... flatKeys) {
+<span class="nc bnc" id="L510" title="All 2 branches missed.">        for (String key : flatKeys) {</span>
+<span class="nc" id="L511">            int val = obj.optInt(key, -1);</span>
+<span class="nc bnc" id="L512" title="All 2 branches missed.">            if (val &gt; 0) return val;</span>
+        }
+<span class="nc bnc" id="L514" title="All 2 branches missed.">        if (obj.has(objectKey)) {</span>
+<span class="nc" id="L515">            int flatVal = obj.optInt(objectKey, -1);</span>
+<span class="nc bnc" id="L516" title="All 2 branches missed.">            if (flatVal &gt; 0) return flatVal;</span>
+        }
+<span class="nc bnc" id="L518" title="All 4 branches missed.">        if (obj.has(objectKey) &amp;&amp; !obj.isNull(objectKey)) {</span>
+            try {
+<span class="nc" id="L520">                JSONObject nested = obj.getJSONObject(objectKey);</span>
+<span class="nc" id="L521">                int val = nested.optInt(&quot;id&quot;,</span>
+<span class="nc" id="L522">                        nested.optInt(&quot;userId&quot;,</span>
+<span class="nc" id="L523">                                nested.optInt(&quot;user_id&quot;,</span>
+<span class="nc" id="L524">                                        nested.optInt(&quot;senderUserId&quot;, -1))));</span>
+<span class="nc bnc" id="L525" title="All 2 branches missed.">                if (val &gt; 0) return val;</span>
+<span class="nc" id="L526">            } catch (Exception ignored) {}</span>
+        }
+<span class="nc" id="L528">        return 0;</span>
+    }
+
+    private String extractSenderName(JSONObject obj, int senderId) {
+<span class="nc bnc" id="L532" title="All 2 branches missed.">        if (obj == null) return &quot;&quot;;</span>
+        try {
+<span class="nc" id="L534">            String[] flatNameKeys = new String[]{</span>
+                    &quot;senderName&quot;, &quot;sender_name&quot;, &quot;senderDisplayName&quot;, &quot;sender_display_name&quot;,
+                    &quot;displayName&quot;, &quot;display_name&quot;, &quot;name&quot;, &quot;username&quot;, &quot;userName&quot;
+            };
+<span class="nc bnc" id="L538" title="All 2 branches missed.">            for (String k : flatNameKeys) {</span>
+<span class="nc bnc" id="L539" title="All 2 branches missed.">                if (obj.has(k)) {</span>
+<span class="nc" id="L540">                    String v = obj.optString(k, &quot;&quot;).trim();</span>
+<span class="nc bnc" id="L541" title="All 2 branches missed.">                    if (!v.isEmpty()) return v;</span>
+                }
+            }
+<span class="nc bnc" id="L544" title="All 4 branches missed.">            if (obj.has(&quot;sender&quot;) &amp;&amp; !obj.isNull(&quot;sender&quot;)) {</span>
+                try {
+<span class="nc" id="L546">                    JSONObject s = obj.getJSONObject(&quot;sender&quot;);</span>
+<span class="nc bnc" id="L547" title="All 2 branches missed.">                    for (String k : new String[]{&quot;displayName&quot;, &quot;display_name&quot;, &quot;name&quot;, &quot;username&quot;, &quot;userName&quot;}) {</span>
+<span class="nc bnc" id="L548" title="All 2 branches missed.">                        if (s.has(k)) {</span>
+<span class="nc" id="L549">                            String v = s.optString(k, &quot;&quot;).trim();</span>
+<span class="nc bnc" id="L550" title="All 2 branches missed.">                            if (!v.isEmpty()) return v;</span>
+                        }
+                    }
+<span class="nc" id="L553">                } catch (Exception ignored) {}</span>
+            }
+<span class="nc bnc" id="L555" title="All 4 branches missed.">            if (obj.has(&quot;user&quot;) &amp;&amp; !obj.isNull(&quot;user&quot;)) {</span>
+                try {
+<span class="nc" id="L557">                    JSONObject s = obj.getJSONObject(&quot;user&quot;);</span>
+<span class="nc bnc" id="L558" title="All 2 branches missed.">                    for (String k : new String[]{&quot;displayName&quot;, &quot;display_name&quot;, &quot;name&quot;, &quot;username&quot;, &quot;userName&quot;}) {</span>
+<span class="nc bnc" id="L559" title="All 2 branches missed.">                        if (s.has(k)) {</span>
+<span class="nc" id="L560">                            String v = s.optString(k, &quot;&quot;).trim();</span>
+<span class="nc bnc" id="L561" title="All 2 branches missed.">                            if (!v.isEmpty()) return v;</span>
+                        }
+                    }
+<span class="nc" id="L564">                } catch (Exception ignored) {}</span>
+            }
+<span class="nc bnc" id="L566" title="All 2 branches missed.">            if (memberNames.containsKey(senderId)) return memberNames.get(senderId);</span>
+<span class="nc" id="L567">        } catch (Exception ignored) {}</span>
+<span class="nc" id="L568">        return &quot;&quot;;</span>
+    }
+
+    private boolean isMemberActive(JSONObject obj) {
+        try {
+<span class="nc bnc" id="L573" title="All 2 branches missed.">            if (obj.has(&quot;status&quot;)) {</span>
+<span class="nc" id="L574">                String s = obj.optString(&quot;status&quot;, &quot;&quot;).trim();</span>
+<span class="nc bnc" id="L575" title="All 2 branches missed.">                if (!s.isEmpty()) {</span>
+<span class="nc" id="L576">                    String sl = s.toLowerCase();</span>
+<span class="nc bnc" id="L577" title="All 10 branches missed.">                    if (sl.equals(&quot;active&quot;) || sl.equals(&quot;joined&quot;) || sl.equals(&quot;accepted&quot;) || sl.equals(&quot;member&quot;) || sl.equals(&quot;active_member&quot;)) return true;</span>
+<span class="nc bnc" id="L578" title="All 8 branches missed.">                    if (sl.equals(&quot;inactive&quot;) || sl.equals(&quot;left&quot;) || sl.equals(&quot;banned&quot;) || sl.equals(&quot;removed&quot;)) return false;</span>
+                }
+            }
+<span class="nc bnc" id="L581" title="All 2 branches missed.">            if (obj.has(&quot;active&quot;)) {</span>
+<span class="nc bnc" id="L582" title="All 2 branches missed.">                if (obj.optBoolean(&quot;active&quot;, false)) return true;</span>
+<span class="nc" id="L583">                int v = obj.optInt(&quot;active&quot;, -1);</span>
+<span class="nc bnc" id="L584" title="All 2 branches missed.">                if (v &gt; 0) return true;</span>
+            }
+<span class="nc bnc" id="L586" title="All 2 branches missed.">            if (obj.has(&quot;isActive&quot;)) {</span>
+<span class="nc bnc" id="L587" title="All 2 branches missed.">                if (obj.optBoolean(&quot;isActive&quot;, false)) return true;</span>
+            }
+<span class="nc bnc" id="L589" title="All 2 branches missed.">            if (obj.has(&quot;statusCode&quot;)) {</span>
+<span class="nc" id="L590">                int code = obj.optInt(&quot;statusCode&quot;, -1);</span>
+<span class="nc bnc" id="L591" title="All 2 branches missed.">                if (code == 1) return true;</span>
+            }
+<span class="nc bnc" id="L593" title="All 2 branches missed.">            if (obj.has(&quot;membershipStatus&quot;)) {</span>
+<span class="nc" id="L594">                String s = obj.optString(&quot;membershipStatus&quot;, &quot;&quot;).toLowerCase();</span>
+<span class="nc bnc" id="L595" title="All 6 branches missed.">                if (s.contains(&quot;active&quot;) || s.contains(&quot;joined&quot;) || s.contains(&quot;accepted&quot;)) return true;</span>
+<span class="nc bnc" id="L596" title="All 6 branches missed.">                if (s.contains(&quot;inactive&quot;) || s.contains(&quot;left&quot;) || s.contains(&quot;removed&quot;)) return false;</span>
+            }
+<span class="nc" id="L598">            return true;</span>
+<span class="nc" id="L599">        } catch (Exception e) {</span>
+<span class="nc" id="L600">            return true;</span>
+        }
+    }
+
+    private void fetchConversationDetails(int convId) {
+<span class="nc" id="L605">        String url = BASE_URL + &quot;/conversations/&quot; + convId;</span>
+<span class="nc" id="L606">        Log.d(TAG, &quot;GET conversation details: &quot; + url);</span>
+
+<span class="nc" id="L608">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+<span class="nc" id="L610">                    Log.d(TAG, &quot;Conversation details response: &quot; + response);</span>
+                    try {
+<span class="nc" id="L612">                        JSONObject json = new JSONObject(response);</span>
+<span class="nc" id="L613">                        List&lt;Integer&gt; partIds = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L614" title="All 2 branches missed.">                        if (json.has(&quot;userIds&quot;)) {</span>
+<span class="nc" id="L615">                            JSONArray u = json.optJSONArray(&quot;userIds&quot;);</span>
+<span class="nc bnc" id="L616" title="All 4 branches missed.">                            if (u != null) for (int i = 0; i &lt; u.length(); i++) partIds.add(u.optInt(i, -1));</span>
+                        }
+<span class="nc bnc" id="L618" title="All 4 branches missed.">                        if (partIds.isEmpty() &amp;&amp; json.has(&quot;participants&quot;)) {</span>
+<span class="nc" id="L619">                            JSONArray u = json.optJSONArray(&quot;participants&quot;);</span>
+<span class="nc bnc" id="L620" title="All 4 branches missed.">                            if (u != null) for (int i = 0; i &lt; u.length(); i++) partIds.add(u.optInt(i, -1));</span>
+                        }
+<span class="nc bnc" id="L622" title="All 4 branches missed.">                        if (partIds.isEmpty() &amp;&amp; json.has(&quot;members&quot;)) {</span>
+<span class="nc" id="L623">                            JSONArray u = json.optJSONArray(&quot;members&quot;);</span>
+<span class="nc bnc" id="L624" title="All 4 branches missed.">                            if (u != null) for (int i = 0; i &lt; u.length(); i++) partIds.add(u.optInt(i, -1));</span>
+                        }
+<span class="nc bnc" id="L626" title="All 4 branches missed.">                        if (partIds.isEmpty() &amp;&amp; json.has(&quot;users&quot;)) {</span>
+                            try {
+<span class="nc" id="L628">                                JSONArray u = json.optJSONArray(&quot;users&quot;);</span>
+<span class="nc bnc" id="L629" title="All 2 branches missed.">                                if (u != null) {</span>
+<span class="nc bnc" id="L630" title="All 2 branches missed.">                                    for (int i = 0; i &lt; u.length(); i++) {</span>
+<span class="nc" id="L631">                                        JSONObject o = u.optJSONObject(i);</span>
+<span class="nc bnc" id="L632" title="All 2 branches missed.">                                        if (o != null) {</span>
+<span class="nc" id="L633">                                            int id = o.optInt(&quot;id&quot;, o.optInt(&quot;userId&quot;, -1));</span>
+<span class="nc bnc" id="L634" title="All 2 branches missed.">                                            if (id &gt; 0) partIds.add(id);</span>
+                                        }
+                                    }
+                                }
+<span class="nc" id="L638">                            } catch (Exception ignored) {}</span>
+                        }
+<span class="nc" id="L640">                        Log.d(TAG, &quot;Conversation participants parsed: &quot; + partIds);</span>
+<span class="nc" id="L641">                        boolean amMember = partIds.contains(currentUserId);</span>
+<span class="nc bnc" id="L642" title="All 2 branches missed.">                        if (!amMember) {</span>
+                            // Backend no longer requires strict membership enforcement in many cases.
+                            // Treat missing membership as a warning but do NOT block the user or auto force-add.
+<span class="nc" id="L645">                            Log.w(TAG, &quot;Current user &quot; + currentUserId + &quot; is NOT listed as participant of conversation &quot; + convId + &quot;. Proceeding without forcing membership. Participants: &quot; + partIds);</span>
+                        } else {
+<span class="nc" id="L647">                            Log.d(TAG, &quot;Current user is a participant of conversation &quot; + convId);</span>
+                        }
+<span class="nc" id="L649">                    } catch (Exception e) {</span>
+<span class="nc" id="L650">                        Log.e(TAG, &quot;Error parsing conversation details: &quot; + e.getMessage());</span>
+<span class="nc" id="L651">                    }</span>
+<span class="nc" id="L652">                },</span>
+                error -&gt; {
+<span class="nc" id="L654">                    Log.e(TAG, &quot;Failed to fetch conversation details: &quot; + error);</span>
+<span class="nc bnc" id="L655" title="All 2 branches missed.">                    if (error.networkResponse != null) {</span>
+                        try {
+<span class="nc" id="L657">                            Log.e(TAG, &quot;Status: &quot; + error.networkResponse.statusCode + &quot; Body: &quot; + new String(error.networkResponse.data));</span>
+<span class="nc" id="L658">                        } catch (Exception ignored) {}</span>
+                    }
+<span class="nc" id="L660">                });</span>
+<span class="nc" id="L661">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L662">    }</span>
+
+    // Force re-create group conversation with current user included
+    private void fetchGroupConversationIdForceAdd() {
+<span class="nc" id="L666">        String url = BASE_URL + &quot;/conversations/group&quot;;</span>
+<span class="nc" id="L667">        List&lt;Integer&gt; userIds = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L668" title="All 2 branches missed.">        if (!memberUserIds.contains(currentUserId)) {</span>
+<span class="nc" id="L669">            userIds.add(currentUserId);</span>
+        }
+<span class="nc" id="L671">        userIds.addAll(memberUserIds);</span>
+<span class="nc" id="L672">        Collections.sort(userIds);</span>
+<span class="nc" id="L673">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L675">            body.put(&quot;groupId&quot;, groupId);</span>
+<span class="nc bnc" id="L676" title="All 2 branches missed.">            body.put(&quot;name&quot;, groupName != null ? groupName : &quot;Group &quot; + groupId);</span>
+<span class="nc" id="L677">            JSONArray idsArray = new JSONArray();</span>
+<span class="nc bnc" id="L678" title="All 2 branches missed.">            for (int uid : userIds) {</span>
+<span class="nc" id="L679">                idsArray.put(uid);</span>
+<span class="nc" id="L680">            }</span>
+<span class="nc" id="L681">            body.put(&quot;userIds&quot;, idsArray);</span>
+<span class="nc" id="L682">        } catch (Exception e) {</span>
+<span class="nc" id="L683">            Log.e(TAG, &quot;Error building body (force add)&quot;, e);</span>
+<span class="nc" id="L684">            connectWebSocket();</span>
+<span class="nc" id="L685">            return;</span>
+<span class="nc" id="L686">        }</span>
+<span class="nc" id="L687">        Log.d(TAG, &quot;FORCE Step 2: POST &quot; + url + &quot; body=&quot; + body);</span>
+<span class="nc" id="L688">        StringRequest request = new StringRequest(Request.Method.POST, url,</span>
+                response -&gt; {
+<span class="nc" id="L690">                    Log.d(TAG, &quot;FORCE Conversation response: &quot; + response);</span>
+                    try {
+<span class="nc" id="L692">                        JSONObject json = new JSONObject(response);</span>
+<span class="nc" id="L693">                        conversationId = json.optInt(&quot;conversationId&quot;,</span>
+<span class="nc" id="L694">                                json.optInt(&quot;id&quot;,</span>
+<span class="nc" id="L695">                                        json.optInt(&quot;conversation_id&quot;, -1)));</span>
+<span class="nc" id="L696">                    } catch (Exception e) {</span>
+                        try {
+<span class="nc" id="L698">                            conversationId = Integer.parseInt(response.trim());</span>
+<span class="nc" id="L699">                        } catch (NumberFormatException nfe) {</span>
+<span class="nc" id="L700">                            Log.e(TAG, &quot;Could not parse conversationId from: &quot; + response);</span>
+<span class="nc" id="L701">                        }</span>
+<span class="nc" id="L702">                    }</span>
+<span class="nc" id="L703">                    Log.d(TAG, &quot;FORCE Got conversationId = &quot; + conversationId);</span>
+<span class="nc bnc" id="L704" title="All 2 branches missed.">                    if (conversationId &gt; 0) {</span>
+<span class="nc" id="L705">                        cacheConversationId(groupId, conversationId);</span>
+                        // After force-adding, check again
+<span class="nc" id="L707">                        fetchConversationDetails(conversationId);</span>
+                    } else {
+                        // Only show error if still not a participant
+<span class="nc" id="L710">                        runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L711">                            Toast.makeText(this, &quot;You are not a participant on the server for this conversation.&quot;, Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L712">                        });</span>
+                    }
+<span class="nc" id="L714">                },</span>
+                error -&gt; {
+<span class="nc" id="L716">                    Log.e(TAG, &quot;FORCE Failed to create group conversation: &quot; + error);</span>
+<span class="nc" id="L717">                    runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L718">                        Toast.makeText(this, &quot;You are not a participant on the server for this conversation.&quot;, Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L719">                    });</span>
+<span class="nc" id="L720">                }) {</span>
+            @Override
+<span class="nc" id="L722">            public byte[] getBody() { return body.toString().getBytes(); }</span>
+            @Override
+<span class="nc" id="L724">            public String getBodyContentType() { return &quot;application/json&quot;; }</span>
+        };
+<span class="nc" id="L726">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L727">    }</span>
+
+    private void connectWebSocket() {
+<span class="nc" id="L730">        WebSocketClientManager.getInstance().clearMessageQueue();</span>
+<span class="nc" id="L731">        WebSocketClientManager.getInstance().setWebSocketEventListener(this);</span>
+<span class="nc bnc" id="L732" title="All 2 branches missed.">        if (WebSocketClientManager.getInstance().isConnected()) {</span>
+<span class="nc" id="L733">            Log.d(TAG, &quot;WebSocket already connected, reusing&quot;);</span>
+        } else {
+<span class="nc" id="L735">            String wsUrl = WS_BASE + currentUserId;</span>
+<span class="nc" id="L736">            Log.d(TAG, &quot;Connecting WebSocket: &quot; + wsUrl);</span>
+<span class="nc" id="L737">            WebSocketClientManager.getInstance().connectWebSocket(wsUrl);</span>
+        }
+<span class="nc" id="L739">        sendBtn.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L740">            String message = msgEtx.getText().toString().trim();</span>
+<span class="nc bnc" id="L741" title="All 2 branches missed.">            if (message.isEmpty()) {</span>
+<span class="nc" id="L742">                Toast.makeText(this, &quot;Message cannot be empty!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L743">                return;</span>
+            }
+            //if (conversationId &lt;= 0) {
+              //  Toast.makeText(this, &quot;Chat not ready — no conversationId&quot;, Toast.LENGTH_SHORT).show();
+               // return;
+            //}
+            try {
+<span class="nc" id="L750">                JSONObject jsonMsg = new JSONObject();</span>
+<span class="nc" id="L751">                jsonMsg.put(&quot;conversationId&quot;, conversationId);</span>
+<span class="nc" id="L752">                jsonMsg.put(&quot;content&quot;, message);</span>
+<span class="nc" id="L753">                Log.d(TAG, &quot;Sending: &quot; + jsonMsg);</span>
+
+<span class="nc" id="L755">                boolean sent = WebSocketClientManager.getInstance().sendMessage(jsonMsg.toString());</span>
+<span class="nc bnc" id="L756" title="All 2 branches missed.">                if (sent) {</span>
+<span class="nc" id="L757">                    lastSentMessage = message;</span>
+<span class="nc" id="L758">                    appendMessage(message, true, null);</span>
+<span class="nc" id="L759">                    msgEtx.setText(&quot;&quot;);</span>
+                } else {
+<span class="nc" id="L761">                    Toast.makeText(this, &quot;Not connected. Reconnecting...&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L762">                    WebSocketClientManager.getInstance().connectWebSocket(WS_BASE + currentUserId);</span>
+                }
+<span class="nc" id="L764">            } catch (Exception e) {</span>
+<span class="nc" id="L765">                Log.e(TAG, &quot;Send error: &quot; + e.getMessage());</span>
+<span class="nc" id="L766">            }</span>
+<span class="nc" id="L767">        });</span>
+<span class="nc" id="L768">    }</span>
+
+    private void appendMessage(String content, boolean isSent, String senderName) {
+<span class="nc" id="L771">        ChatMessage msg = new ChatMessage(content, isSent);</span>
+<span class="nc bnc" id="L772" title="All 2 branches missed.">        if (senderName != null) msg.setSenderName(senderName);</span>
+<span class="nc" id="L773">        messageList.add(msg);</span>
+<span class="nc" id="L774">        chatAdapter.notifyItemInserted(messageList.size() - 1);</span>
+<span class="nc" id="L775">        scrollToBottom();</span>
+<span class="nc" id="L776">    }</span>
+
+    private void scrollToBottom() {
+<span class="nc bnc" id="L779" title="All 2 branches missed.">        if (!messageList.isEmpty()) {</span>
+<span class="nc" id="L780">            recyclerChat.scrollToPosition(messageList.size() - 1);</span>
+        }
+<span class="nc" id="L782">    }</span>
+
+    @Override
+    public void onWebSocketOpen(ServerHandshake handshakedata) {
+<span class="nc" id="L786">        Log.d(TAG, &quot;WebSocket OPEN&quot;);</span>
+<span class="nc" id="L787">    }</span>
+
+    @Override
+    public void onWebSocketMessage(String message) {
+<span class="nc" id="L791">        runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L792">            Log.d(TAG, &quot;WS message: &quot; + message);</span>
+            try {
+<span class="nc" id="L794">                JSONObject json = new JSONObject(message);</span>
+<span class="nc" id="L795">                String content = json.optString(&quot;content&quot;, json.optString(&quot;message&quot;, &quot;&quot;));</span>
+<span class="nc" id="L796">                int senderId = json.optInt(&quot;senderUserId&quot;,</span>
+<span class="nc" id="L797">                        json.optInt(&quot;senderId&quot;, json.optInt(&quot;sender_id&quot;, -1)));</span>
+
+<span class="nc bnc" id="L799" title="All 2 branches missed.">                if (!content.isEmpty()) {</span>
+<span class="nc bnc" id="L800" title="All 2 branches missed.">                    boolean isSent = (senderId == currentUserId);</span>
+
+                    // Detect echo
+<span class="nc bnc" id="L803" title="All 6 branches missed.">                    if (!isSent &amp;&amp; lastSentMessage != null &amp;&amp; content.equals(lastSentMessage)) {</span>
+<span class="nc" id="L804">                        isSent = true;</span>
+                    }
+<span class="nc bnc" id="L806" title="All 2 branches missed.">                    if (isSent) {</span>
+<span class="nc" id="L807">                        lastSentMessage = null;</span>
+<span class="nc" id="L808">                        return;</span>
+                    }
+
+<span class="nc" id="L811">                    String name = extractSenderName(json, senderId);</span>
+<span class="nc bnc" id="L812" title="All 4 branches missed.">                    if (name == null || name.isEmpty()) {</span>
+<span class="nc bnc" id="L813" title="All 2 branches missed.">                        if (memberNames.containsKey(senderId)) {</span>
+<span class="nc" id="L814">                            name = memberNames.get(senderId);</span>
+                        } else {
+<span class="nc" id="L816">                            name = &quot;User &quot; + senderId;</span>
+                            // fetch and update later
+<span class="nc" id="L818">                            fetchUserNameAndUpdate(senderId);</span>
+                        }
+                    }
+<span class="nc" id="L821">                    appendMessage(content, false, name);</span>
+<span class="nc" id="L822">                    return;</span>
+                }
+<span class="nc" id="L824">            } catch (Exception ignored) {}</span>
+
+            // Echo filter for plain text
+<span class="nc bnc" id="L827" title="All 2 branches missed.">            if (lastSentMessage != null) {</span>
+<span class="nc bnc" id="L828" title="All 4 branches missed.">                if (message.equals(lastSentMessage) || message.contains(lastSentMessage)) {</span>
+<span class="nc" id="L829">                    lastSentMessage = null;</span>
+<span class="nc" id="L830">                    return;</span>
+                }
+            }
+
+            // Filter system messages
+<span class="nc" id="L835">            String lower = message.toLowerCase();</span>
+<span class="nc bnc" id="L836" title="All 4 branches missed.">            if (lower.contains(&quot;has joined&quot;) || lower.contains(&quot;has left&quot;)</span>
+<span class="nc bnc" id="L837" title="All 4 branches missed.">                    || lower.contains(&quot;welcome&quot;) || lower.contains(&quot;entered&quot;)</span>
+<span class="nc bnc" id="L838" title="All 4 branches missed.">                    || lower.contains(&quot;connected&quot;) || lower.contains(&quot;disconnected&quot;)) {</span>
+<span class="nc" id="L839">                return;</span>
+            }
+
+<span class="nc" id="L842">            appendMessage(message, false, null);</span>
+<span class="nc" id="L843">        });</span>
+<span class="nc" id="L844">    }</span>
+
+    @Override
+    public void onWebSocketClose(int code, String reason, boolean remote) {
+<span class="nc" id="L848">        Log.d(TAG, &quot;WebSocket CLOSED: &quot; + code + &quot; &quot; + reason);</span>
+<span class="nc" id="L849">        runOnUiThread(() -&gt; Toast.makeText(this, &quot;Chat disconnected&quot;, Toast.LENGTH_SHORT).show());</span>
+<span class="nc" id="L850">    }</span>
+
+    @Override
+    public void onWebSocketError(Exception ex) {
+<span class="nc bnc" id="L854" title="All 2 branches missed.">        Log.e(TAG, &quot;WebSocket ERROR: &quot; + (ex != null ? ex.getMessage() : &quot;unknown&quot;));</span>
+<span class="nc" id="L855">    }</span>
+
+    private void showMembersDialog() {
+<span class="nc" id="L858">        View dialogView = getLayoutInflater().inflate(R.layout.dialog_group_members, null);</span>
+<span class="nc" id="L859">        TextView tvCount = dialogView.findViewById(R.id.tvDialogMemberCount);</span>
+<span class="nc" id="L860">        LinearLayout container = dialogView.findViewById(R.id.membersContainer);</span>
+<span class="nc" id="L861">        Button btnClose = dialogView.findViewById(R.id.btnCloseMembersDialog);</span>
+
+<span class="nc" id="L863">        tvCount.setText(memberNames.size() + &quot; members&quot;);</span>
+
+<span class="nc bnc" id="L865" title="All 2 branches missed.">        for (Map.Entry&lt;Integer, String&gt; entry : memberNames.entrySet()) {</span>
+<span class="nc" id="L866">            int uid = entry.getKey();</span>
+<span class="nc" id="L867">            String name = entry.getValue();</span>
+
+<span class="nc" id="L869">            LinearLayout row = new LinearLayout(this);</span>
+<span class="nc" id="L870">            row.setOrientation(LinearLayout.HORIZONTAL);</span>
+<span class="nc" id="L871">            row.setGravity(Gravity.CENTER_VERTICAL);</span>
+<span class="nc" id="L872">            row.setPadding(dp(8), dp(10), dp(8), dp(10));</span>
+
+<span class="nc" id="L874">            FrameLayout avatarFrame = new FrameLayout(this);</span>
+<span class="nc" id="L875">            LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(dp(36), dp(36));</span>
+<span class="nc" id="L876">            ap.setMargins(0, 0, dp(12), 0);</span>
+<span class="nc" id="L877">            avatarFrame.setLayoutParams(ap);</span>
+<span class="nc" id="L878">            avatarFrame.setBackgroundColor(Color.parseColor(&quot;#7B6FFF&quot;));</span>
+
+<span class="nc" id="L880">            TextView avatarText = new TextView(this);</span>
+<span class="nc bnc" id="L881" title="All 2 branches missed.">            avatarText.setText(name.isEmpty() ? &quot;?&quot; : String.valueOf(name.charAt(0)).toUpperCase());</span>
+<span class="nc" id="L882">            avatarText.setTextColor(Color.WHITE);</span>
+<span class="nc" id="L883">            avatarText.setTextSize(14);</span>
+<span class="nc" id="L884">            avatarText.setGravity(Gravity.CENTER);</span>
+<span class="nc" id="L885">            avatarText.setLayoutParams(new FrameLayout.LayoutParams(</span>
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+<span class="nc" id="L887">            avatarFrame.addView(avatarText);</span>
+<span class="nc" id="L888">            row.addView(avatarFrame);</span>
+
+<span class="nc" id="L890">            LinearLayout textCol = new LinearLayout(this);</span>
+<span class="nc" id="L891">            textCol.setOrientation(LinearLayout.VERTICAL);</span>
+
+<span class="nc" id="L893">            TextView tvName = new TextView(this);</span>
+<span class="nc" id="L894">            tvName.setText(name);</span>
+<span class="nc" id="L895">            tvName.setTextColor(Color.WHITE);</span>
+<span class="nc" id="L896">            tvName.setTextSize(15);</span>
+<span class="nc" id="L897">            tvName.setTypeface(null, android.graphics.Typeface.BOLD);</span>
+<span class="nc" id="L898">            textCol.addView(tvName);</span>
+
+<span class="nc" id="L900">            TextView tvId = new TextView(this);</span>
+<span class="nc bnc" id="L901" title="All 2 branches missed.">            boolean isYou = (uid == currentUserId);</span>
+<span class="nc bnc" id="L902" title="All 2 branches missed.">            tvId.setText(isYou ? &quot;You&quot; : &quot;ID: &quot; + uid);</span>
+<span class="nc bnc" id="L903" title="All 2 branches missed.">            tvId.setTextColor(isYou ? Color.parseColor(&quot;#7B6FFF&quot;) : Color.parseColor(&quot;#9B9BB4&quot;));</span>
+<span class="nc" id="L904">            tvId.setTextSize(11);</span>
+<span class="nc" id="L905">            textCol.addView(tvId);</span>
+<span class="nc" id="L906">            row.addView(textCol);</span>
+
+<span class="nc" id="L908">            View divider = new View(this);</span>
+<span class="nc" id="L909">            divider.setLayoutParams(new LinearLayout.LayoutParams(</span>
+<span class="nc" id="L910">                    LinearLayout.LayoutParams.MATCH_PARENT, dp(1)));</span>
+<span class="nc" id="L911">            divider.setBackgroundColor(Color.parseColor(&quot;#2A2A42&quot;));</span>
+
+<span class="nc" id="L913">            container.addView(row);</span>
+<span class="nc" id="L914">            container.addView(divider);</span>
+<span class="nc" id="L915">        }</span>
+
+<span class="nc" id="L917">        AlertDialog dialog = new AlertDialog.Builder(this)</span>
+<span class="nc" id="L918">                .setView(dialogView).setCancelable(true).create();</span>
+<span class="nc bnc" id="L919" title="All 2 branches missed.">        if (dialog.getWindow() != null)</span>
+<span class="nc" id="L920">            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);</span>
+<span class="nc" id="L921">        btnClose.setOnClickListener(v -&gt; dialog.dismiss());</span>
+<span class="nc" id="L922">        dialog.show();</span>
+<span class="nc" id="L923">    }</span>
+
+    @Override
+    protected void onDestroy() {
+<span class="nc" id="L927">        super.onDestroy();</span>
+<span class="nc" id="L928">        WebSocketClientManager.getInstance().removeWebSocketEventListener();</span>
+<span class="nc" id="L929">    }</span>
+
+    private int dp(int value) {
+<span class="nc" id="L932">        return (int) (value * getResources().getDisplayMetrics().density);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

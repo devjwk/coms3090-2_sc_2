@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">LoginActivity.java</span></div><h1>LoginActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonObjectRequest;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
+<span class="fc" id="L20">public class LoginActivity extends AppCompatActivity {</span>
+
+    private EditText etUsername, etPassword;
+    private Button btnLogin, btnSignup, btnDeleteUser, btnModerator;
+
+    private static final String LOGIN_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080/login&quot;;
+    //private static final String LOGIN_URL = &quot;http://10.0.2.2:3002/login&quot;;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L31">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L32">        setContentView(R.layout.activity_login);</span>
+
+<span class="fc" id="L34">        etUsername    = findViewById(R.id.login_username_edt);</span>
+<span class="fc" id="L35">        etPassword    = findViewById(R.id.login_password_edt);</span>
+<span class="fc" id="L36">        btnLogin      = findViewById(R.id.login_login_btn);</span>
+<span class="fc" id="L37">        btnSignup     = findViewById(R.id.login_signup_btn);</span>
+<span class="fc" id="L38">        btnDeleteUser = findViewById(R.id.login_delete_user_btn);</span>
+<span class="fc" id="L39">        btnModerator  = findViewById(R.id.login_moderator_btn);</span>
+<span class="fc" id="L40">        btnLogin.setOnClickListener(v -&gt; loginUser());</span>
+
+<span class="fc" id="L42">        btnSignup.setOnClickListener(v -&gt;</span>
+<span class="nc" id="L43">                startActivity(new Intent(LoginActivity.this, SignupActivity.class)));</span>
+
+<span class="fc" id="L45">        btnDeleteUser.setOnClickListener(v -&gt;</span>
+<span class="nc" id="L46">                startActivity(new Intent(LoginActivity.this, DeleteUserActivity.class)));</span>
+
+<span class="fc" id="L48">        btnModerator.setOnClickListener(v -&gt;</span>
+<span class="nc" id="L49">                startActivity(new Intent(LoginActivity.this, ModeratorActivity.class))</span>
+                );
+<span class="fc" id="L51">    }</span>
+
+    private void loginUser() {
+<span class="fc" id="L54">        String email    = etUsername.getText().toString().trim();</span>
+<span class="fc" id="L55">        String password = etPassword.getText().toString().trim();</span>
+
+<span class="pc bpc" id="L57" title="2 of 4 branches missed.">        if (email.isEmpty() || password.isEmpty()) {</span>
+<span class="fc" id="L58">            Toast.makeText(this, &quot;Enter email and password&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L59">            return;</span>
+        }
+
+        String url;
+        try {
+<span class="nc" id="L64">            url = LOGIN_URL + &quot;?email=&quot; + URLEncoder.encode(email, &quot;UTF-8&quot;)</span>
+<span class="nc" id="L65">                    + &quot;&amp;passwordHash=&quot; + URLEncoder.encode(password, &quot;UTF-8&quot;);</span>
+<span class="nc" id="L66">        } catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L67">            Toast.makeText(this, &quot;Error building request&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L68">            return;</span>
+<span class="nc" id="L69">        }</span>
+
+<span class="nc" id="L71">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.GET,
+                url,
+                null,
+                response -&gt; {
+                    try {
+<span class="nc bnc" id="L77" title="All 6 branches missed.">                        if (!&quot;success&quot;.equals(response.optString(&quot;message&quot;, &quot;&quot;)) &amp;&amp; !response.has(&quot;user_id&quot;) &amp;&amp; !response.has(&quot;userId&quot;)) {</span>
+<span class="nc" id="L78">                            Toast.makeText(this, &quot;Invalid email or password&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L79">                            return;</span>
+                        }
+<span class="nc" id="L81">                        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);</span>
+<span class="nc" id="L82">                        int uid = response.optInt(&quot;userId&quot;, response.optInt(&quot;user_id&quot;, 1));</span>
+<span class="nc" id="L83">                        intent.putExtra(&quot;USER_ID&quot;, uid);</span>
+<span class="nc bnc" id="L84" title="All 4 branches missed.">                        if (response.has(&quot;email&quot;) || response.has(&quot;bio&quot;)) {</span>
+<span class="nc" id="L85">                            intent.putExtra(&quot;USER_JSON&quot;, response.toString());</span>
+                        }
+<span class="nc" id="L87">                        startActivity(intent);</span>
+<span class="nc" id="L88">                    } catch (Exception e) {</span>
+<span class="nc" id="L89">                        Toast.makeText(this, &quot;Invalid server response&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L90">                    }</span>
+<span class="nc" id="L91">                },</span>
+                error -&gt; {
+<span class="nc" id="L93">                    Toast.makeText(this, &quot;Invalid email or password&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L94">                }</span>
+        );
+
+<span class="nc" id="L97">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L98">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>
