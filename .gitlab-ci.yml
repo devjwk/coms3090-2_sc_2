@@ -7,6 +7,10 @@ maven-build:
   tags:
     - jj_tag
   script:
+    - export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+    - export PATH=$JAVA_HOME/bin:$PATH
+    - java -version
+    - javac -version
     - cd Backend/BackendMain/springboot_example
     - mvn package
   only:
@@ -14,12 +18,17 @@ maven-build:
       - JJ_CICD
     changes:
       - Backend/**/*
+      - .gitlab-ci.yml
 
 maven-test:
   stage: maventest
   tags:
     - jj_tag
   script:
+    - export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+    - export PATH=$JAVA_HOME/bin:$PATH
+    - java -version
+    - javac -version
     - cd Backend/BackendMain/springboot_example
     - mvn test
   only:
@@ -27,3 +36,4 @@ maven-test:
       - JJ_CICD
     changes:
       - Backend/**/*
+      - .gitlab-ci.yml

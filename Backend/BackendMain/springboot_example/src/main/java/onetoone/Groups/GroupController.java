@@ -6,6 +6,7 @@ import onetoone.ConverstaionMembers.ConversationMember;
 import onetoone.ConverstaionMembers.ConvoMemRepository;
 import onetoone.GroupMember.GMRepository;
 import onetoone.GroupMember.GroupMember;
+import onetoone.GroupMember.MembershipStatus;
 import onetoone.Moderators.Moderator;
 import onetoone.Moderators.ModeratorRepository;
 import onetoone.Users.User;
@@ -65,6 +66,42 @@ public class GroupController {
         return userSet.size();
     }
 
+    @GetMapping("/groups/{groupId}/events")
+    public ResponseEntity<?> getGroupEventsForUsers(@PathVariable Long groupId) {
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        String events = groupOpt.get().getEvents();
+
+        if (events == null || events.isBlank()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        return ResponseEntity.ok(events.split("\\n"));
+    }
+
+    @GetMapping("/groups/{groupId}/announcements")
+    public ResponseEntity<?> getGroupAnnouncementsForUsers(@PathVariable Long groupId) {
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        String announcements = groupOpt.get().getAnnouncements();
+
+        if (announcements == null || announcements.isBlank()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        return ResponseEntity.ok(announcements.split("\\n"));
+    }
+
     @GetMapping("/groups/recommend/{userId}")
     public List<Group> recommendGroups(@PathVariable Long userId) {
         Optional<User> userOpt = userRepository.findById(userId);
@@ -109,8 +146,6 @@ public class GroupController {
         return ResponseEntity.ok(groupOptional.get());
     }
 
-
-
     @GetMapping(path = "/groups")
     @Operation(summary = "Get all groups", description = "Returns a list of all user groups.")
     public List<Group> getAllGroups() {
@@ -120,18 +155,18 @@ public class GroupController {
     @GetMapping(path = "/groups/me/{userId}")
     public ResponseEntity<List<Group>> getMyGroups(@PathVariable Long userId) {
 
-        List<GroupMember> memberships = groupMemberRepository.findByUserId_userId(userId);
-
-        if (memberships.isEmpty()) {
-            return ResponseEntity.ok(new ArrayList<>());
-        }
+        List<GroupMember> memberships =
+                groupMemberRepository.findByUserId_UserIdAndStatus(
+                        userId,
+                        MembershipStatus.APPROVED
+                );
 
         List<Group> groups = memberships.stream()
-                .map(GroupMember::getGroupId) // returns Group
+                .map(GroupMember::getGroupId)
                 .toList();
 
         return ResponseEntity.ok(groups);
-        }
+    }
 
     @PostMapping("/groups/{groupId}/add/{userId}")
     public ResponseEntity<String> addUserToGroup(@PathVariable Long groupId,
@@ -255,6 +290,17 @@ public class GroupController {
         if (!moderatorId.equals(group.getModeratorId())) {
             return ResponseEntity.status(403).body("You do not control this group");
         }
+
+        Optional<GroupMember> memberOpt =
+                groupMemberRepository.findByGroupId_GroupIdAndUserId_UserId(groupId, userId);
+
+        if (memberOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Membership request not found");
+        }
+
+        GroupMember groupMember = memberOpt.get();
+        groupMember.setStatus(MembershipStatus.APPROVED);
+        groupMemberRepository.save(groupMember);
 
         Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
         if (convoOpt.isEmpty()) {

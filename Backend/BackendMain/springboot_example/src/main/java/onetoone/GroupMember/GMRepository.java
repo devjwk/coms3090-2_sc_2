@@ -12,4 +12,13 @@ import java.util.Optional;
 public interface GMRepository extends JpaRepository<GroupMember, Long> {
     List<GroupMember> findByGroupId_groupId(Long groupId);
     List<GroupMember> findByUserId_userId(Long userId);
+
+    List<GroupMember> findByGroupId_GroupIdAndStatus(
+            Long groupId,
+            MembershipStatus status
+    );
+
+    List<GroupMember> findByUserId_UserIdAndStatus(Long userId, MembershipStatus status);
+
+    Optional<GroupMember> findByGroupId_GroupIdAndUserId_UserId(Long groupId, Long userId);
 }
