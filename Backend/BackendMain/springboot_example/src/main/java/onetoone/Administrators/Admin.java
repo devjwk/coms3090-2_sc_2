@@ -15,16 +15,17 @@ import java.time.Instant;
 public class Admin {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "admin_id")
     private Long adminId;
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "userId")
     private User userId;
 
-    @Column(name = "active", nullable = false)
-    private Boolean isActiveAdmin = true;
+    @Column(name = "active_admin", nullable = false)
+    private Boolean activeAdmin = true;
 
     @CreationTimestamp
-    @Column(name = "timestamp", nullable = false, updatable = false)
-    private Instant timestamp;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
 }

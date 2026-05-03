@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,22 +23,23 @@ public class AdminController {
     UserRepository UserRepository;
 
     //create
-    @PostMapping("/admin")
-    public ResponseEntity<String> createReport (@RequestBody Admin admin) {
-        User adm = UserRepository.findById(admin.getUserId().getUserId()).orElse(null);
+    @PostMapping("/admin/{id}")
+    public ResponseEntity<String> createAdmin (@PathVariable Long id) {
+        User adm = UserRepository.findById(id).orElse(null);
 
         if (adm == null) {
             return ResponseEntity.status(404).body("User not found");
         }
 
-        Admin r2 = AdminRepository.findByUserId_UserId(adm.getUserId());
+        Admin r2 = AdminRepository.findByUserId_UserId(id);
 
         if (r2 != null) {
             return ResponseEntity.status(404).body("User already has an admin listing. Please update it instead.");
         }
 
+        Admin admin = new Admin();
         admin.setUserId(adm);
-        admin.setIsActiveAdmin(true);
+        admin.setActiveAdmin(true);
         AdminRepository.save(admin);
         return ResponseEntity.ok("Admin created");
     }
@@ -51,12 +53,17 @@ public class AdminController {
             return ResponseEntity.status(404).body(false);
         }
 
-        if (adm.getIsActiveAdmin() == true) {
+        if (adm.getActiveAdmin() == true) {
             return ResponseEntity.status(200).body(true);
         }
         else {
             return ResponseEntity.status(200).body(false);
         }
+    }
+
+    @GetMapping("/admin/all")
+    public List<Admin> listAdmins() {
+        return AdminRepository.findAll();
     }
 
     //update isActiveAdmin (enable/disable admin powers)
@@ -69,7 +76,10 @@ public class AdminController {
         }
 
         Admin admin = matchOptional.get();
-        admin.setIsActiveAdmin(info.getIsActiveAdmin());
+
+        if (info.getActiveAdmin() != null) {
+            admin.setActiveAdmin(info.getActiveAdmin());
+        }
 
         AdminRepository.save(admin);
         return ResponseEntity.ok("Admin updated");

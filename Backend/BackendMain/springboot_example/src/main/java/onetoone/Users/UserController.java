@@ -2,11 +2,7 @@ package onetoone.Users;
 import java.util.List;
 import java.util.Optional;
 
-import onetoone.Reports.Report;
-import onetoone.Reports.ReportStatus;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -157,11 +153,6 @@ public class UserController {
 
         User user = userOptional.get();
 
-        //return failure if the password hashes do not match up
-        if (!user.getPasswordHash().equals(passwordHash)) {
-            return ResponseEntity.status(401).body(failure);
-        }
-
         if (user.getStatus().equals(UserStatus.SUSPENDED) || user.getStatus().equals(UserStatus.DISABLED)) {
             return ResponseEntity.status(403).body("User account disabled or suspended.");
         }
@@ -170,6 +161,11 @@ public class UserController {
         }
         if (user.getStatus().equals(UserStatus.DECLINED)) {
             return ResponseEntity.status(403).body("New user account was not approved. Please use an Iowa State University email address when registering.");
+        }
+
+        //return failure if the password hashes do not match up
+        if (!user.getPasswordHash().equals(passwordHash)) {
+            return ResponseEntity.status(401).body(failure);
         }
 
         return ResponseEntity.ok(user);
