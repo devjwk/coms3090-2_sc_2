@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WebSocketClientManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">WebSocketClientManager.java</span></div><h1>WebSocketClientManager.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import android.util.Log;
+
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
+import org.json.JSONObject;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+
+public class WebSocketClientManager {
+
+    private static WebSocketClientManager instance;
+    private MyWebSocketClient webSocketClient;
+    private WebSocketEventListener webSocketEventListener;
+
+    // Queue messages received when no listener is active (e.g. chat screen is closed)
+<span class="nc" id="L20">    private final List&lt;String&gt; messageQueue = new ArrayList&lt;&gt;();</span>
+
+    // Store current user ID so we can filter out our own echoes from the queue
+<span class="nc" id="L23">    private int currentUserId = -1;</span>
+
+<span class="nc" id="L25">    private WebSocketClientManager() {}</span>
+
+    public static synchronized WebSocketClientManager getInstance() {
+<span class="nc bnc" id="L28" title="All 2 branches missed.">        if (instance == null) {</span>
+<span class="nc" id="L29">            instance = new WebSocketClientManager();</span>
+        }
+<span class="nc" id="L31">        return instance;</span>
+    }
+
+    public void setWebSocketEventListener(WebSocketEventListener listener) {
+<span class="nc" id="L35">        this.webSocketEventListener = listener;</span>
+        // Flush any queued messages to the new listener
+<span class="nc bnc" id="L37" title="All 4 branches missed.">        if (listener != null &amp;&amp; !messageQueue.isEmpty()) {</span>
+<span class="nc" id="L38">            Log.d(&quot;WebSocket&quot;, &quot;Flushing &quot; + messageQueue.size() + &quot; queued messages to listener&quot;);</span>
+<span class="nc" id="L39">            List&lt;String&gt; queued = new ArrayList&lt;&gt;(messageQueue);</span>
+<span class="nc" id="L40">            messageQueue.clear();</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            for (String msg : queued) {</span>
+<span class="nc" id="L42">                listener.onWebSocketMessage(msg);</span>
+<span class="nc" id="L43">            }</span>
+        }
+<span class="nc" id="L45">    }</span>
+
+    public void removeWebSocketEventListener() {
+<span class="nc" id="L48">        this.webSocketEventListener = null;</span>
+<span class="nc" id="L49">    }</span>
+
+    public void clearMessageQueue() {
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (!messageQueue.isEmpty()) {</span>
+<span class="nc" id="L53">            Log.d(&quot;WebSocket&quot;, &quot;Clearing &quot; + messageQueue.size() + &quot; queued messages (history already loaded)&quot;);</span>
+<span class="nc" id="L54">            messageQueue.clear();</span>
+        }
+<span class="nc" id="L56">    }</span>
+
+    public void setCurrentUserId(int userId) {
+<span class="nc" id="L59">        this.currentUserId = userId;</span>
+<span class="nc" id="L60">    }</span>
+
+    public int getCurrentUserId() {
+<span class="nc" id="L63">        return currentUserId;</span>
+    }
+
+    public void connectWebSocket(String serverUrl) {
+        // Don't create a new connection if already connected to the same URL
+<span class="nc bnc" id="L68" title="All 4 branches missed.">        if (webSocketClient != null &amp;&amp; webSocketClient.isOpen()) {</span>
+<span class="nc" id="L69">            Log.d(&quot;WebSocket&quot;, &quot;Already connected, skipping reconnect&quot;);</span>
+<span class="nc" id="L70">            return;</span>
+        }
+        // Close stale client before reconnecting
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (webSocketClient != null) {</span>
+<span class="nc" id="L74">            try { webSocketClient.close(); } catch (Exception ignored) {}</span>
+        }
+        try {
+<span class="nc" id="L77">            URI serverUri = URI.create(serverUrl);</span>
+<span class="nc" id="L78">            webSocketClient = new MyWebSocketClient(serverUri);</span>
+<span class="nc" id="L79">            webSocketClient.connect();</span>
+<span class="nc" id="L80">        } catch (Exception e) {</span>
+<span class="nc" id="L81">            e.printStackTrace();</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            if (webSocketEventListener != null) {</span>
+<span class="nc" id="L83">                webSocketEventListener.onWebSocketError(e);</span>
+            }
+<span class="nc" id="L85">        }</span>
+<span class="nc" id="L86">    }</span>
+
+    public boolean sendMessage(String message) {
+<span class="nc bnc" id="L89" title="All 4 branches missed.">        if (webSocketClient != null &amp;&amp; webSocketClient.isOpen()) {</span>
+<span class="nc" id="L90">            webSocketClient.send(message);</span>
+<span class="nc" id="L91">            Log.d(&quot;WebSocket&quot;, &quot;Sent: &quot; + message);</span>
+<span class="nc" id="L92">            return true;</span>
+        }
+<span class="nc" id="L94">        Log.e(&quot;WebSocket&quot;, &quot;Cannot send — not connected&quot;);</span>
+<span class="nc" id="L95">        return false;</span>
+    }
+
+    public boolean isConnected() {
+<span class="nc bnc" id="L99" title="All 4 branches missed.">        return webSocketClient != null &amp;&amp; webSocketClient.isOpen();</span>
+    }
+
+    public void disconnectWebSocket() {
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (webSocketClient != null) {</span>
+<span class="nc" id="L104">            webSocketClient.close();</span>
+        }
+<span class="nc" id="L106">    }</span>
+
+    private class MyWebSocketClient extends WebSocketClient {
+
+<span class="nc" id="L110">        public MyWebSocketClient(URI serverUri) {</span>
+<span class="nc" id="L111">            super(serverUri);</span>
+<span class="nc" id="L112">        }</span>
+
+        @Override
+        public void onOpen(ServerHandshake handshakedata) {
+<span class="nc" id="L116">            Log.d(&quot;WebSocket&quot;, &quot;Connected&quot;);</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">            if (webSocketEventListener != null) {</span>
+<span class="nc" id="L118">                webSocketEventListener.onWebSocketOpen(handshakedata);</span>
+            }
+<span class="nc" id="L120">        }</span>
+
+        @Override
+        public void onMessage(String message) {
+<span class="nc" id="L124">            Log.d(&quot;WebSocket&quot;, &quot;Received: &quot; + message);</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">            if (webSocketEventListener != null) {</span>
+<span class="nc" id="L126">                webSocketEventListener.onWebSocketMessage(message);</span>
+            } else {
+                // No listener active — only queue messages from OTHER users
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                if (shouldQueueMessage(message)) {</span>
+<span class="nc" id="L130">                    Log.d(&quot;WebSocket&quot;, &quot;No listener, queuing message: &quot; + message);</span>
+<span class="nc" id="L131">                    messageQueue.add(message);</span>
+                } else {
+<span class="nc" id="L133">                    Log.d(&quot;WebSocket&quot;, &quot;Skipping own echo/system message from queue: &quot; + message);</span>
+                }
+            }
+<span class="nc" id="L136">        }</span>
+
+        @Override
+        public void onClose(int code, String reason, boolean remote) {
+<span class="nc" id="L140">            Log.d(&quot;WebSocket&quot;, &quot;Closed&quot;);</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">            if (webSocketEventListener != null) {</span>
+<span class="nc" id="L142">                webSocketEventListener.onWebSocketClose(code, reason, remote);</span>
+            }
+<span class="nc" id="L144">        }</span>
+
+        @Override
+        public void onError(Exception ex) {
+<span class="nc" id="L148">            Log.d(&quot;WebSocket&quot;, &quot;Error: &quot; + ex.getMessage());</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">            if (webSocketEventListener != null) {</span>
+<span class="nc" id="L150">                webSocketEventListener.onWebSocketError(ex);</span>
+            }
+<span class="nc" id="L152">        }</span>
+    }
+
+    /**
+     * Determines if a message should be queued (i.e., it's from another user, not an echo or system msg).
+     */
+    private boolean shouldQueueMessage(String message) {
+        // Try to parse as JSON and check senderId
+        try {
+<span class="nc" id="L161">            JSONObject json = new JSONObject(message);</span>
+<span class="nc" id="L162">            int senderId = json.optInt(&quot;senderUserId&quot;,</span>
+<span class="nc" id="L163">                    json.optInt(&quot;senderId&quot;, json.optInt(&quot;sender_id&quot;, -1)));</span>
+
+            // If senderId matches our user, it's an echo — don't queue
+<span class="nc bnc" id="L166" title="All 4 branches missed.">            if (currentUserId &gt; 0 &amp;&amp; senderId == currentUserId) {</span>
+<span class="nc" id="L167">                return false;</span>
+            }
+
+            // If it has content and is from someone else, queue it
+<span class="nc" id="L171">            String content = json.optString(&quot;content&quot;, json.optString(&quot;message&quot;, &quot;&quot;));</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            return !content.isEmpty();</span>
+<span class="nc" id="L173">        } catch (Exception e) {</span>
+            // Plain text message — filter system messages
+<span class="nc" id="L175">            String lower = message.toLowerCase();</span>
+<span class="nc bnc" id="L176" title="All 4 branches missed.">            if (lower.contains(&quot;has joined&quot;) || lower.contains(&quot;has left&quot;)</span>
+<span class="nc bnc" id="L177" title="All 4 branches missed.">                    || lower.contains(&quot;welcome&quot;) || lower.contains(&quot;entered&quot;)</span>
+<span class="nc bnc" id="L178" title="All 4 branches missed.">                    || lower.contains(&quot;connected&quot;) || lower.contains(&quot;disconnected&quot;)) {</span>
+<span class="nc" id="L179">                return false;</span>
+            }
+            // Queue other plain text messages
+<span class="nc" id="L182">            return true;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>
