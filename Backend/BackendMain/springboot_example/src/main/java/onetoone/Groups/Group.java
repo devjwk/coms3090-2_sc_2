@@ -37,6 +37,12 @@ public class Group {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "events")
+    private String events;
+
+    @Column(name = "announcements")
+    private String announcements;
+
     // =============================== Getters and Setters for each field ================================== //
 
     public Long getGroupId() { return groupId; }
@@ -53,4 +59,28 @@ public class Group {
 
     public List<String> getInterests() { return interests; }
     public void setInterests(List<String> interests) { this.interests = interests; }
+
+    public String getEvents() {
+        return events;
+    }
+
+    public void setEvents(String events) {
+        this.events = events;
+    }
+
+    public String getAnnouncements() {
+        return announcements;
+    }
+
+    public void setAnnouncements(String announcements) {
+        this.announcements = announcements;
+    }
+
+    public Long getModeratorId() {
+        return moderatorId;
+    }
+
+    public void setModeratorId(Long moderatorId) {
+        this.moderatorId = moderatorId;
+    }
 }
