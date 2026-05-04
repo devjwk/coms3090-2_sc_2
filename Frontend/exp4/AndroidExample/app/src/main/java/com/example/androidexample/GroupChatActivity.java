@@ -220,6 +220,49 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
+    private void refreshGroupMembersForDialog() {
+        if (groupId <= 0) {
+            return;
+        }
+        String url = BASE_URL + "/gm/glist/" + groupId;
+        Log.d(TAG, "Refreshing members list: " + url);
+
+        StringRequest request = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        memberNames.clear();
+                        memberUserIds.clear();
+                        JSONArray arr = new JSONArray(response);
+                        for (int i = 0; i < arr.length(); i++) {
+                            JSONObject obj = arr.getJSONObject(i);
+                            int uid = obj.optInt("userId", obj.optInt("userid", -1));
+                            if (uid <= 0) {
+                                continue;
+                            }
+                            String name = obj.optString("displayName",
+                                    obj.optString("displayname",
+                                            obj.optString("name",
+                                                    obj.optString("userName",
+                                                            obj.optString("username", "")))));
+                            if (name.isEmpty()) {
+                                continue;
+                            }
+                            memberNames.put(uid, name);
+                            if (!memberUserIds.contains(uid)) {
+                                memberUserIds.add(uid);
+                            }
+                        }
+                        tvMemberCount.setText(memberUserIds.size() + " members · Tap to view");
+                        Log.d(TAG, "Refreshed members: " + memberNames);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error refreshing members: " + e.getMessage());
+                    }
+                },
+                error -> Log.e(TAG, "Refresh members failed: " + error));
+
+        VolleySingleton.getInstance(this).addToRequestQueue(request);
+    }
+
     private void fetchGroupMembersFallback() {
         String url = BASE_URL + "/gm/glist/" + groupId;
         Log.d(TAG, "Fallback Step 1: GET members: " + url);
@@ -997,6 +1040,7 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         tvCount.setText(memberNames.size() + " members");
 
         for (Map.Entry<Integer, String> entry : memberNames.entrySet()) {
+            int userId = entry.getKey();
             String name = entry.getValue();
 
             LinearLayout row = new LinearLayout(this);
@@ -1004,7 +1048,7 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
             row.setPadding(dp(8), dp(10), dp(8), dp(10));
 
             TextView tvName = new TextView(this);
-            tvName.setText(name);
+            tvName.setText(name + " (User ID: " + userId + ")");
             tvName.setTextColor(Color.WHITE);
             tvName.setTextSize(15);
             tvName.setTypeface(null, android.graphics.Typeface.BOLD);
@@ -1032,6 +1076,7 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         super.onResume();
         if (groupId > 0) {
             loadPinnedAnnouncement();
+            refreshGroupMembersForDialog();
         }
     }
 
