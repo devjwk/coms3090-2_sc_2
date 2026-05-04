@@ -1,8 +1,5 @@
 package onetoone.Moderators;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
 import onetoone.Announcements.Announcement;
 import onetoone.Announcements.AnnouncementRepository;
 import onetoone.Conversations.Conversation;
@@ -15,15 +12,12 @@ import onetoone.GroupMember.MembershipStatus;
 import onetoone.Groups.Group;
 import onetoone.Groups.GroupRepository;
 import onetoone.Messages.MessagesRepository;
-import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import onetoone.Messages.Messages;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -228,6 +222,7 @@ public class ModeratorController {
             return ResponseEntity.status(403).body("You do not control this group");
         }
 
+        // 🔥 Force correct backend values (don't trust frontend)
         event.setGroupId(groupId);
         event.setModeratorId(moderatorId);
 

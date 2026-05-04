@@ -1,9 +1,13 @@
 package onetoone.Groups;
 
+import onetoone.Announcements.Announcement;
+import onetoone.Announcements.AnnouncementRepository;
 import onetoone.Conversations.Conversation;
 import onetoone.Conversations.ConvoRepository;
 import onetoone.ConverstaionMembers.ConversationMember;
 import onetoone.ConverstaionMembers.ConvoMemRepository;
+import onetoone.Events.GroupEvent;
+import onetoone.Events.GroupEventRepository;
 import onetoone.GroupMember.GMRepository;
 import onetoone.GroupMember.GroupMember;
 import onetoone.GroupMember.MembershipStatus;
@@ -46,6 +50,12 @@ public class GroupController {
     @Autowired
     ModeratorRepository moderatorRepository;
 
+    @Autowired
+    GroupEventRepository groupEventRepository;
+
+    @Autowired
+    AnnouncementRepository announcementRepository;
+
     private final String success = "{\"message\":\"success\"}";
     private final String failure = "{\"message\":\"failure\"}";
 
@@ -75,13 +85,9 @@ public class GroupController {
             return ResponseEntity.status(404).body("Group not found");
         }
 
-        String events = groupOpt.get().getEvents();
+        List<GroupEvent> events = groupEventRepository.findByGroupId(groupId);
 
-        if (events == null || events.isBlank()) {
-            return ResponseEntity.ok(List.of());
-        }
-
-        return ResponseEntity.ok(events.split("\\n"));
+        return ResponseEntity.ok(events);
     }
 
     @GetMapping("/groups/{groupId}/announcements")
@@ -93,13 +99,39 @@ public class GroupController {
             return ResponseEntity.status(404).body("Group not found");
         }
 
-        String announcements = groupOpt.get().getAnnouncements();
+        List<Announcement> announcements = announcementRepository.findByGroupId(groupId);
 
-        if (announcements == null || announcements.isBlank()) {
-            return ResponseEntity.ok(List.of());
+        return ResponseEntity.ok(announcements);
+    }
+
+    @GetMapping("/groups/{groupId}/announcements/pinned")
+    public ResponseEntity<?> getPinnedAnnouncements(@PathVariable Long groupId) {
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
         }
 
-        return ResponseEntity.ok(announcements.split("\\n"));
+        List<Announcement> pinned =
+                announcementRepository.findByGroupIdAndPinnedTrue(groupId);
+
+        return ResponseEntity.ok(pinned);
+    }
+
+    @GetMapping("/groups/{groupId}/announcements/unpinned")
+    public ResponseEntity<?> getUnpinnedAnnouncements(@PathVariable Long groupId) {
+
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Group not found");
+        }
+
+        List<Announcement> unpinned =
+                announcementRepository.findByGroupIdAndPinnedFalse(groupId);
+
+        return ResponseEntity.ok(unpinned);
     }
 
     @GetMapping("/groups/recommend/{userId}")
@@ -344,11 +376,13 @@ public class GroupController {
     }
 
     @DeleteMapping("/moderators/{moderatorId}/groups/{groupId}/members/{userId}")
-    public ResponseEntity<String> removeMemberAsModerator(@PathVariable Long moderatorId,
-                                                          @PathVariable Long groupId,
-                                                          @PathVariable Long userId) {
-
+    public ResponseEntity<String> removeMemberAsModerator(
+            @PathVariable Long moderatorId,
+            @PathVariable Long groupId,
+            @PathVariable Long userId
+    ) {
         Optional<Group> groupOpt = groupRepository.findById(groupId);
+
         if (groupOpt.isEmpty()) {
             return ResponseEntity.status(404).body("Group not found");
         }
@@ -359,24 +393,65 @@ public class GroupController {
             return ResponseEntity.status(403).body("You do not control this group");
         }
 
-        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
-        if (convoOpt.isEmpty()) {
-            return ResponseEntity.status(404).body("Conversation not found");
+        Optional<GroupMember> memberOpt =
+                groupMemberRepository.findByGroupId_GroupIdAndUserId_UserId(groupId, userId);
+
+        if (memberOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("User not in group");
         }
 
-        Long conversationId = convoOpt.get().getConversationId();
+        groupMemberRepository.delete(memberOpt.get());
 
-        List<ConversationMember> members =
-                convoMemRepository.findByConversationId(conversationId);
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
 
-        for (ConversationMember m : members) {
-            if (m.getUserId().equals(userId)) {
-                convoMemRepository.delete(m);
-                return ResponseEntity.ok("Member removed");
+        if (convoOpt.isPresent()) {
+            Long conversationId = convoOpt.get().getConversationId();
+
+            List<ConversationMember> members =
+                    convoMemRepository.findByConversationId(conversationId);
+
+            for (ConversationMember m : members) {
+                if (m.getUserId().equals(userId)) {
+                    convoMemRepository.delete(m);
+                    break;
+                }
             }
         }
 
-        return ResponseEntity.status(404).body("User not in group");
+        return ResponseEntity.ok("Member removed");
+    }
+
+    @DeleteMapping("/groups/{groupId}/leave/{userId}")
+    public ResponseEntity<String> leaveGroup(
+            @PathVariable Long groupId,
+            @PathVariable Long userId
+    ) {
+        Optional<GroupMember> memberOpt =
+                groupMemberRepository.findByGroupId_GroupIdAndUserId_UserId(groupId, userId);
+
+        if (memberOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("User not in group");
+        }
+
+        groupMemberRepository.delete(memberOpt.get());
+
+        Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
+
+        if (convoOpt.isPresent()) {
+            Long conversationId = convoOpt.get().getConversationId();
+
+            List<ConversationMember> members =
+                    convoMemRepository.findByConversationId(conversationId);
+
+            for (ConversationMember m : members) {
+                if (m.getUserId().equals(userId)) {
+                    convoMemRepository.delete(m);
+                    break;
+                }
+            }
+        }
+
+        return ResponseEntity.ok("User left group");
     }
 
     @DeleteMapping("/groups/{groupId}/remove/{userId}")
