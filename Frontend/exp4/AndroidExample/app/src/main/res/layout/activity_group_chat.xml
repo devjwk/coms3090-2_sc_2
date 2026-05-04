@@ -6,105 +6,130 @@
     android:orientation="vertical"
     android:background="#0F0F1A">
 
-    <!-- Top bar -->
+    <!-- Top bar: row 1 keeps title readable, row 2 scrolls actions -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="68dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:background="#1E1E30"
         android:paddingStart="8dp"
-        android:paddingEnd="12dp">
-
-        <Button
-            android:id="@+id/backBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="←"
-            android:textColor="#7B6FFF"
-            android:textSize="20sp"
-            android:backgroundTint="#1E1E30"
-            android:layout_marginEnd="8dp"/>
-
-        <FrameLayout
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="#7B6FFF"
-            android:layout_marginEnd="12dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="👥"
-                android:textSize="18sp"
-                android:gravity="center"/>
-
-        </FrameLayout>
+        android:paddingTop="8dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:minHeight="52dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/tvGroupName"
+            <Button
+                android:id="@+id/backBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Group Chat"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp"
-                android:textStyle="bold"/>
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="#1E1E30"
+                android:text="←"
+                android:textColor="#7B6FFF"
+                android:textSize="20sp" />
 
-            <TextView
-                android:id="@+id/tvMemberCount"
-                android:layout_width="wrap_content"
+            <FrameLayout
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="12dp"
+                android:background="#7B6FFF">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="👥"
+                    android:textSize="18sp" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Tap to view members"
-                android:textColor="#9E97FF"
-                android:textSize="13sp"/>
+                android:layout_weight="1"
+                android:orientation="vertical">
 
+                <TextView
+                    android:id="@+id/tvGroupName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Group Chat"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvMemberCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Tap to view members"
+                    android:textColor="#9E97FF"
+                    android:textSize="13sp" />
+            </LinearLayout>
         </LinearLayout>
 
-        <Button
-            android:id="@+id/btnViewEvents"
-            android:layout_width="wrap_content"
-            android:layout_height="28dp"
-            android:text="Events"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="8sp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:layout_marginEnd="5dp"
-            android:backgroundTint="#3C3C50" />
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fillViewport="true"
+            android:scrollbars="none">
 
-        <Button
-            android:id="@+id/btnViewAnnouncements"
-            android:layout_width="wrap_content"
-            android:layout_height="34dp"
-            android:text="Announcements"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="8sp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:layout_marginEnd="8dp"
-            android:backgroundTint="#3C3C50" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-        <Button
-            android:id="@+id/btnManageGroupChat"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="Manage"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:backgroundTint="#7B6FFF"
-            android:visibility="gone" />
+                <Button
+                    android:id="@+id/btnViewEvents"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_marginEnd="8dp"
+                    android:backgroundTint="#3C3C50"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:text="Events"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
 
+                <Button
+                    android:id="@+id/btnViewAnnouncements"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_marginEnd="8dp"
+                    android:backgroundTint="#3C3C50"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:text="Announcements"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
+
+                <Button
+                    android:id="@+id/btnManageGroupChat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:backgroundTint="#7B6FFF"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:text="Manage"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </HorizontalScrollView>
     </LinearLayout>
 
     <LinearLayout

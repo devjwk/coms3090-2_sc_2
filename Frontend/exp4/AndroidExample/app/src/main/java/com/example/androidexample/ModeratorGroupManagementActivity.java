@@ -80,6 +80,10 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
         tvMessages = findViewById(R.id.tvModMessages);
         layoutPendingActions = findViewById(R.id.layoutPendingActions);
 
+        // Dashboard-only summaries for messages/events are intentionally hidden.
+        tvEvents.setVisibility(android.view.View.GONE);
+        tvMessages.setVisibility(android.view.View.GONE);
+
         etApproveMemberId = findViewById(R.id.etApproveMemberId);
         etRemoveMemberId = findViewById(R.id.etRemoveMemberId);
         etModerationMessageId = findViewById(R.id.etModerationMessageId);
@@ -157,23 +161,6 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
     }
 
     private void loadAllData() {
-        repository.getGroupDetails(this, moderatorId, groupId, new ModeratorRepository.JsonObjectCallback() {
-            @Override
-            public void onSuccess(JSONObject object) {
-                conversationId = object.optInt("conversationId",
-                        object.optInt("conversation_id", object.optInt("id", groupId)));
-                loadMessages();
-            }
-
-            @Override
-            public void onError(String error) {
-                conversationId = groupId;
-                loadMessages();
-            }
-        });
-
-
-
         repository.getPendingMembers(this, moderatorId, groupId, new ModeratorRepository.JsonArrayCallback() {
             @Override
             public void onSuccess(JSONArray array) {
@@ -188,18 +175,6 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
             }
         });
 
-        repository.getGroupEvents(this, moderatorId, groupId, new ModeratorRepository.JsonArrayCallback() {
-            @Override
-            public void onSuccess(JSONArray array) {
-                tvEvents.setText(prettyArray("Events", array));
-            }
-
-            @Override
-            public void onError(String error) {
-                tvEvents.setText(error);
-            }
-        });
-
         repository.getGroupAnnouncements(this, moderatorId, groupId, new ModeratorRepository.JsonArrayCallback() {
             @Override
             public void onSuccess(JSONArray array) {
@@ -209,21 +184,6 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
             @Override
             public void onError(String error) {
                 tvAnnouncements.setText(error);
-            }
-        });
-    }
-
-    private void loadMessages() {
-        int targetConversationId = conversationId > 0 ? conversationId : groupId;
-        repository.getConversationMessages(this, targetConversationId, new ModeratorRepository.JsonArrayCallback() {
-            @Override
-            public void onSuccess(JSONArray array) {
-                tvMessages.setText(prettyArray("Messages", array));
-            }
-
-            @Override
-            public void onError(String error) {
-                tvMessages.setText(error);
             }
         });
     }
@@ -423,7 +383,6 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
             public void onSuccess(String response) {
                 Toast.makeText(ModeratorGroupManagementActivity.this, "Message removed", Toast.LENGTH_SHORT).show();
                 etModerationMessageId.setText("");
-                loadMessages();
             }
 
             @Override
@@ -445,7 +404,6 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
             public void onSuccess(String response) {
                 Toast.makeText(ModeratorGroupManagementActivity.this, "Message restored", Toast.LENGTH_SHORT).show();
                 etModerationMessageId.setText("");
-                loadMessages();
             }
 
             @Override
