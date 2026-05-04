@@ -37,7 +37,7 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
     private static final String TAG = "GroupChatActivity";
     private static final String PREFS_NAME = "GroupChatPrefs";
 
-    private Button sendBtn, backBtn, btnManageGroupChat, btnViewEvents;
+    private Button sendBtn, backBtn, btnManageGroupChat, btnViewEvents, btnViewAnnouncements;
     private EditText msgEtx;
     private RecyclerView recyclerChat;
     private TextView tvGroupName, tvMemberCount;
@@ -79,6 +79,7 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         backBtn       = findViewById(R.id.backBtn);
         btnManageGroupChat = findViewById(R.id.btnManageGroupChat);
         btnViewEvents = findViewById(R.id.btnViewEvents);
+        btnViewAnnouncements = findViewById(R.id.btnViewAnnouncements);
         msgEtx        = findViewById(R.id.msgEdt);
         recyclerChat  = findViewById(R.id.recyclerChat);
         tvGroupName   = findViewById(R.id.tvGroupName);
@@ -118,7 +119,9 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
                 && (!hasPermissionPayload || moderatorPermissions.contains(ModeratorPermissions.MODERATE_CONVERSATIONS));
         btnManageGroupChat.setVisibility(showManageButton ? View.VISIBLE : View.GONE);
         btnViewEvents.setVisibility(groupId > 0 ? View.VISIBLE : View.GONE);
+        btnViewAnnouncements.setVisibility(groupId > 0 ? View.VISIBLE : View.GONE);
         btnViewEvents.setOnClickListener(v -> loadAndShowGroupEvents());
+        btnViewAnnouncements.setOnClickListener(v -> loadAndShowAnnouncements());
         btnManageGroupChat.setOnClickListener(v -> {
             if (!showManageButton || moderatorId <= 0) {
                 Toast.makeText(this, "Moderator session required", Toast.LENGTH_SHORT).show();
@@ -1333,8 +1336,93 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         return line.toString();
     }
 
+    private void loadAndShowAnnouncements() {
+        if (groupId <= 0) {
+            Toast.makeText(this, "Invalid group", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        moderatorRepository.getOrderedAnnouncementsForChat(this, groupId, moderatorId, new ModeratorRepository.JsonArrayCallback() {
+            @Override
+            public void onSuccess(JSONArray array) {
+                runOnUiThread(() -> showAnnouncementsDialog(array));
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> Toast.makeText(GroupChatActivity.this, error, Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private void showAnnouncementsDialog(JSONArray announcements) {
+        String message = formatAnnouncementsForDialog(announcements);
+        new AlertDialog.Builder(this)
+                .setTitle("Announcements")
+                .setMessage(message)
+                .setPositiveButton("Close", null)
+                .show();
+    }
+
+    private String formatAnnouncementsForDialog(JSONArray announcements) {
+        if (announcements == null || announcements.length() == 0) {
+            return "No announcements yet.";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < announcements.length(); i++) {
+            JSONObject announcement = announcements.optJSONObject(i);
+            if (announcement == null) {
+                continue;
+            }
+            String block = extractAnnouncementDisplayBlock(announcement);
+            if (block.isEmpty()) {
+                continue;
+            }
+            sb.append(i + 1).append(". ").append(block).append("\n\n");
+        }
+
+        if (sb.length() == 0) {
+            return "No announcements yet.";
+        }
+        return sb.toString().trim();
+    }
+
+    private String extractAnnouncementDisplayBlock(JSONObject announcement) {
+        if (announcement == null) {
+            return "";
+        }
+
+        String title = announcement.optString("title", "").trim();
+        String content = announcement.optString("content",
+                announcement.optString("announcement", "")).trim();
+        String createdAt = announcement.optString("createdAt", "").trim();
+        boolean pinned = announcement.optBoolean("pinned", false)
+                || announcement.optBoolean("isPinned", false);
+
+        StringBuilder block = new StringBuilder();
+        if (pinned) {
+            block.append("[PINNED]");
+        }
+
+        if (!title.isEmpty()) {
+            if (block.length() > 0) block.append(" ");
+            block.append(title);
+        }
+        if (!content.isEmpty()) {
+            if (block.length() > 0) block.append("\n");
+            block.append(content);
+        }
+        if (!createdAt.isEmpty()) {
+            if (block.length() > 0) block.append("\n");
+            block.append("Created: ").append(createdAt);
+        }
+
+        return block.toString().trim();
+    }
+
     private void loadPinnedAnnouncement() {
-        moderatorRepository.getGroupAnnouncementsForChat(this, groupId, moderatorId, new ModeratorRepository.JsonArrayCallback() {
+        moderatorRepository.getPinnedAnnouncementsForGroup(this, groupId, new ModeratorRepository.JsonArrayCallback() {
             @Override
             public void onSuccess(JSONArray array) {
                 runOnUiThread(() -> renderPinnedAnnouncement(array));
@@ -1342,8 +1430,19 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
 
             @Override
             public void onError(String error) {
-                Log.d(TAG, "Pinned announcement unavailable: " + error);
-                runOnUiThread(() -> hidePinnedAnnouncement());
+                // Fallback to broader announcements endpoint if pinned endpoint is unavailable.
+                moderatorRepository.getOrderedAnnouncementsForChat(GroupChatActivity.this, groupId, moderatorId, new ModeratorRepository.JsonArrayCallback() {
+                    @Override
+                    public void onSuccess(JSONArray array) {
+                        runOnUiThread(() -> renderPinnedAnnouncement(array));
+                    }
+
+                    @Override
+                    public void onError(String fallbackError) {
+                        Log.d(TAG, "Pinned announcement unavailable: " + fallbackError);
+                        runOnUiThread(() -> hidePinnedAnnouncement());
+                    }
+                });
             }
         });
     }

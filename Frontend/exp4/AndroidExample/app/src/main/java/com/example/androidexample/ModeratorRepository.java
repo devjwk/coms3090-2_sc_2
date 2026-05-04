@@ -286,6 +286,59 @@ public class ModeratorRepository {
         });
     }
 
+    public void getPinnedAnnouncementsForGroup(android.content.Context context,
+                                               int groupId,
+                                               JsonArrayCallback callback) {
+        String url = ROOT_URL + "/groups/" + groupId + "/announcements/pinned";
+        getArray(context, url, "Failed to load pinned announcements", callback);
+    }
+
+    public void getUnpinnedAnnouncementsForGroup(android.content.Context context,
+                                                 int groupId,
+                                                 JsonArrayCallback callback) {
+        String url = ROOT_URL + "/groups/" + groupId + "/announcements/unpinned";
+        getArray(context, url, "Failed to load unpinned announcements", callback);
+    }
+
+    public void getOrderedAnnouncementsForChat(android.content.Context context,
+                                               int groupId,
+                                               int moderatorId,
+                                               JsonArrayCallback callback) {
+        getPinnedAnnouncementsForGroup(context, groupId, new JsonArrayCallback() {
+            @Override
+            public void onSuccess(JSONArray pinnedArray) {
+                getUnpinnedAnnouncementsForGroup(context, groupId, new JsonArrayCallback() {
+                    @Override
+                    public void onSuccess(JSONArray unpinnedArray) {
+                        callback.onSuccess(mergeAnnouncements(pinnedArray, unpinnedArray));
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        // If unpinned endpoint fails, still return pinned items.
+                        callback.onSuccess(mergeAnnouncements(pinnedArray, null));
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                // Fallback to existing all-announcements endpoint path for resilience.
+                getGroupAnnouncementsForChat(context, groupId, moderatorId, new JsonArrayCallback() {
+                    @Override
+                    public void onSuccess(JSONArray array) {
+                        callback.onSuccess(sortAnnouncementsPinnedFirst(array));
+                    }
+
+                    @Override
+                    public void onError(String fallbackError) {
+                        callback.onError(fallbackError);
+                    }
+                });
+            }
+        });
+    }
+
     public void approveMember(android.content.Context context,
                               int moderatorId,
                               int groupId,
@@ -456,8 +509,21 @@ public class ModeratorRepository {
                                   int groupId,
                                   int announcementId,
                                   ActionCallback callback) {
-        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements/" + announcementId + "/unpin";
-        sendAction(context, Request.Method.PUT, url, null, callback, "Failed to unpin announcement");
+        String primaryUrl = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements/" + announcementId + "/unpin";
+        String typoFallbackUrl = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements/" + announcementId + "/unppin";
+
+        StringRequest request = new StringRequest(Request.Method.PUT, primaryUrl,
+                callback::onSuccess,
+                error -> {
+                    int status = error != null && error.networkResponse != null ? error.networkResponse.statusCode : -1;
+                    if (status == 404) {
+                        // Backend typo compatibility: try /unppin when /unpin is unavailable.
+                        sendAction(context, Request.Method.PUT, typoFallbackUrl, null, callback, "Failed to unpin announcement");
+                        return;
+                    }
+                    callback.onError("Failed to unpin announcement");
+                });
+        VolleySingleton.getInstance(context).addToRequestQueue(request);
     }
 
     public void deleteAnnouncement(android.content.Context context,
@@ -631,5 +697,55 @@ public class ModeratorRepository {
         };
         VolleySingleton.getInstance(context).addToRequestQueue(request);
     }
-}
 
+    private JSONArray mergeAnnouncements(JSONArray pinned, JSONArray unpinned) {
+        JSONArray merged = new JSONArray();
+        java.util.HashSet<Integer> seenIds = new java.util.HashSet<>();
+        appendUniqueAnnouncements(merged, pinned, seenIds);
+        appendUniqueAnnouncements(merged, unpinned, seenIds);
+        return merged;
+    }
+
+    private JSONArray sortAnnouncementsPinnedFirst(JSONArray source) {
+        JSONArray pinned = new JSONArray();
+        JSONArray unpinned = new JSONArray();
+        if (source == null) {
+            return new JSONArray();
+        }
+        for (int i = 0; i < source.length(); i++) {
+            Object raw = source.opt(i);
+            JSONObject obj = raw instanceof JSONObject ? (JSONObject) raw : null;
+            if (obj != null && (obj.optBoolean("pinned", false) || obj.optBoolean("isPinned", false))) {
+                pinned.put(obj);
+            } else {
+                unpinned.put(raw);
+            }
+        }
+        return mergeAnnouncements(pinned, unpinned);
+    }
+
+    private void appendUniqueAnnouncements(JSONArray target,
+                                           JSONArray source,
+                                           java.util.HashSet<Integer> seenIds) {
+        if (target == null || source == null) {
+            return;
+        }
+        for (int i = 0; i < source.length(); i++) {
+            Object raw = source.opt(i);
+            JSONObject obj = raw instanceof JSONObject ? (JSONObject) raw : null;
+            if (obj == null) {
+                target.put(raw);
+                continue;
+            }
+            int id = obj.optInt("announcementId", obj.optInt("id", -1));
+            if (id > 0) {
+                if (seenIds.contains(id)) {
+                    continue;
+                }
+                seenIds.add(id);
+            }
+            target.put(obj);
+        }
+    }
+
+}

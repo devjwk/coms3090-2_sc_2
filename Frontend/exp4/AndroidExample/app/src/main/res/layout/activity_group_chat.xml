@@ -69,13 +69,26 @@
         <Button
             android:id="@+id/btnViewEvents"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
+            android:layout_height="28dp"
             android:text="Events"
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
+            android:textSize="8sp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:layout_marginEnd="5dp"
+            android:backgroundTint="#3C3C50" />
+
+        <Button
+            android:id="@+id/btnViewAnnouncements"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:text="Announcements"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="8sp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:layout_marginEnd="8dp"
             android:backgroundTint="#3C3C50" />
 
