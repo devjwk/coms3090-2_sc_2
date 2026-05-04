@@ -22,16 +22,6 @@
             android:text="Manage Group" />
 
         <TextView
-            android:id="@+id/tvModGroupDetails"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="#C2C2DE"
-            android:background="#1E1E30"
-            android:padding="12dp"
-            android:layout_marginBottom="12dp"
-            android:text="Loading group details..." />
-
-        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Member Actions"
@@ -79,16 +69,6 @@
             android:textColor="#FFFFFF"
             android:backgroundTint="#7B6FFF"
             android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:id="@+id/tvModMembers"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#1E1E30"
-            android:padding="12dp"
-            android:textColor="#FFFFFF"
-            android:layout_marginBottom="8dp"
-            android:text="Members" />
 
         <TextView
             android:layout_width="match_parent"

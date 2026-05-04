@@ -231,7 +231,15 @@ public class ModeratorRepository {
         getArray(context, publicUrl, "Failed to load events", new JsonArrayCallback() {
             @Override
             public void onSuccess(JSONArray array) {
-                callback.onSuccess(array);
+                if (array.length() > 0) {
+                    callback.onSuccess(array);
+                } else if (moderatorId > 0) {
+                    // Public endpoint returned empty — fall through to moderator endpoint
+                    String moderatorUrl = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/events";
+                    getArray(context, moderatorUrl, "Failed to load events", callback);
+                } else {
+                    callback.onSuccess(array);
+                }
             }
 
             @Override
@@ -240,7 +248,6 @@ public class ModeratorRepository {
                     callback.onError(error);
                     return;
                 }
-
                 String moderatorUrl = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/events";
                 getArray(context, moderatorUrl, "Failed to load events", callback);
             }
@@ -347,7 +354,30 @@ public class ModeratorRepository {
             callback.onError("Failed to build event payload");
             return;
         }
-        sendAction(context, Request.Method.POST, url, body, callback, "Failed to schedule event");
+
+        android.util.Log.d("ScheduleEvent", "URL: " + url);
+        android.util.Log.d("ScheduleEvent", "Body: " + body.toString());
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,
+                response -> callback.onSuccess(response.toString()),
+                error -> {
+                    String msg = "Failed to schedule event";
+                    if (error.networkResponse != null) {
+                        msg += " (HTTP " + error.networkResponse.statusCode + ")";
+                        try {
+                            // This shows exactly what the backend rejected
+                            String responseBody = new String(error.networkResponse.data,
+                                    java.nio.charset.StandardCharsets.UTF_8);
+                            android.util.Log.e("ScheduleEvent", "Error body: " + responseBody);
+                            msg += ": " + responseBody;
+                        } catch (Exception e) {
+                            android.util.Log.e("ScheduleEvent", "Could not parse error body");
+                        }
+                    }
+                    callback.onError(msg);
+                });
+
+        VolleySingleton.getInstance(context).addToRequestQueue(request);
     }
 
     public void createAnnouncement(android.content.Context context,
@@ -455,26 +485,7 @@ public class ModeratorRepository {
         sendAction(context, Request.Method.POST, url, body, callback, "Failed to join group");
     }
 
-    public void leaveGroup(android.content.Context context,
-                           int membershipId,
-                           ActionCallback callback) {
-        String url = ROOT_URL + "/gm/leave/" + membershipId;
-        sendAction(context, Request.Method.DELETE, url, null, callback, "Failed to leave group");
-    }
 
-    public void getGroupMembersPublic(android.content.Context context,
-                                      int groupId,
-                                      JsonArrayCallback callback) {
-        String url = ROOT_URL + "/gm/glist/" + groupId;
-        getArray(context, url, "Failed to load group members", callback);
-    }
-
-    public void getUserGroups(android.content.Context context,
-                              int userId,
-                              JsonArrayCallback callback) {
-        String url = ROOT_URL + "/gm/ulist/" + userId;
-        getArray(context, url, "Failed to load user groups", callback);
-    }
 
     public void getAllGroups(android.content.Context context,
                              JsonArrayCallback callback) {

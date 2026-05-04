@@ -23,8 +23,6 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
     private int groupId;
 
     private TextView tvGroupHeader;
-    private TextView tvGroupDetails;
-    private TextView tvMembers;
     private TextView tvPendingMembers;
     private TextView tvEvents;
     private TextView tvAnnouncements;
@@ -76,8 +74,6 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
         }
 
         tvGroupHeader = findViewById(R.id.tvModGroupHeader);
-        tvGroupDetails = findViewById(R.id.tvModGroupDetails);
-        tvMembers = findViewById(R.id.tvModMembers);
         tvPendingMembers = findViewById(R.id.tvModPendingMembers);
         tvEvents = findViewById(R.id.tvModEvents);
         tvAnnouncements = findViewById(R.id.tvModAnnouncements);
@@ -164,7 +160,6 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
         repository.getGroupDetails(this, moderatorId, groupId, new ModeratorRepository.JsonObjectCallback() {
             @Override
             public void onSuccess(JSONObject object) {
-                tvGroupDetails.setText(object.toString());
                 conversationId = object.optInt("conversationId",
                         object.optInt("conversation_id", object.optInt("id", groupId)));
                 loadMessages();
@@ -172,23 +167,12 @@ public class ModeratorGroupManagementActivity extends AppCompatActivity {
 
             @Override
             public void onError(String error) {
-                tvGroupDetails.setText(error);
                 conversationId = groupId;
                 loadMessages();
             }
         });
 
-        repository.getGroupMembers(this, moderatorId, groupId, new ModeratorRepository.JsonArrayCallback() {
-            @Override
-            public void onSuccess(JSONArray array) {
-                tvMembers.setText(formatMemberNames(array));
-            }
 
-            @Override
-            public void onError(String error) {
-                tvMembers.setText(error);
-            }
-        });
 
         repository.getPendingMembers(this, moderatorId, groupId, new ModeratorRepository.JsonArrayCallback() {
             @Override

@@ -28,7 +28,6 @@ public class ModeratorDashboardActivity extends AppCompatActivity {
     private int moderatorId;
     private int currentUserId;
 
-    private TextView tvModeratorProfile;
     private TextView tvModeratorPermissions;
     private EditText etGroupName;
     private EditText etGroupDescription;
@@ -52,8 +51,6 @@ public class ModeratorDashboardActivity extends AppCompatActivity {
             return;
         }
 
-        tvModeratorProfile = findViewById(R.id.tvModeratorProfile);
-        tvModeratorPermissions = findViewById(R.id.tvModeratorPermissions);
         etGroupName = findViewById(R.id.etCreateModeratorGroupName);
         etGroupDescription = findViewById(R.id.etCreateModeratorGroupDescription);
         etGroupInterests = findViewById(R.id.etCreateModeratorGroupInterests);
@@ -88,31 +85,12 @@ public class ModeratorDashboardActivity extends AppCompatActivity {
     }
 
     private void loadDashboard() {
-        loadProfile();
         loadGroups();
     }
 
-    private void loadProfile() {
-        repository.getModeratorProfile(this, moderatorId, new ModeratorRepository.ModeratorAccountCallback() {
-            @Override
-            public void onSuccess(ModeratorAccount account) {
-                sessionManager.saveSession(account);
-                tvModeratorProfile.setText(
-                        "Moderator ID: " + account.getModeratorId() + "\n"
-                                + "Email: " + account.getEmail() + "\n"
-                                + "Auth Provider: " + account.getAuthProvider() + "\n"
-                                + "Roles: " + TextUtils.join(", ", account.getRoles())
-                );
-                tvModeratorPermissions.setText("Permissions: " + TextUtils.join(", ", account.getPermissions()));
-                applyPermissionGates();
-            }
 
-            @Override
-            public void onError(String error) {
-                Toast.makeText(ModeratorDashboardActivity.this, error, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
+
+
 
     private void loadGroups() {
         repository.getManagedGroups(this, moderatorId, new ModeratorRepository.GroupsCallback() {

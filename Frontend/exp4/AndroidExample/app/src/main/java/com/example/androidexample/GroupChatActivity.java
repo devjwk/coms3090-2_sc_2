@@ -1243,35 +1243,49 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
     }
 
     private String extractEventDisplayLine(Object raw) {
-        if (raw == null) {
-            return "";
-        }
-        if (raw instanceof String) {
-            return ((String) raw).trim();
-        }
-        if (!(raw instanceof JSONObject)) {
-            return String.valueOf(raw);
-        }
+        if (raw == null) return "";
+        if (raw instanceof String) return ((String) raw).trim();
+        if (!(raw instanceof JSONObject)) return String.valueOf(raw);
 
         JSONObject obj = (JSONObject) raw;
         String title = obj.optString("title",
                 obj.optString("event",
                         obj.optString("name", ""))).trim();
+        String id = obj.optString("eventId", obj.optString("id", "")).trim();
         String when = obj.optString("when",
                 obj.optString("timestamp",
                         obj.optString("scheduledAt",
                                 obj.optString("eventTime", "")))).trim();
+        String location = obj.optString("location",
+                obj.optString("eventLocation",
+                        obj.optString("place", ""))).trim();
+        String description = obj.optString("description",
+                obj.optString("details",
+                        obj.optString("content", ""))).trim();
 
-        if (title.isEmpty() && when.isEmpty()) {
-            return obj.toString();
+        String titleWithId = title.isEmpty()
+                ? ""
+                : (id.isEmpty() ? title : title + " (ID: " + id + ")");
+
+        StringBuilder line = new StringBuilder();
+        if (!titleWithId.isEmpty()) {
+            line.append(titleWithId);
         }
-        if (when.isEmpty()) {
-            return title;
+        if (!when.isEmpty()) {
+            if (line.length() > 0) line.append("\n");
+            line.append("Time: ").append(when);
         }
-        if (title.isEmpty()) {
-            return when;
+        if (!location.isEmpty()) {
+            if (line.length() > 0) line.append("\n");
+            line.append("Location: ").append(location);
         }
-        return title + " - " + when;
+        if (!description.isEmpty()) {
+            if (line.length() > 0) line.append("\n");
+            line.append("Description: ").append(description);
+        }
+
+        if (line.length() == 0) return obj.toString();
+        return line.toString();
     }
 
     private void loadPinnedAnnouncement() {

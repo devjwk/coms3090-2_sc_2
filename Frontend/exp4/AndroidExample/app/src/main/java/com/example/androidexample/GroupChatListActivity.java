@@ -229,7 +229,6 @@ public class GroupChatListActivity extends AppCompatActivity {
             arrow.setTextSize(22);
             card.addView(arrow);
 
-            // Open group chat on tap
             final int gId = g.groupId;
             final String gName = g.groupName;
             card.setOnClickListener(v -> {
