@@ -59,12 +59,13 @@ public class SignupActivity extends AppCompatActivity {
         params.put("displayName", etDisplayName.getText().toString().trim());
         params.put("bio", etBio.getText().toString().trim());
         params.put("major", etMajor.getText().toString().trim());
-        
+        params.put("active",true);// backend: @Column(name = "active", nullable = false)
+        params.put("status","NEED_APPROVAL");// backend: @Column(name = "status", nullable = false)")
         try {
             String ageStr = etAge.getText().toString().trim();
-            params.put("age", ageStr.isEmpty() ? 0 : Integer.parseInt(ageStr));
+            params.put("age", ageStr.isEmpty() ? null : Integer.parseInt(ageStr));
         } catch (NumberFormatException e) {
-            params.put("age", 0);
+            params.put("age", null);
         }
 
         String interestsText = etInterests.getText().toString().trim();

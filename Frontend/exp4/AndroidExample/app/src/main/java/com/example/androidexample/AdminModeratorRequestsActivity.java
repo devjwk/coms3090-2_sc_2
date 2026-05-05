@@ -11,6 +11,15 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class AdminModeratorRequestsActivity extends AppCompatActivity {
 
     private LinearLayout pendingRequestsContainer;
@@ -20,13 +29,13 @@ public class AdminModeratorRequestsActivity extends AppCompatActivity {
     private final List<PendingModeratorRequest> pendingRequests = new ArrayList<>();
 
     private static class PendingModeratorRequest {
-        int moderatorId;
+        Long userId;
         String email;
         String displayName;
         String status;
 
-        PendingModeratorRequest(int moderatorId, String email, String displayName, String status) {
-            this.moderatorId = moderatorId;
+        PendingModeratorRequest(Long userId, String email, String displayName, String status) {
+            this.userId = userId;
             this.email = email;
             this.displayName = displayName;
             this.status = status;
@@ -41,12 +50,11 @@ public class AdminModeratorRequestsActivity extends AppCompatActivity {
         pendingRequestsContainer = findViewById(R.id.pendingRequestsContainer);
         btnBackAdminRequests = findViewById(R.id.btnBackAdminRequests);
         btnRefreshModeratorRequests = findViewById(R.id.btnRefreshModeratorRequests);
+        fetchPendingRequests();// Fetch pending moderator requests
 
-        loadMockPendingRequests();
-        renderPendingRequests();
 
         btnRefreshModeratorRequests.setOnClickListener(v -> {
-            loadMockPendingRequests();
+            fetchPendingRequests();
             renderPendingRequests();
             Toast.makeText(
                     AdminModeratorRequestsActivity.this,
@@ -56,31 +64,6 @@ public class AdminModeratorRequestsActivity extends AppCompatActivity {
         });
 
         btnBackAdminRequests.setOnClickListener(v -> finish());
-    }
-
-    private void loadMockPendingRequests() {
-        pendingRequests.clear();
-
-        pendingRequests.add(new PendingModeratorRequest(
-                1,
-                "moderator1@iastate.edu",
-                "John Moderator",
-                "PENDING"
-        ));
-
-        pendingRequests.add(new PendingModeratorRequest(
-                2,
-                "moderator2@iastate.edu",
-                "Sarah Moderator",
-                "PENDING"
-        ));
-
-        pendingRequests.add(new PendingModeratorRequest(
-                3,
-                "fakeuser@gmail.com",
-                "Non ISU User",
-                "PENDING"
-        ));
     }
 
     private void renderPendingRequests() {
@@ -189,25 +172,41 @@ public class AdminModeratorRequestsActivity extends AppCompatActivity {
 
         return card;
     }
-
     private void approveRequest(PendingModeratorRequest request) {
-        if (!isValidIsuEmail(request.email)) {
-            Toast.makeText(
-                    this,
-                    "Cannot approve non-ISU email: " + request.email,
-                    Toast.LENGTH_SHORT
-            ).show();
-            return;
-        }
+        // 백엔드 경로: /users/edit/{id}
+        String url = "http://coms-3090-015.class.las.iastate.edu:8080/users/edit/" + request.userId;
 
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("userId", request.userId);
+            jsonBody.put("status", "APPROVED");
+            jsonBody.put("email", request.email);
+
+        } catch (JSONException e) { e.printStackTrace(); }
+
+        JsonObjectRequest putRequest = new JsonObjectRequest(Request.Method.PUT, url, jsonBody,
+                response -> {
+                    handleSuccess(request);
+                },
+                error -> {
+                    if (error.networkResponse != null && error.networkResponse.statusCode == 200) {
+                        handleSuccess(request);
+                    } else {
+
+                        android.util.Log.e("APPROVE_ERROR", "Status: " +
+                                (error.networkResponse != null ? error.networkResponse.statusCode : "null"));
+                        Toast.makeText(this, "approve failed: check data(400)", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+
+        VolleySingleton.getInstance(this).addToRequestQueue(putRequest);
+    }
+
+    private void handleSuccess(PendingModeratorRequest request) {
         pendingRequests.remove(request);
         renderPendingRequests();
-
-        Toast.makeText(
-                this,
-                "Approved " + request.email,
-                Toast.LENGTH_SHORT
-        ).show();
+        Toast.makeText(this, "approve success!", Toast.LENGTH_SHORT).show();
     }
 
     private void rejectRequest(PendingModeratorRequest request) {
@@ -240,4 +239,29 @@ public class AdminModeratorRequestsActivity extends AppCompatActivity {
 
         return android.graphics.Color.parseColor("#FFB86B");
     }
-}
+
+    private void fetchPendingRequests() {
+        String url = "http://coms-3090-015.class.las.iastate.edu:8080/users/status/NEED_APPROVAL";
+
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
+                response -> {
+                    pendingRequests.clear();
+                    try {
+                        for (int i = 0; i < response.length(); i++) {
+                            JSONObject user = response.getJSONObject(i);
+                            pendingRequests.add(new PendingModeratorRequest(
+                                    user.getLong("userId"),
+                                    user.getString("email"),
+                                    user.getString("displayName"),
+                                    user.getString("status")
+                            ));
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    renderPendingRequests();
+                },
+                error -> Toast.makeText(this, "Error fetching pending requests", Toast.LENGTH_SHORT).show());
+        Volley.newRequestQueue(this).add(request);
+    }
+    }
