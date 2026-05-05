@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatListActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">ChatListActivity.java</span></div><h1>ChatListActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+
+<span class="nc" id="L27">public class ChatListActivity extends AppCompatActivity {</span>
+
+    private static final String TAG = &quot;ChatListActivity&quot;;
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+
+    private LinearLayout chatListContainer, groupListContainer;
+    private ScrollView scrollDirect, scrollGroups;
+    private TextView tvEmptyState;
+    private Button tabDirect, tabGroups;
+    private int currentUserId;
+
+<span class="nc" id="L38">    private boolean isDirectTab = true;</span>
+<span class="nc" id="L39">    private boolean directLoaded = false;</span>
+<span class="nc" id="L40">    private boolean groupsLoaded = false;</span>
+
+    private static class MatchedUser {
+        int userId;
+        String name;
+<span class="nc" id="L45">        MatchedUser(int userId) { this.userId = userId; this.name = &quot;User &quot; + userId; }</span>
+    }
+
+    private static class GroupInfo {
+        int groupId;
+        String groupName;
+        String description;
+<span class="nc" id="L52">        List&lt;String&gt; memberNames = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L53">        List&lt;Integer&gt; memberIds = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L54">        GroupInfo(int id, String name, String desc) {</span>
+<span class="nc" id="L55">            this.groupId = id;</span>
+<span class="nc" id="L56">            this.groupName = name;</span>
+<span class="nc" id="L57">            this.description = desc;</span>
+<span class="nc" id="L58">        }</span>
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L63">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L64">        setContentView(R.layout.activity_chat_list);</span>
+
+<span class="nc" id="L66">        currentUserId      = getIntent().getIntExtra(&quot;USER_ID&quot;, 1);</span>
+<span class="nc" id="L67">        chatListContainer  = findViewById(R.id.chatListContainer);</span>
+<span class="nc" id="L68">        groupListContainer = findViewById(R.id.groupListContainer);</span>
+<span class="nc" id="L69">        scrollDirect       = findViewById(R.id.scrollDirect);</span>
+<span class="nc" id="L70">        scrollGroups       = findViewById(R.id.scrollGroups);</span>
+<span class="nc" id="L71">        tvEmptyState       = findViewById(R.id.tvEmptyState);</span>
+<span class="nc" id="L72">        tabDirect          = findViewById(R.id.tabDirect);</span>
+<span class="nc" id="L73">        tabGroups          = findViewById(R.id.tabGroups);</span>
+<span class="nc" id="L74">        Button btnBack     = findViewById(R.id.btnBack);</span>
+
+<span class="nc" id="L76">        btnBack.setOnClickListener(v -&gt; finish());</span>
+
+<span class="nc" id="L78">        tabDirect.setOnClickListener(v -&gt; switchTab(true));</span>
+<span class="nc" id="L79">        tabGroups.setOnClickListener(v -&gt; switchTab(false));</span>
+
+<span class="nc" id="L81">        fetchAcceptedMatches();</span>
+<span class="nc" id="L82">        fetchAllGroups();</span>
+<span class="nc" id="L83">    }</span>
+
+    private void switchTab(boolean direct) {
+<span class="nc" id="L86">        isDirectTab = direct;</span>
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (direct) {</span>
+<span class="nc" id="L89">            tabDirect.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor(&quot;#7B6FFF&quot;)));</span>
+<span class="nc" id="L90">            tabDirect.setTextColor(Color.WHITE);</span>
+<span class="nc" id="L91">            tabGroups.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor(&quot;#2A2A42&quot;)));</span>
+<span class="nc" id="L92">            tabGroups.setTextColor(Color.parseColor(&quot;#9B9BB4&quot;));</span>
+<span class="nc" id="L93">            scrollDirect.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L94">            scrollGroups.setVisibility(View.GONE);</span>
+
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (!directLoaded) {</span>
+<span class="nc" id="L97">                tvEmptyState.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L98">                tvEmptyState.setText(&quot;Loading matches...&quot;);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            } else if (chatListContainer.getChildCount() == 0) {</span>
+<span class="nc" id="L100">                tvEmptyState.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L101">                tvEmptyState.setText(&quot;No matches yet — swipe to find people!&quot;);</span>
+            } else {
+<span class="nc" id="L103">                tvEmptyState.setVisibility(View.GONE);</span>
+            }
+        } else {
+<span class="nc" id="L106">            tabGroups.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor(&quot;#7B6FFF&quot;)));</span>
+<span class="nc" id="L107">            tabGroups.setTextColor(Color.WHITE);</span>
+<span class="nc" id="L108">            tabDirect.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor(&quot;#2A2A42&quot;)));</span>
+<span class="nc" id="L109">            tabDirect.setTextColor(Color.parseColor(&quot;#9B9BB4&quot;));</span>
+<span class="nc" id="L110">            scrollDirect.setVisibility(View.GONE);</span>
+<span class="nc" id="L111">            scrollGroups.setVisibility(View.VISIBLE);</span>
+
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            if (!groupsLoaded) {</span>
+<span class="nc" id="L114">                tvEmptyState.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L115">                tvEmptyState.setText(&quot;Loading groups...&quot;);</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            } else if (groupListContainer.getChildCount() == 0) {</span>
+<span class="nc" id="L117">                tvEmptyState.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L118">                tvEmptyState.setText(&quot;No groups available yet.&quot;);</span>
+            } else {
+<span class="nc" id="L120">                tvEmptyState.setVisibility(View.GONE);</span>
+            }
+        }
+<span class="nc" id="L123">    }</span>
+
+
+    private void fetchAcceptedMatches() {
+<span class="nc" id="L127">        String url = BASE_URL + &quot;/matches/user/&quot; + currentUserId;</span>
+<span class="nc" id="L128">        Log.d(TAG, &quot;GET &quot; + url);</span>
+
+<span class="nc" id="L130">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+<span class="nc" id="L132">                    Log.d(TAG, &quot;Matches response: &quot; + response);</span>
+                    try {
+<span class="nc" id="L134">                        JSONArray arr = new JSONArray(response);</span>
+<span class="nc" id="L135">                        List&lt;MatchedUser&gt; matched = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                        for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L138">                            JSONObject m = arr.getJSONObject(i);</span>
+<span class="nc" id="L139">                            String status = m.optString(&quot;status&quot;, &quot;&quot;);</span>
+
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                            if (&quot;ACCEPTED&quot;.equalsIgnoreCase(status)) {</span>
+<span class="nc" id="L142">                                int u1 = m.optInt(&quot;user1Id&quot;, -1);</span>
+<span class="nc" id="L143">                                int u2 = m.optInt(&quot;user2Id&quot;, -1);</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">                                int otherId = (u1 == currentUserId) ? u2 : u1;</span>
+
+<span class="nc bnc" id="L146" title="All 2 branches missed.">                                if (otherId &gt; 0) {</span>
+<span class="nc" id="L147">                                    boolean dup = false;</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                                    for (MatchedUser mu : matched) {</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                                        if (mu.userId == otherId) { dup = true; break; }</span>
+<span class="nc" id="L150">                                    }</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                                    if (!dup) matched.add(new MatchedUser(otherId));</span>
+                                }
+                            }
+                        }
+
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                        if (matched.isEmpty()) {</span>
+<span class="nc" id="L157">                            directLoaded = true;</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">                            if (isDirectTab) showEmpty(&quot;No matches yet — swipe to find people!&quot;);</span>
+                        } else {
+<span class="nc" id="L160">                            fetchNamesAndBuildList(matched, 0);</span>
+                        }
+
+<span class="nc" id="L163">                    } catch (Exception e) {</span>
+<span class="nc" id="L164">                        Log.e(TAG, &quot;Parse error: &quot; + e.getMessage());</span>
+<span class="nc" id="L165">                        directLoaded = true;</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                        if (isDirectTab) showEmpty(&quot;Could not load matches.&quot;);</span>
+<span class="nc" id="L167">                    }</span>
+<span class="nc" id="L168">                },</span>
+                error -&gt; {
+<span class="nc" id="L170">                    Log.e(TAG, &quot;Fetch matches error: &quot; + error);</span>
+<span class="nc" id="L171">                    directLoaded = true;</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                    if (isDirectTab) showEmpty(&quot;No matches yet — swipe to find people!&quot;);</span>
+<span class="nc" id="L173">                }</span>
+        );
+
+<span class="nc" id="L176">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L177">    }</span>
+
+    private void fetchNamesAndBuildList(List&lt;MatchedUser&gt; list, int index) {
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        if (index &gt;= list.size()) {</span>
+<span class="nc" id="L181">            directLoaded = true;</span>
+<span class="nc" id="L182">            runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L183">                buildChatCards(list);</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                if (isDirectTab) tvEmptyState.setVisibility(View.GONE);</span>
+<span class="nc" id="L185">            });</span>
+<span class="nc" id="L186">            return;</span>
+        }
+
+<span class="nc" id="L189">        MatchedUser mu = list.get(index);</span>
+<span class="nc" id="L190">        String url = BASE_URL + &quot;/users/&quot; + mu.userId;</span>
+
+<span class="nc" id="L192">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L195">                        JSONObject user = new JSONObject(response);</span>
+<span class="nc" id="L196">                        String name = user.optString(&quot;name&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">                        if (name.isEmpty()) name = user.optString(&quot;displayName&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                        if (name.isEmpty()) name = &quot;User &quot; + mu.userId;</span>
+<span class="nc" id="L199">                        mu.name = name;</span>
+<span class="nc" id="L200">                    } catch (Exception e) { }</span>
+<span class="nc" id="L201">                    fetchNamesAndBuildList(list, index + 1);</span>
+<span class="nc" id="L202">                },</span>
+<span class="nc" id="L203">                error -&gt; fetchNamesAndBuildList(list, index + 1)</span>
+        );
+
+<span class="nc" id="L206">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L207">    }</span>
+
+    private void buildChatCards(List&lt;MatchedUser&gt; list) {
+<span class="nc" id="L210">        chatListContainer.removeAllViews();</span>
+
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        for (MatchedUser mu : list) {</span>
+<span class="nc" id="L213">            LinearLayout card = new LinearLayout(this);</span>
+<span class="nc" id="L214">            card.setOrientation(LinearLayout.HORIZONTAL);</span>
+<span class="nc" id="L215">            card.setGravity(Gravity.CENTER_VERTICAL);</span>
+<span class="nc" id="L216">            card.setPadding(dp(16), dp(14), dp(16), dp(14));</span>
+<span class="nc" id="L217">            card.setBackgroundColor(Color.parseColor(&quot;#1E1E30&quot;));</span>
+
+<span class="nc" id="L219">            LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(</span>
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+<span class="nc" id="L222">            cardParams.setMargins(dp(12), dp(4), dp(12), dp(4));</span>
+<span class="nc" id="L223">            card.setLayoutParams(cardParams);</span>
+
+<span class="nc" id="L225">            FrameLayout avatar = new FrameLayout(this);</span>
+<span class="nc" id="L226">            LinearLayout.LayoutParams avatarParams = new LinearLayout.LayoutParams(dp(48), dp(48));</span>
+<span class="nc" id="L227">            avatarParams.setMargins(0, 0, dp(14), 0);</span>
+<span class="nc" id="L228">            avatar.setLayoutParams(avatarParams);</span>
+<span class="nc" id="L229">            avatar.setBackgroundColor(Color.parseColor(&quot;#7B6FFF&quot;));</span>
+
+<span class="nc" id="L231">            TextView avatarText = new TextView(this);</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">            avatarText.setText(mu.name.isEmpty() ? &quot;?&quot; : String.valueOf(mu.name.charAt(0)).toUpperCase());</span>
+<span class="nc" id="L233">            avatarText.setTextColor(Color.WHITE);</span>
+<span class="nc" id="L234">            avatarText.setTextSize(20);</span>
+<span class="nc" id="L235">            avatarText.setGravity(Gravity.CENTER);</span>
+<span class="nc" id="L236">            avatarText.setLayoutParams(new FrameLayout.LayoutParams(</span>
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT));
+<span class="nc" id="L239">            avatar.addView(avatarText);</span>
+<span class="nc" id="L240">            card.addView(avatar);</span>
+
+<span class="nc" id="L242">            LinearLayout textCol = new LinearLayout(this);</span>
+<span class="nc" id="L243">            textCol.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="nc" id="L244">            LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(</span>
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+<span class="nc" id="L246">            textCol.setLayoutParams(textParams);</span>
+
+<span class="nc" id="L248">            TextView tvName = new TextView(this);</span>
+<span class="nc" id="L249">            tvName.setText(mu.name);</span>
+<span class="nc" id="L250">            tvName.setTextColor(Color.WHITE);</span>
+<span class="nc" id="L251">            tvName.setTextSize(16);</span>
+<span class="nc" id="L252">            tvName.setTypeface(null, android.graphics.Typeface.BOLD);</span>
+<span class="nc" id="L253">            textCol.addView(tvName);</span>
+
+<span class="nc" id="L255">            TextView tvSub = new TextView(this);</span>
+<span class="nc" id="L256">            tvSub.setText(&quot;Tap to chat&quot;);</span>
+<span class="nc" id="L257">            tvSub.setTextColor(Color.parseColor(&quot;#9B9BB4&quot;));</span>
+<span class="nc" id="L258">            tvSub.setTextSize(12);</span>
+<span class="nc" id="L259">            textCol.addView(tvSub);</span>
+
+<span class="nc" id="L261">            card.addView(textCol);</span>
+
+<span class="nc" id="L263">            TextView arrow = new TextView(this);</span>
+<span class="nc" id="L264">            arrow.setText(&quot;›&quot;);</span>
+<span class="nc" id="L265">            arrow.setTextColor(Color.parseColor(&quot;#7B6FFF&quot;));</span>
+<span class="nc" id="L266">            arrow.setTextSize(22);</span>
+<span class="nc" id="L267">            card.addView(arrow);</span>
+
+<span class="nc" id="L269">            final int otherUserId = mu.userId;</span>
+<span class="nc" id="L270">            final String otherName = mu.name;</span>
+<span class="nc" id="L271">            card.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L272">                Intent intent = new Intent(ChatListActivity.this, ChatActivity.class);</span>
+<span class="nc" id="L273">                intent.putExtra(&quot;USER_ID&quot;, currentUserId);</span>
+<span class="nc" id="L274">                intent.putExtra(&quot;OTHER_USER_ID&quot;, otherUserId);</span>
+<span class="nc" id="L275">                intent.putExtra(&quot;OTHER_USERNAME&quot;, otherName);</span>
+<span class="nc" id="L276">                startActivity(intent);</span>
+<span class="nc" id="L277">            });</span>
+
+<span class="nc" id="L279">            chatListContainer.addView(card);</span>
+<span class="nc" id="L280">        }</span>
+<span class="nc" id="L281">    }</span>
+
+
+    private void fetchAllGroups() {
+<span class="nc" id="L285">        String url = BASE_URL + &quot;/groups/me/&quot; + currentUserId;</span>
+<span class="nc" id="L286">        Log.d(TAG, &quot;GET groups: &quot; + url);</span>
+
+<span class="nc" id="L288">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+<span class="nc" id="L290">                    Log.d(TAG, &quot;Groups response: &quot; + response);</span>
+                    try {
+<span class="nc" id="L292">                        JSONArray arr = new JSONArray(response);</span>
+<span class="nc" id="L293">                        List&lt;GroupInfo&gt; groups = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L294">                        java.util.HashSet&lt;Integer&gt; seenGroupIds = new java.util.HashSet&lt;&gt;();</span>
+
+<span class="nc bnc" id="L296" title="All 2 branches missed.">                        for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L297">                            JSONObject obj = arr.getJSONObject(i);</span>
+<span class="nc" id="L298">                            int gid = obj.optInt(&quot;groupId&quot;, obj.optInt(&quot;groupid&quot;,</span>
+<span class="nc" id="L299">                                    obj.optInt(&quot;group_id&quot;, -1)));</span>
+<span class="nc" id="L300">                            String name = obj.optString(&quot;groupName&quot;,</span>
+<span class="nc" id="L301">                                    obj.optString(&quot;groupname&quot;,</span>
+<span class="nc" id="L302">                                            obj.optString(&quot;group_name&quot;, &quot;Group &quot; + gid)));</span>
+<span class="nc" id="L303">                            String desc = obj.optString(&quot;description&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L304" title="All 4 branches missed.">                            if (gid &gt; 0 &amp;&amp; !seenGroupIds.contains(gid)) {</span>
+<span class="nc" id="L305">                                groups.add(new GroupInfo(gid, name, desc));</span>
+<span class="nc" id="L306">                                seenGroupIds.add(gid);</span>
+                            }
+                        }
+
+<span class="nc bnc" id="L310" title="All 2 branches missed.">                        if (groups.isEmpty()) {</span>
+<span class="nc" id="L311">                            groupsLoaded = true;</span>
+<span class="nc bnc" id="L312" title="All 2 branches missed.">                            if (!isDirectTab) showGroupsEmpty(&quot;No groups available yet.&quot;);</span>
+                        } else {
+<span class="nc" id="L314">                            fetchGroupMembers(groups, 0);</span>
+                        }
+<span class="nc" id="L316">                    } catch (Exception e) {</span>
+<span class="nc" id="L317">                        Log.e(TAG, &quot;Groups parse error: &quot; + e.getMessage());</span>
+<span class="nc" id="L318">                        groupsLoaded = true;</span>
+<span class="nc bnc" id="L319" title="All 2 branches missed.">                        if (!isDirectTab) showGroupsEmpty(&quot;Could not load groups.&quot;);</span>
+<span class="nc" id="L320">                    }</span>
+<span class="nc" id="L321">                },</span>
+                error -&gt; {
+<span class="nc" id="L323">                    Log.e(TAG, &quot;Fetch groups error: &quot; + error);</span>
+<span class="nc" id="L324">                    groupsLoaded = true;</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">                    if (!isDirectTab) showGroupsEmpty(&quot;Could not load groups from server.&quot;);</span>
+<span class="nc" id="L326">                });</span>
+
+<span class="nc" id="L328">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L329">    }</span>
+
+
+    private void fetchGroupMembers(List&lt;GroupInfo&gt; groups, int index) {
+<span class="nc bnc" id="L333" title="All 2 branches missed.">        if (index &gt;= groups.size()) {</span>
+<span class="nc" id="L334">            resolveGroupMemberNames(groups, 0, 0);</span>
+<span class="nc" id="L335">            return;</span>
+        }
+
+<span class="nc" id="L338">        GroupInfo g = groups.get(index);</span>
+<span class="nc" id="L339">        String url = BASE_URL + &quot;/gm/glist/&quot; + g.groupId;</span>
+<span class="nc" id="L340">        Log.d(TAG, &quot;GET members for group &quot; + g.groupId + &quot;: &quot; + url);</span>
+
+<span class="nc" id="L342">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L345">                        JSONArray arr = new JSONArray(response);</span>
+<span class="nc bnc" id="L346" title="All 2 branches missed.">                        for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L347">                            JSONObject obj = arr.getJSONObject(i);</span>
+<span class="nc" id="L348">                            int uid = obj.optInt(&quot;userId&quot;, obj.optInt(&quot;userid&quot;, -1));</span>
+<span class="nc" id="L349">                            String name = obj.optString(&quot;displayName&quot;,</span>
+<span class="nc" id="L350">                                    obj.optString(&quot;displayname&quot;,</span>
+<span class="nc" id="L351">                                            obj.optString(&quot;name&quot;,</span>
+<span class="nc" id="L352">                                                    obj.optString(&quot;userName&quot;,</span>
+<span class="nc" id="L353">                                                            obj.optString(&quot;username&quot;, &quot;&quot;)))));</span>
+
+<span class="nc bnc" id="L355" title="All 4 branches missed.">                            if (name.isEmpty() &amp;&amp; obj.has(&quot;user&quot;)) {</span>
+<span class="nc" id="L356">                                JSONObject userObj = obj.optJSONObject(&quot;user&quot;);</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">                                if (userObj != null) {</span>
+<span class="nc" id="L358">                                    name = userObj.optString(&quot;name&quot;,</span>
+<span class="nc" id="L359">                                            userObj.optString(&quot;displayName&quot;, &quot;&quot;));</span>
+                                }
+                            }
+
+<span class="nc bnc" id="L363" title="All 2 branches missed.">                            if (uid &gt; 0) {</span>
+<span class="nc" id="L364">                                g.memberIds.add(uid);</span>
+<span class="nc bnc" id="L365" title="All 2 branches missed.">                                if (name.isEmpty()) name = &quot;User &quot; + uid;</span>
+<span class="nc" id="L366">                                g.memberNames.add(name);</span>
+                            }
+                        }
+<span class="nc" id="L369">                    } catch (Exception e) {</span>
+<span class="nc" id="L370">                        Log.e(TAG, &quot;Error parsing members for group &quot; + g.groupId + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L371">                    }</span>
+<span class="nc" id="L372">                    fetchGroupMembers(groups, index + 1);</span>
+<span class="nc" id="L373">                },</span>
+                error -&gt; {
+<span class="nc" id="L375">                    Log.e(TAG, &quot;Failed to fetch members for group &quot; + g.groupId);</span>
+<span class="nc" id="L376">                    fetchGroupMembers(groups, index + 1);</span>
+<span class="nc" id="L377">                });</span>
+
+<span class="nc" id="L379">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L380">    }</span>
+
+
+    private void resolveGroupMemberNames(List&lt;GroupInfo&gt; groups, int groupIdx, int memberIdx) {
+<span class="nc bnc" id="L384" title="All 2 branches missed.">        if (groupIdx &gt;= groups.size()) {</span>
+<span class="nc" id="L385">            groupsLoaded = true;</span>
+<span class="nc" id="L386">            runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L387">                buildGroupCards(groups);</span>
+<span class="nc bnc" id="L388" title="All 2 branches missed.">                if (!isDirectTab) tvEmptyState.setVisibility(View.GONE);</span>
+<span class="nc" id="L389">            });</span>
+<span class="nc" id="L390">            return;</span>
+        }
+
+<span class="nc" id="L393">        GroupInfo g = groups.get(groupIdx);</span>
+<span class="nc bnc" id="L394" title="All 2 branches missed.">        if (memberIdx &gt;= g.memberIds.size()) {</span>
+<span class="nc" id="L395">            resolveGroupMemberNames(groups, groupIdx + 1, 0);</span>
+<span class="nc" id="L396">            return;</span>
+        }
+
+<span class="nc" id="L399">        int uid = g.memberIds.get(memberIdx);</span>
+<span class="nc" id="L400">        String url = BASE_URL + &quot;/users/&quot; + uid;</span>
+
+<span class="nc" id="L402">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L405">                        JSONObject user = new JSONObject(response);</span>
+<span class="nc" id="L406">                        String name = user.optString(&quot;name&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L407" title="All 2 branches missed.">                        if (name.isEmpty()) name = user.optString(&quot;displayName&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L408" title="All 2 branches missed.">                        if (!name.isEmpty()) {</span>
+<span class="nc" id="L409">                            g.memberNames.set(memberIdx, name);</span>
+                        }
+<span class="nc" id="L411">                    } catch (Exception e) { }</span>
+<span class="nc" id="L412">                    resolveGroupMemberNames(groups, groupIdx, memberIdx + 1);</span>
+<span class="nc" id="L413">                },</span>
+<span class="nc" id="L414">                error -&gt; resolveGroupMemberNames(groups, groupIdx, memberIdx + 1));</span>
+
+<span class="nc" id="L416">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L417">    }</span>
+
+    private void buildGroupCards(List&lt;GroupInfo&gt; groups) {
+<span class="nc" id="L420">        groupListContainer.removeAllViews();</span>
+
+<span class="nc bnc" id="L422" title="All 2 branches missed.">        for (GroupInfo g : groups) {</span>
+<span class="nc" id="L423">            LinearLayout card = new LinearLayout(this);</span>
+<span class="nc" id="L424">            card.setOrientation(LinearLayout.HORIZONTAL);</span>
+<span class="nc" id="L425">            card.setGravity(Gravity.CENTER_VERTICAL);</span>
+<span class="nc" id="L426">            card.setPadding(dp(16), dp(14), dp(16), dp(14));</span>
+<span class="nc" id="L427">            card.setBackgroundColor(Color.parseColor(&quot;#1E1E30&quot;));</span>
+
+<span class="nc" id="L429">            LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(</span>
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+<span class="nc" id="L432">            cardParams.setMargins(dp(12), dp(4), dp(12), dp(4));</span>
+<span class="nc" id="L433">            card.setLayoutParams(cardParams);</span>
+
+<span class="nc" id="L435">            FrameLayout avatar = new FrameLayout(this);</span>
+<span class="nc" id="L436">            LinearLayout.LayoutParams avatarParams = new LinearLayout.LayoutParams(dp(48), dp(48));</span>
+<span class="nc" id="L437">            avatarParams.setMargins(0, 0, dp(14), 0);</span>
+<span class="nc" id="L438">            avatar.setLayoutParams(avatarParams);</span>
+<span class="nc" id="L439">            avatar.setBackgroundColor(Color.parseColor(&quot;#7B6FFF&quot;));</span>
+
+<span class="nc" id="L441">            TextView avatarText = new TextView(this);</span>
+<span class="nc" id="L442">            avatarText.setText(&quot;👥&quot;);</span>
+<span class="nc" id="L443">            avatarText.setTextSize(20);</span>
+<span class="nc" id="L444">            avatarText.setGravity(Gravity.CENTER);</span>
+<span class="nc" id="L445">            avatarText.setLayoutParams(new FrameLayout.LayoutParams(</span>
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT));
+<span class="nc" id="L448">            avatar.addView(avatarText);</span>
+<span class="nc" id="L449">            card.addView(avatar);</span>
+
+<span class="nc" id="L451">            LinearLayout textCol = new LinearLayout(this);</span>
+<span class="nc" id="L452">            textCol.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="nc" id="L453">            LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(</span>
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+<span class="nc" id="L455">            textCol.setLayoutParams(textParams);</span>
+
+<span class="nc" id="L457">            TextView tvName = new TextView(this);</span>
+<span class="nc" id="L458">            tvName.setText(g.groupName);</span>
+<span class="nc" id="L459">            tvName.setTextColor(Color.WHITE);</span>
+<span class="nc" id="L460">            tvName.setTextSize(16);</span>
+<span class="nc" id="L461">            tvName.setTypeface(null, android.graphics.Typeface.BOLD);</span>
+<span class="nc" id="L462">            textCol.addView(tvName);</span>
+
+<span class="nc bnc" id="L464" title="All 4 branches missed.">            if (g.description != null &amp;&amp; !g.description.isEmpty()) {</span>
+<span class="nc" id="L465">                TextView tvDesc = new TextView(this);</span>
+<span class="nc" id="L466">                tvDesc.setText(g.description);</span>
+<span class="nc" id="L467">                tvDesc.setTextColor(Color.parseColor(&quot;#9B9BB4&quot;));</span>
+<span class="nc" id="L468">                tvDesc.setTextSize(12);</span>
+<span class="nc" id="L469">                tvDesc.setMaxLines(1);</span>
+<span class="nc" id="L470">                textCol.addView(tvDesc);</span>
+            }
+
+
+<span class="nc" id="L474">            card.addView(textCol);</span>
+
+<span class="nc" id="L476">            TextView arrow = new TextView(this);</span>
+<span class="nc" id="L477">            arrow.setText(&quot;›&quot;);</span>
+<span class="nc" id="L478">            arrow.setTextColor(Color.parseColor(&quot;#7B6FFF&quot;));</span>
+<span class="nc" id="L479">            arrow.setTextSize(22);</span>
+<span class="nc" id="L480">            card.addView(arrow);</span>
+
+<span class="nc" id="L482">            final int gId = g.groupId;</span>
+<span class="nc" id="L483">            final String gName = g.groupName;</span>
+<span class="nc" id="L484">            card.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L485">                Intent intent = new Intent(ChatListActivity.this, GroupChatActivity.class);</span>
+<span class="nc" id="L486">                intent.putExtra(&quot;USER_ID&quot;, currentUserId);</span>
+<span class="nc" id="L487">                intent.putExtra(&quot;GROUP_ID&quot;, gId);</span>
+<span class="nc" id="L488">                intent.putExtra(&quot;GROUP_NAME&quot;, gName);</span>
+<span class="nc" id="L489">                startActivity(intent);</span>
+<span class="nc" id="L490">            });</span>
+
+<span class="nc" id="L492">            groupListContainer.addView(card);</span>
+<span class="nc" id="L493">        }</span>
+<span class="nc" id="L494">    }</span>
+
+
+    private void showEmpty(String msg) {
+<span class="nc" id="L498">        runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L499">            tvEmptyState.setText(msg);</span>
+<span class="nc" id="L500">            tvEmptyState.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L501">            chatListContainer.removeAllViews();</span>
+<span class="nc" id="L502">        });</span>
+<span class="nc" id="L503">    }</span>
+
+    private void showGroupsEmpty(String msg) {
+<span class="nc" id="L506">        runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L507">            tvEmptyState.setText(msg);</span>
+<span class="nc" id="L508">            tvEmptyState.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L509">            groupListContainer.removeAllViews();</span>
+<span class="nc" id="L510">        });</span>
+<span class="nc" id="L511">    }</span>
+
+    private int dp(int value) {
+<span class="nc" id="L514">        return (int) (value * getResources().getDisplayMetrics().density);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

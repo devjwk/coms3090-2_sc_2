@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import jakarta.persistence.*;
+import onetoone.Matches.MatchStatus;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
@@ -47,6 +48,10 @@ public class User {
 
     private Integer age;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private UserStatus status = UserStatus.NEED_APPROVAL;
+
     // =============================== Getters and Setters for each field ================================== //
 
     public Long getUserId() { return userId; }
@@ -77,4 +82,7 @@ public class User {
 
     public List<String> getInterests() { return interests; }
     public void setInterests(List<String> interests) { this.interests = interests; }
+
+    public UserStatus getStatus() { return status; }
+    public void setStatus(UserStatus status) { this.status = status; }
 }

@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">GroupsActivity.java</span></div><h1>GroupsActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L25">public class GroupsActivity extends AppCompatActivity {</span>
+
+    private TextView msgResponse;
+
+    private EditText etGroupName, etGroupDesc;
+    private Button btnCreateGroup;
+
+    private EditText etGetGroupId;
+    private Button btnGetAllGroups, btnGetGroupById;
+
+    private EditText etEditGroupId, etEditGroupName, etEditGroupDesc;
+    private Button btnEditGroup;
+
+    private EditText etDeleteGroupId;
+    private Button btnDeleteGroup;
+
+    private Button btnManageMembers;
+    private Button btnBack;
+
+    private int currentUserId;
+
+    private EditText etGroupInterests;
+
+    private Button btnOpenNotifications;
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080/groups&quot;;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L53">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L54">        setContentView(R.layout.activity_groups);</span>
+
+<span class="fc" id="L56">        currentUserId = getIntent().getIntExtra(&quot;USER_ID&quot;, 1);</span>
+
+<span class="fc" id="L58">        msgResponse = findViewById(R.id.msgResponse);</span>
+
+<span class="fc" id="L60">        etGroupName = findViewById(R.id.etGroupName);</span>
+<span class="fc" id="L61">        etGroupDesc = findViewById(R.id.etGroupDesc);</span>
+<span class="fc" id="L62">        btnCreateGroup = findViewById(R.id.btnCreateGroup);</span>
+
+<span class="fc" id="L64">        etGetGroupId = findViewById(R.id.etGetGroupId);</span>
+<span class="fc" id="L65">        btnGetAllGroups = findViewById(R.id.btnGetAllGroups);</span>
+<span class="fc" id="L66">        btnGetGroupById = findViewById(R.id.btnGetGroupById);</span>
+
+<span class="fc" id="L68">        etEditGroupId = findViewById(R.id.etEditGroupId);</span>
+<span class="fc" id="L69">        etEditGroupName = findViewById(R.id.etEditGroupName);</span>
+<span class="fc" id="L70">        etEditGroupDesc = findViewById(R.id.etEditGroupDesc);</span>
+<span class="fc" id="L71">        etGroupInterests = findViewById(R.id.etGroupInterests);</span>
+<span class="fc" id="L72">        btnEditGroup = findViewById(R.id.btnEditGroup);</span>
+
+<span class="fc" id="L74">        etDeleteGroupId = findViewById(R.id.etDeleteGroupId);</span>
+<span class="fc" id="L75">        btnDeleteGroup = findViewById(R.id.btnDeleteGroup);</span>
+
+<span class="fc" id="L77">        btnManageMembers = findViewById(R.id.btnManageMembers);</span>
+<span class="fc" id="L78">        btnBack = findViewById(R.id.btnBack);</span>
+<span class="fc" id="L79">        btnOpenNotifications = findViewById(R.id.btnOpenNotifications);</span>
+
+<span class="fc" id="L81">        btnCreateGroup.setOnClickListener(v -&gt; createGroup());</span>
+<span class="pc" id="L82">        btnGetAllGroups.setOnClickListener(v -&gt; getAllGroups());</span>
+<span class="pc" id="L83">        btnGetGroupById.setOnClickListener(v -&gt; getGroupById());</span>
+<span class="pc" id="L84">        btnEditGroup.setOnClickListener(v -&gt; editGroup());</span>
+<span class="pc" id="L85">        btnDeleteGroup.setOnClickListener(v -&gt; deleteGroup());</span>
+
+<span class="fc" id="L87">        btnManageMembers.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L88">            Intent intent = new Intent(GroupsActivity.this, GroupMembershipActivity.class);</span>
+<span class="nc" id="L89">            intent.putExtra(&quot;USER_ID&quot;, currentUserId);</span>
+<span class="nc" id="L90">            startActivity(intent);</span>
+<span class="nc" id="L91">        });</span>
+
+<span class="fc" id="L93">        Button btnGroupChat = findViewById(R.id.btnGroupChat);</span>
+<span class="fc" id="L94">        btnGroupChat.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L95">            Intent intent = new Intent(GroupsActivity.this, GroupChatListActivity.class);</span>
+<span class="nc" id="L96">            intent.putExtra(&quot;USER_ID&quot;, currentUserId);</span>
+<span class="nc" id="L97">            startActivity(intent);</span>
+<span class="nc" id="L98">        });</span>
+
+<span class="pc" id="L100">        btnBack.setOnClickListener(v -&gt; finish());</span>
+
+<span class="fc" id="L102">        btnOpenNotifications.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L103">            Intent intent = new Intent(GroupsActivity.this, WebSocketConnectActivity.class);</span>
+<span class="nc" id="L104">            startActivity(intent);</span>
+<span class="nc" id="L105">        });</span>
+
+
+<span class="fc" id="L108">    }</span>
+
+    private void createGroup() {
+<span class="fc" id="L111">        String name = etGroupName.getText().toString().trim();</span>
+<span class="fc" id="L112">        String desc = etGroupDesc.getText().toString().trim();</span>
+<span class="fc" id="L113">        String interestsText = etGroupInterests.getText().toString().trim();</span>
+
+
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        if (name.isEmpty()) {</span>
+<span class="fc" id="L117">            Toast.makeText(this, &quot;Group name cannot be empty.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L118">            return;</span>
+        }
+
+<span class="nc" id="L121">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L123">            body.put(&quot;groupName&quot;, name);</span>
+<span class="nc" id="L124">            body.put(&quot;description&quot;, desc);</span>
+<span class="nc" id="L125">            body.put(&quot;createdBy&quot;, currentUserId);</span>
+
+<span class="nc" id="L127">            JSONArray interestsArray = new JSONArray();</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">            if (!interestsText.isEmpty()) {</span>
+<span class="nc" id="L129">                String[] interests = interestsText.split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">                for (String interest : interests) {</span>
+<span class="nc" id="L131">                    String trimmed = interest.trim();</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">                    if(!trimmed.isEmpty()) {</span>
+<span class="nc" id="L133">                        interestsArray.put(trimmed);</span>
+                    }
+                }
+            }
+<span class="nc" id="L137">            body.put(&quot;interests&quot;, interestsArray);</span>
+<span class="nc" id="L138">        } catch (JSONException e) {</span>
+<span class="nc" id="L139">            e.printStackTrace();</span>
+<span class="nc" id="L140">            return;</span>
+<span class="nc" id="L141">        }</span>
+
+<span class="nc" id="L143">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.POST,
+                BASE_URL,
+                body,
+                response -&gt; {
+<span class="nc" id="L148">                    Log.d(&quot;Create Group&quot;, response.toString());</span>
+<span class="nc" id="L149">                    msgResponse.setText(&quot;Group created!\n\n&quot; + response.toString());</span>
+<span class="nc" id="L150">                    Toast.makeText(this, &quot;Group created!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L151">                },</span>
+                error -&gt; {
+<span class="nc" id="L153">                    Log.e(&quot;Create Group Error&quot;, error.toString());</span>
+<span class="nc" id="L154">                    Toast.makeText(this, &quot;Failed to create group.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L155">                }</span>
+        );
+
+<span class="nc" id="L158">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L159">    }</span>
+
+    private void getAllGroups() {
+<span class="nc" id="L162">        msgResponse.setText(&quot;Loading all groups...&quot;);</span>
+
+<span class="nc" id="L164">        JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                BASE_URL,
+                null,
+                response -&gt; {
+                    try {
+<span class="nc" id="L170">                        List&lt;Group&gt; groups = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                        for (int i = 0; i &lt; response.length(); i++) {</span>
+<span class="nc" id="L172">                            JSONObject obj = response.getJSONObject(i);</span>
+<span class="nc" id="L173">                            groups.add(new Group(</span>
+<span class="nc" id="L174">                                    obj.optInt(&quot;groupId&quot;),</span>
+<span class="nc" id="L175">                                    obj.optString(&quot;groupName&quot;, &quot;&quot;),</span>
+<span class="nc" id="L176">                                    obj.optString(&quot;description&quot;, &quot;&quot;),</span>
+<span class="nc" id="L177">                                    obj.optInt(&quot;createdBy&quot;),</span>
+<span class="nc" id="L178">                                    obj.optString(&quot;createdAt&quot;, &quot;&quot;)</span>
+                            ));
+                        }
+
+<span class="nc" id="L182">                        StringBuilder sb = new StringBuilder(&quot;All Groups:\n\n&quot;);</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                        for (Group g : groups) {</span>
+<span class="nc" id="L184">                            sb.append(&quot;ID: &quot;).append(g.getGroupId()).append(&quot;\n&quot;);</span>
+<span class="nc" id="L185">                            sb.append(&quot;Name: &quot;).append(g.getName()).append(&quot;\n&quot;);</span>
+<span class="nc" id="L186">                            sb.append(&quot;Description: &quot;).append(g.getDescription()).append(&quot;\n&quot;);</span>
+<span class="nc" id="L187">                            sb.append(&quot;Created By: &quot;).append(g.getCreatedBy()).append(&quot;\n&quot;);</span>
+<span class="nc" id="L188">                            sb.append(&quot;Created At: &quot;).append(g.getCreatedAt()).append(&quot;\n\n&quot;);</span>
+<span class="nc" id="L189">                        }</span>
+
+<span class="nc" id="L191">                        msgResponse.setText(sb.toString());</span>
+<span class="nc" id="L192">                    } catch (JSONException e) {</span>
+<span class="nc" id="L193">                        e.printStackTrace();</span>
+<span class="nc" id="L194">                        msgResponse.setText(&quot;Error parsing groups.&quot;);</span>
+<span class="nc" id="L195">                    }</span>
+<span class="nc" id="L196">                },</span>
+                error -&gt; {
+<span class="nc" id="L198">                    Log.e(&quot;Get Groups Error&quot;, error.toString());</span>
+<span class="nc" id="L199">                    msgResponse.setText(&quot;Failed to load groups.&quot;);</span>
+<span class="nc" id="L200">                }</span>
+        );
+
+<span class="nc" id="L203">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L204">    }</span>
+
+    private void getGroupById() {
+<span class="nc" id="L207">        String idStr = etGetGroupId.getText().toString().trim();</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (idStr.isEmpty()) {</span>
+<span class="nc" id="L209">            Toast.makeText(this, &quot;Enter a group ID.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L210">            return;</span>
+        }
+
+<span class="nc" id="L213">        String url = BASE_URL + &quot;/&quot; + idStr;</span>
+<span class="nc" id="L214">        msgResponse.setText(&quot;Loading group...&quot;);</span>
+
+<span class="nc" id="L216">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.GET,
+                url,
+                null,
+                response -&gt; {
+<span class="nc" id="L221">                    msgResponse.setText(</span>
+<span class="nc" id="L222">                            &quot;ID: &quot; + response.optInt(&quot;groupId&quot;) + &quot;\n\n&quot; +</span>
+<span class="nc" id="L223">                                    &quot;Name: &quot; + response.optString(&quot;groupName&quot;, &quot;&quot;) + &quot;\n\n&quot; +</span>
+<span class="nc" id="L224">                                    &quot;Description: &quot; + response.optString(&quot;description&quot;, &quot;&quot;) + &quot;\n\n&quot; +</span>
+<span class="nc" id="L225">                                    &quot;Created By: &quot; + response.optInt(&quot;createdBy&quot;) + &quot;\n\n&quot; +</span>
+<span class="nc" id="L226">                                    &quot;Created At: &quot; + response.optString(&quot;createdAt&quot;, &quot;&quot;)</span>
+                    );
+<span class="nc" id="L228">                },</span>
+                error -&gt; {
+<span class="nc" id="L230">                    Log.e(&quot;Get Group Error&quot;, error.toString());</span>
+<span class="nc" id="L231">                    msgResponse.setText(&quot;Failed to load group.&quot;);</span>
+<span class="nc" id="L232">                }</span>
+        );
+
+<span class="nc" id="L235">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L236">    }</span>
+
+    private void editGroup() {
+<span class="nc" id="L239">        String idStr = etEditGroupId.getText().toString().trim();</span>
+<span class="nc" id="L240">        String name = etEditGroupName.getText().toString().trim();</span>
+<span class="nc" id="L241">        String desc = etEditGroupDesc.getText().toString().trim();</span>
+
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        if (idStr.isEmpty()) {</span>
+<span class="nc" id="L244">            Toast.makeText(this, &quot;Enter a group ID to edit.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L245">            return;</span>
+        }
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        if (name.isEmpty()) {</span>
+<span class="nc" id="L248">            Toast.makeText(this, &quot;Group name cannot be empty.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L249">            return;</span>
+        }
+
+<span class="nc" id="L252">        String url = BASE_URL + &quot;/edit/&quot; + idStr;</span>
+
+<span class="nc" id="L254">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L256">            body.put(&quot;groupName&quot;, name);</span>
+<span class="nc" id="L257">            body.put(&quot;description&quot;, desc);</span>
+<span class="nc" id="L258">        } catch (JSONException e) {</span>
+<span class="nc" id="L259">            e.printStackTrace();</span>
+<span class="nc" id="L260">            return;</span>
+<span class="nc" id="L261">        }</span>
+
+<span class="nc" id="L263">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.PUT,
+                url,
+                body,
+                response -&gt; {
+<span class="nc" id="L268">                    Log.d(&quot;Edit Group&quot;, response.toString());</span>
+<span class="nc" id="L269">                    msgResponse.setText(&quot;Group updated!\n\n&quot; + response.toString());</span>
+<span class="nc" id="L270">                    Toast.makeText(this, &quot;Group updated!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L271">                },</span>
+                error -&gt; {
+<span class="nc" id="L273">                    Log.e(&quot;Edit Group Error&quot;, error.toString());</span>
+<span class="nc" id="L274">                    Toast.makeText(this, &quot;Failed to update group.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L275">                }</span>
+        );
+
+<span class="nc" id="L278">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L279">    }</span>
+
+    private void deleteGroup() {
+<span class="nc" id="L282">        String idStr = etDeleteGroupId.getText().toString().trim();</span>
+<span class="nc bnc" id="L283" title="All 2 branches missed.">        if (idStr.isEmpty()) {</span>
+<span class="nc" id="L284">            Toast.makeText(this, &quot;Enter a group ID to delete.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L285">            return;</span>
+        }
+
+<span class="nc" id="L288">        String url = BASE_URL + &quot;/&quot; + idStr;</span>
+
+<span class="nc" id="L290">        StringRequest request = new StringRequest(</span>
+                Request.Method.DELETE,
+                url,
+                response -&gt; {
+<span class="nc" id="L294">                    Log.d(&quot;Delete Group&quot;, response);</span>
+<span class="nc" id="L295">                    msgResponse.setText(&quot;Group deleted!&quot;);</span>
+<span class="nc" id="L296">                    Toast.makeText(this, &quot;Group deleted!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L297">                },</span>
+                error -&gt; {
+<span class="nc" id="L299">                    Log.e(&quot;Delete Group Error&quot;, error.toString());</span>
+<span class="nc" id="L300">                    Toast.makeText(this, &quot;Failed to delete group.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L301">                }</span>
+        );
+
+<span class="nc" id="L304">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L305">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

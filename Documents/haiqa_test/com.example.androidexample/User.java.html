@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>User.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">User.java</span></div><h1>User.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import java.util.List;
+
+public class User {
+
+    private int userId;
+    private String name;
+    private String email;
+    private String passwordHash;
+    private String bio;
+    private List&lt;String&gt; hobbies;
+    private String role;
+    private double latitude;
+    private double longitude;
+    private String createdAt;
+    private boolean isActive;
+    private String major;
+    private Integer age;
+
+    public User(int userId,
+                String name,
+                String email,
+                String passwordHash,
+                String bio,
+                List&lt;String&gt; hobbies,
+                String role,
+                double latitude,
+                double longitude,
+                String createdAt,
+                boolean isActive) {
+<span class="nc" id="L32">        this(userId, name, email, passwordHash, bio, hobbies, role, latitude, longitude, createdAt, isActive, null, null);</span>
+<span class="nc" id="L33">    }</span>
+
+    public User(int userId,
+                String name,
+                String email,
+                String passwordHash,
+                String bio,
+                List&lt;String&gt; hobbies,
+                String role,
+                double latitude,
+                double longitude,
+                String createdAt,
+                boolean isActive,
+                String major,
+<span class="fc" id="L47">                Integer age) {</span>
+<span class="fc" id="L48">        this.userId = userId;</span>
+<span class="fc" id="L49">        this.name = name;</span>
+<span class="fc" id="L50">        this.email = email;</span>
+<span class="fc" id="L51">        this.passwordHash = passwordHash;</span>
+<span class="fc" id="L52">        this.bio = bio;</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        this.hobbies = hobbies != null ? hobbies : new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc" id="L54">        this.role = role;</span>
+<span class="fc" id="L55">        this.latitude = latitude;</span>
+<span class="fc" id="L56">        this.longitude = longitude;</span>
+<span class="fc" id="L57">        this.createdAt = createdAt;</span>
+<span class="fc" id="L58">        this.isActive = isActive;</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        this.major = major != null ? major : &quot;&quot;;</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        this.age = age != null ? age : 0;</span>
+<span class="fc" id="L61">    }</span>
+
+    public int getUserId() {
+
+<span class="nc" id="L65">        return userId;</span>
+    }
+
+    public String getName() {
+
+<span class="fc" id="L70">        return name;</span>
+    }
+
+    public String getEmail() {
+
+<span class="fc" id="L75">        return email;</span>
+    }
+
+    public String getPasswordHash() {
+
+<span class="nc" id="L80">        return passwordHash;</span>
+    }
+
+    public String getBio() {
+<span class="fc" id="L84">        return bio;</span>
+    }
+
+    public List&lt;String&gt; getHobbies() {
+
+<span class="fc" id="L89">        return hobbies;</span>
+    }
+
+    public String getRole() {
+
+<span class="fc" id="L94">        return role;</span>
+    }
+
+    public double getLatitude() {
+
+<span class="nc" id="L99">        return latitude;</span>
+    }
+
+    public double getLongitude() {
+
+<span class="nc" id="L104">        return longitude;</span>
+    }
+
+    public String getCreatedAt() {
+
+<span class="fc" id="L109">        return createdAt;</span>
+    }
+
+    public void setName(String name) {
+
+<span class="nc" id="L114">        this.name = name;</span>
+<span class="nc" id="L115">    }</span>
+
+    public void setBio(String bio) {
+
+<span class="nc" id="L119">        this.bio = bio;</span>
+<span class="nc" id="L120">    }</span>
+
+    public boolean isActive() {
+<span class="fc" id="L123">        return isActive;</span>
+    }
+
+    public String getMajor() {
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">        return major != null ? major : &quot;&quot;;</span>
+    }
+
+    public Integer getAge() {
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">        return age != null ? age : 0;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

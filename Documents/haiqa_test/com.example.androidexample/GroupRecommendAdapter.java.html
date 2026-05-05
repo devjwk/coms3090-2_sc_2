@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupRecommendAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">GroupRecommendAdapter.java</span></div><h1>GroupRecommendAdapter.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import java.util.List;
+import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+import android.widget.Button;
+
+public class GroupRecommendAdapter extends RecyclerView.Adapter&lt;GroupRecommendAdapter.GroupRecommendViewHolder&gt;{
+    private List&lt;RecommendGroup&gt; recommendGroupsList;
+    private OnJoinClickListener onJoinClickListener;
+
+    public interface OnJoinClickListener {
+        void onJoinClick(RecommendGroup group);
+    }
+
+<span class="nc" id="L20">    public GroupRecommendAdapter(List&lt;RecommendGroup&gt; recommendGroupsList, OnJoinClickListener onJoinClickListener) {</span>
+<span class="nc" id="L21">        this.recommendGroupsList = recommendGroupsList;</span>
+<span class="nc" id="L22">        this.onJoinClickListener = onJoinClickListener;</span>
+<span class="nc" id="L23">    }</span>
+
+    @NonNull
+    @Override
+    public GroupRecommendViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+<span class="nc" id="L28">        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_group_recommend, parent, false);</span>
+<span class="nc" id="L29">        return new GroupRecommendViewHolder(view);</span>
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull GroupRecommendViewHolder holder, int position) {
+<span class="nc" id="L34">        RecommendGroup group = recommendGroupsList.get(position);</span>
+<span class="nc" id="L35">        holder.tvGroupName.setText(group.getGroupName());</span>
+<span class="nc" id="L36">        holder.tvCategory.setText(group.getCategory());</span>
+<span class="nc" id="L37">        holder.btnJoinGroup.setOnClickListener(v -&gt; {</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">            if (onJoinClickListener != null) {</span>
+<span class="nc" id="L39">                onJoinClickListener.onJoinClick(group);</span>
+            }
+<span class="nc" id="L41">        });</span>
+<span class="nc" id="L42">        holder.tvMemberCount.setText(group.getMemberCount() + &quot; members&quot;);</span>
+<span class="nc" id="L43">        holder.tvMatchScore.setText(group.getMatchScore() + &quot;%&quot;);</span>
+<span class="nc" id="L44">        holder.tvGroupDescription.setText(group.getDescription());</span>
+
+<span class="nc" id="L46">        List&lt;String&gt; matchedKeywords = group.getMatchedKeywords();</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if (matchedKeywords.size() &gt; 0)  {</span>
+<span class="nc" id="L48">            holder.tvKeyword1.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L49">            holder.tvKeyword1.setText(matchedKeywords.get(0));</span>
+        }
+        else{
+<span class="nc" id="L52">            holder.tvKeyword1.setVisibility(View.GONE);</span>
+        }
+
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (matchedKeywords.size() &gt; 1) {</span>
+<span class="nc" id="L56">            holder.tvKeyword2.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L57">            holder.tvKeyword2.setText(matchedKeywords.get(1));</span>
+        }
+        else{
+<span class="nc" id="L60">            holder.tvKeyword2.setVisibility(View.GONE);</span>
+        }
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if(matchedKeywords.size() &gt; 2){</span>
+<span class="nc" id="L64">            holder.tvKeyword3.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L65">            holder.tvKeyword3.setText(matchedKeywords.get(2));</span>
+        }
+        else{
+<span class="nc" id="L68">            holder.tvKeyword3.setVisibility(View.GONE);</span>
+        }
+
+<span class="nc" id="L71">        holder.tvGroupEmoji.setText(getCategoryEmoji(group.getCategory()));</span>
+<span class="nc" id="L72">    }</span>
+    @Override
+    public int getItemCount() {
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        return recommendGroupsList != null ? recommendGroupsList.size() : 0;</span>
+    }
+
+    public void updateData(List&lt;RecommendGroup&gt; recommendGroupsList) {
+<span class="nc" id="L79">        this.recommendGroupsList = recommendGroupsList;</span>
+<span class="nc" id="L80">        notifyDataSetChanged();</span>
+<span class="nc" id="L81">    }</span>
+
+    private String getCategoryEmoji(String category) {
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (category == null) return &quot;\uD83D\uDC65&quot;;</span>
+
+<span class="nc bnc" id="L86" title="All 8 branches missed.">        switch (category.toLowerCase()) {</span>
+            case &quot;tech&quot;:
+            case &quot;coding&quot;:
+<span class="nc" id="L89">                return &quot;💻&quot;;</span>
+            case &quot;sports&quot;:
+<span class="nc" id="L91">                return &quot;🏀&quot;;</span>
+            case &quot;music&quot;:
+<span class="nc" id="L93">                return &quot;🎵&quot;;</span>
+            case &quot;fitness&quot;:
+<span class="nc" id="L95">                return &quot;💪&quot;;</span>
+            case &quot;outdoor&quot;:
+<span class="nc" id="L97">                return &quot;🥾&quot;;</span>
+            case &quot;gaming&quot;:
+<span class="nc" id="L99">                return &quot;🎮&quot;;</span>
+            case &quot;study&quot;:
+<span class="nc" id="L101">                return &quot;📚&quot;;</span>
+            default:
+<span class="nc" id="L103">                return &quot;👥&quot;;</span>
+        }
+    }
+
+    static class GroupRecommendViewHolder extends RecyclerView.ViewHolder {
+
+        TextView tvGroupEmoji;
+        TextView tvGroupName;
+        TextView tvCategory;
+        TextView tvMemberCount;
+        TextView tvMatchScore;
+        TextView tvGroupDescription;
+        TextView tvKeyword1;
+        TextView tvKeyword2;
+        TextView tvKeyword3;
+        TextView tvViewDetails;
+
+        Button btnJoinGroup;
+
+        public GroupRecommendViewHolder(@NonNull View itemView) {
+<span class="nc" id="L123">            super(itemView);</span>
+
+<span class="nc" id="L125">            tvGroupEmoji = itemView.findViewById(R.id.tvGroupEmoji);</span>
+<span class="nc" id="L126">            tvGroupName = itemView.findViewById(R.id.tvGroupName);</span>
+<span class="nc" id="L127">            tvCategory = itemView.findViewById(R.id.tvCategory);</span>
+<span class="nc" id="L128">            tvMemberCount = itemView.findViewById(R.id.tvMemberCount);</span>
+<span class="nc" id="L129">            tvMatchScore = itemView.findViewById(R.id.tvMatchScore);</span>
+<span class="nc" id="L130">            tvGroupDescription = itemView.findViewById(R.id.tvGroupDescription);</span>
+<span class="nc" id="L131">            tvKeyword1 = itemView.findViewById(R.id.tvKeyword1);</span>
+<span class="nc" id="L132">            tvKeyword2 = itemView.findViewById(R.id.tvKeyword2);</span>
+<span class="nc" id="L133">            tvKeyword3 = itemView.findViewById(R.id.tvKeyword3);</span>
+<span class="nc" id="L134">            tvViewDetails = itemView.findViewById(R.id.tvViewDetails);</span>
+<span class="nc" id="L135">            btnJoinGroup = itemView.findViewById(R.id.btnJoinGroup);</span>
+<span class="nc" id="L136">        }</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

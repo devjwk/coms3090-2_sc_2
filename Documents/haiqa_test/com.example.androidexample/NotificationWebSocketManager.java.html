@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationWebSocketManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">NotificationWebSocketManager.java</span></div><h1>NotificationWebSocketManager.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import android.util.Log;
+
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
+
+import java.net.URI;
+
+public class NotificationWebSocketManager {
+
+    private static NotificationWebSocketManager instance;
+    private NotificationSocketClient webSocketClient;
+    private NotificationWebSocketListener listener;
+
+    private NotificationWebSocketManager() {}
+
+    public static synchronized NotificationWebSocketManager getInstance() {
+<span class="nc bnc" id="L19" title="All 2 branches missed.">        if (instance == null) {</span>
+<span class="nc" id="L20">            instance = new NotificationWebSocketManager();</span>
+        }
+<span class="nc" id="L22">        return instance;</span>
+    }
+
+    public void setNotificationWebSocketListener(NotificationWebSocketListener listener) {
+<span class="nc" id="L26">        this.listener = listener;</span>
+<span class="nc" id="L27">    }</span>
+
+    public void removeNotificationWebSocketListener() {
+<span class="nc" id="L30">        this.listener = null;</span>
+<span class="nc" id="L31">    }</span>
+
+    public boolean isConnected() {
+<span class="nc bnc" id="L34" title="All 4 branches missed.">        return webSocketClient != null &amp;&amp; webSocketClient.isOpen();</span>
+    }
+
+    public void connectWebSocket(String serverUrl) {
+<span class="nc bnc" id="L38" title="All 4 branches missed.">        if (webSocketClient != null &amp;&amp; webSocketClient.isOpen()) {</span>
+<span class="nc" id="L39">            Log.d(&quot;NotifyWS&quot;, &quot;Already connected, skipping reconnect&quot;);</span>
+<span class="nc" id="L40">            return;</span>
+        }
+
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (webSocketClient != null) {</span>
+            try {
+<span class="nc" id="L45">                webSocketClient.close();</span>
+<span class="nc" id="L46">            } catch (Exception ignored) {}</span>
+        }
+
+        try {
+<span class="nc" id="L50">            URI serverUri = URI.create(serverUrl);</span>
+<span class="nc" id="L51">            webSocketClient = new NotificationSocketClient(serverUri);</span>
+<span class="nc" id="L52">            webSocketClient.connect();</span>
+<span class="nc" id="L53">        } catch (Exception e) {</span>
+<span class="nc" id="L54">            Log.e(&quot;NotifyWS&quot;, &quot;Connect error: &quot; + e.getMessage());</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">            if (listener != null) {</span>
+<span class="nc" id="L56">                listener.onNotificationError(e);</span>
+            }
+<span class="nc" id="L58">        }</span>
+<span class="nc" id="L59">    }</span>
+
+    public void disconnectWebSocket() {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (webSocketClient != null) {</span>
+<span class="nc" id="L63">            webSocketClient.close();</span>
+        }
+<span class="nc" id="L65">    }</span>
+
+    private class NotificationSocketClient extends WebSocketClient {
+
+<span class="nc" id="L69">        public NotificationSocketClient(URI serverUri) {</span>
+<span class="nc" id="L70">            super(serverUri);</span>
+<span class="nc" id="L71">        }</span>
+
+        @Override
+        public void onOpen(ServerHandshake handshakedata) {
+<span class="nc" id="L75">            Log.d(&quot;NotifyWS&quot;, &quot;Connected&quot;);</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            if (listener != null) {</span>
+<span class="nc" id="L77">                listener.onNotificationOpen(handshakedata);</span>
+            }
+<span class="nc" id="L79">        }</span>
+
+        @Override
+        public void onMessage(String message) {
+<span class="nc" id="L83">            Log.d(&quot;NotifyWS&quot;, &quot;Received: &quot; + message);</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            if (listener != null) {</span>
+<span class="nc" id="L85">                listener.onNotificationMessage(message);</span>
+            }
+<span class="nc" id="L87">        }</span>
+
+        @Override
+        public void onClose(int code, String reason, boolean remote) {
+<span class="nc" id="L91">            Log.d(&quot;NotifyWS&quot;, &quot;Closed: &quot; + reason);</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            if (listener != null) {</span>
+<span class="nc" id="L93">                listener.onNotificationClose(code, reason, remote);</span>
+            }
+<span class="nc" id="L95">        }</span>
+
+        @Override
+        public void onError(Exception ex) {
+<span class="nc" id="L99">            Log.e(&quot;NotifyWS&quot;, &quot;Error: &quot; + ex.getMessage());</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            if (listener != null) {</span>
+<span class="nc" id="L101">                listener.onNotificationError(ex);</span>
+            }
+<span class="nc" id="L103">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

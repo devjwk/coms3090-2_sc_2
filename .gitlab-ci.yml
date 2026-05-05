@@ -1,37 +1,39 @@
 stages:
-  - androidbuild
-  - androidtest
+  - mavenbuild
+  - maventest
 
-android-build:
-  image: afirefly/android-ci:java17
-  stage: androidbuild
+maven-build:
+  stage: mavenbuild
   tags:
-    - jongwoo_tag
-  before_script:
-    - export GRADLE_USER_HOME=`pwd`/.gradle
-    - chmod +x ./Frontend/exp4/AndroidExample/gradlew
+    - jj_tag
   script:
-    - cd Frontend/exp4/AndroidExample
-    - ./gradlew build
+    - export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+    - export PATH=$JAVA_HOME/bin:$PATH
+    - java -version
+    - javac -version
+    - cd Backend/BackendMain/springboot_example
+    - mvn package
   only:
     refs:
-      - JONGWOO_CICD
+      - JJ_CICD
     changes:
-      - Frontend/**/*
+      - Backend/**/*
+      - .gitlab-ci.yml
 
-android-test:
-  image: afirefly/android-ci:java17
-  stage: androidtest
+maven-test:
+  stage: maventest
   tags:
-    - jongwoo_tag
-  before_script:
-    - export GRADLE_USER_HOME=`pwd`/.gradle
-    - chmod +x ./Frontend/exp4/AndroidExample/gradlew
+    - jj_tag
   script:
-    - cd Frontend/exp4/AndroidExample
-    - ./gradlew test
+    - export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+    - export PATH=$JAVA_HOME/bin:$PATH
+    - java -version
+    - javac -version
+    - cd Backend/BackendMain/springboot_example
+    - mvn test
   only:
     refs:
-      - JONGWOO_CICD
+      - JJ_CICD
     changes:
-      - Frontend/**/*
+      - Backend/**/*
+      - .gitlab-ci.yml
