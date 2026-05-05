@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0F0F1A"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvAdminRequestsTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Pending Moderator Requests"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvAdminRequestsSubtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Review new moderator account registrations and approve or reject access."
+        android:textColor="#CCCCCC"
+        android:textSize="14sp"
+        android:layout_marginBottom="12dp" />
+
+    <Button
+        android:id="@+id/btnRefreshModeratorRequests"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Refresh Requests"
+        android:textAllCaps="false"
+        android:backgroundTint="#7B6FFF"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="12dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/pendingRequestsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+    </ScrollView>
+
+    <Button
+        android:id="@+id/btnBackAdminRequests"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Back"
+        android:textAllCaps="false"
+        android:backgroundTint="#444444"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="12dp" />
+
+</LinearLayout>

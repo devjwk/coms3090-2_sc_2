@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SwipeActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">SwipeActivity.java</span></div><h1>SwipeActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.bumptech.glide.Glide;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
+<span class="fc" id="L35">public class SwipeActivity extends AppCompatActivity {</span>
+
+    private FrameLayout cardView;
+    private LinearLayout layoutMajor, layoutHobbies;
+    private TextView tvName, tvBio, tvMajor, tvAge, tvHobbies, tvRole;
+    private ImageView ivProfilePhoto;
+    private Button btnLike, btnDislike, btnBack;
+
+    private int currentUserId;
+<span class="fc" id="L44">    private String currentDisplayName = &quot;&quot;;</span>
+
+<span class="fc" id="L46">    private int nextSwipeUserId = -1;</span>
+<span class="fc" id="L47">    private int currentMatchId = -1;</span>
+<span class="fc" id="L48">    private String currentMatchStatus = &quot;UNMATCHED&quot;;</span>
+<span class="fc" id="L49">    private boolean isLoading = false;</span>
+
+<span class="fc" id="L51">    private final Set&lt;Integer&gt; swipedUserIds = new HashSet&lt;&gt;();</span>
+
+    private GestureDetector gestureDetector;
+
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L59">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L60">        setContentView(R.layout.activity_swipe);</span>
+
+<span class="fc" id="L62">        currentUserId = getIntent().getIntExtra(&quot;USER_ID&quot;, 1);</span>
+
+<span class="fc" id="L64">        cardView  = findViewById(R.id.cardView);</span>
+<span class="fc" id="L65">        tvName    = findViewById(R.id.tvName);</span>
+<span class="fc" id="L66">        tvBio     = findViewById(R.id.tvBio);</span>
+<span class="fc" id="L67">        tvMajor   = findViewById(R.id.tvMajor);</span>
+<span class="fc" id="L68">        tvAge     = findViewById(R.id.tvAge);</span>
+<span class="fc" id="L69">        tvHobbies = findViewById(R.id.tvHobbies);</span>
+<span class="fc" id="L70">        tvRole    = findViewById(R.id.tvRole);</span>
+<span class="fc" id="L71">        ivProfilePhoto = findViewById(R.id.ivProfilePhoto);</span>
+<span class="fc" id="L72">        layoutMajor    = findViewById(R.id.layoutMajor);</span>
+<span class="fc" id="L73">        layoutHobbies  = findViewById(R.id.layoutHobbies);</span>
+<span class="fc" id="L74">        btnLike    = findViewById(R.id.btnLike);</span>
+<span class="fc" id="L75">        btnDislike = findViewById(R.id.btnDislike);</span>
+<span class="fc" id="L76">        btnBack    = findViewById(R.id.btnBack);</span>
+
+<span class="fc" id="L78">        fetchNextSwipe();</span>
+
+<span class="fc" id="L80">        gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {</span>
+            private static final int SWIPE_THRESHOLD = 100;
+            private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+<span class="nc bnc" id="L86" title="All 4 branches missed.">                if (e1 == null || e2 == null) return false;</span>
+<span class="nc" id="L87">                float diffX = e2.getX() - e1.getX();</span>
+<span class="nc" id="L88">                float diffY = e2.getY() - e1.getY();</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                if (Math.abs(diffX) &gt; Math.abs(diffY)) {</span>
+<span class="nc bnc" id="L90" title="All 4 branches missed.">                    if (Math.abs(diffX) &gt; SWIPE_THRESHOLD &amp;&amp; Math.abs(velocityX) &gt; SWIPE_VELOCITY_THRESHOLD) {</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                        if (diffX &gt; 0) {</span>
+<span class="nc" id="L92">                            onSwipeRight();</span>
+                        } else {
+<span class="nc" id="L94">                            onSwipeLeft();</span>
+                        }
+                    }
+                }
+<span class="nc" id="L98">                return true;</span>
+            }
+        });
+
+<span class="fc" id="L102">        cardView.setOnTouchListener((v, event) -&gt; {</span>
+<span class="nc" id="L103">            gestureDetector.onTouchEvent(event);</span>
+<span class="nc" id="L104">            return true;</span>
+        });
+
+<span class="pc" id="L107">        btnLike.setOnClickListener(v -&gt; onSwipeRight());</span>
+<span class="pc" id="L108">        btnDislike.setOnClickListener(v -&gt; onSwipeLeft());</span>
+<span class="fc" id="L109">        btnBack.setOnClickListener(v -&gt; finish());</span>
+<span class="fc" id="L110">    }</span>
+
+    private void onSwipeRight() {
+<span class="nc bnc" id="L113" title="All 4 branches missed.">        if (isLoading || currentMatchId &lt; 0) return;</span>
+<span class="nc" id="L114">        isLoading = true;</span>
+<span class="nc" id="L115">        animateCard(800);</span>
+
+<span class="nc" id="L117">        swipedUserIds.add(nextSwipeUserId);</span>
+
+        String newStatus;
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (&quot;PENDING&quot;.equalsIgnoreCase(currentMatchStatus)) {</span>
+<span class="nc" id="L121">            newStatus = &quot;ACCEPTED&quot;;</span>
+        } else {
+<span class="nc" id="L123">            newStatus = &quot;PENDING&quot;;</span>
+        }
+
+<span class="nc" id="L126">        updateMatchStatus(currentMatchId, newStatus, () -&gt; {</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            if (&quot;ACCEPTED&quot;.equals(newStatus)) {</span>
+<span class="nc" id="L128">                final int matchedUserId = nextSwipeUserId;</span>
+<span class="nc" id="L129">                final String matchedName = currentDisplayName;</span>
+<span class="nc" id="L130">                runOnUiThread(() -&gt; showMatchDialog(matchedName, matchedUserId));</span>
+<span class="nc" id="L131">            } else {</span>
+<span class="nc" id="L132">                runOnUiThread(() -&gt;</span>
+<span class="nc" id="L133">                    Toast.makeText(this, &quot;Liked! ♥&quot;, Toast.LENGTH_SHORT).show()</span>
+                );
+            }
+<span class="nc" id="L136">            fetchNextSwipe();</span>
+<span class="nc" id="L137">        });</span>
+<span class="nc" id="L138">    }</span>
+    //hello
+
+    private void onSwipeLeft() {
+<span class="nc bnc" id="L142" title="All 4 branches missed.">        if (isLoading || currentMatchId &lt; 0) return;</span>
+<span class="nc" id="L143">        isLoading = true;</span>
+<span class="nc" id="L144">        animateCard(-800);</span>
+
+<span class="nc" id="L146">        swipedUserIds.add(nextSwipeUserId);</span>
+
+<span class="nc" id="L148">        updateMatchStatus(currentMatchId, &quot;DECLINED&quot;, this::fetchNextSwipe);</span>
+<span class="nc" id="L149">    }</span>
+
+    private void animateCard(float toX) {
+<span class="nc" id="L152">        ObjectAnimator animator = ObjectAnimator.ofFloat(cardView, &quot;translationX&quot;, 0f, toX);</span>
+<span class="nc" id="L153">        animator.setDuration(300);</span>
+<span class="nc" id="L154">        animator.start();</span>
+<span class="nc" id="L155">        cardView.postDelayed(() -&gt; cardView.setTranslationX(0f), 350);</span>
+<span class="nc" id="L156">    }</span>
+
+    private void fetchNextSwipe() {
+<span class="fc" id="L159">        String url = BASE_URL + &quot;/matches/next/&quot; + currentUserId;</span>
+<span class="fc" id="L160">        Log.d(&quot;SwipeActivity&quot;, &quot;Fetching next swipe: &quot; + url);</span>
+
+<span class="fc" id="L162">        runOnUiThread(() -&gt; tvName.setText(&quot;Loading...&quot;));</span>
+
+<span class="fc" id="L164">        StringRequest request = new StringRequest(</span>
+                Request.Method.GET, url,
+                response -&gt; {
+<span class="fc" id="L167">                    Log.d(&quot;SwipeActivity&quot;, &quot;/matches/next raw: &quot; + response);</span>
+                    try {
+                        JSONObject jsonResponse;
+<span class="fc" id="L170">                        String trimmed = response.trim();</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">                        if (trimmed.startsWith(&quot;[&quot;)) {</span>
+<span class="nc" id="L172">                            JSONArray arr = new JSONArray(trimmed);</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                            if (arr.length() == 0) {</span>
+<span class="nc" id="L174">                                runOnUiThread(this::showNoMoreUsers);</span>
+<span class="nc" id="L175">                                return;</span>
+                            }
+<span class="nc" id="L177">                            jsonResponse = arr.getJSONObject(0);</span>
+<span class="nc" id="L178">                        } else {</span>
+<span class="fc" id="L179">                            jsonResponse = new JSONObject(trimmed);</span>
+                        }
+
+<span class="fc" id="L182">                        nextSwipeUserId = jsonResponse.optInt(&quot;userId&quot;,</span>
+<span class="fc" id="L183">                                jsonResponse.optInt(&quot;user_id&quot;,</span>
+<span class="fc" id="L184">                                        jsonResponse.optInt(&quot;id&quot;, -1)));</span>
+<span class="fc" id="L185">                        currentMatchId  = jsonResponse.optInt(&quot;matchId&quot;,</span>
+<span class="fc" id="L186">                                jsonResponse.optInt(&quot;match_id&quot;, -1));</span>
+
+<span class="fc" id="L188">                        String status = jsonResponse.optString(&quot;status&quot;, &quot;&quot;);</span>
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">                        currentMatchStatus = status.isEmpty() ? &quot;UNMATCHED&quot; : status;</span>
+
+<span class="fc" id="L191">                        Log.d(&quot;SwipeActivity&quot;, &quot;Next swipe: userId=&quot; + nextSwipeUserId</span>
+                                + &quot; matchId=&quot; + currentMatchId + &quot; status=&quot; + currentMatchStatus);
+
+<span class="pc bpc" id="L194" title="2 of 4 branches missed.">                        if (nextSwipeUserId &lt; 0 || currentMatchId &lt; 0) {</span>
+<span class="nc" id="L195">                            runOnUiThread(this::showNoMoreUsers);</span>
+<span class="nc" id="L196">                            return;</span>
+                        }
+
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">                        if (swipedUserIds.contains(nextSwipeUserId)) {</span>
+<span class="nc" id="L200">                            Log.d(&quot;SwipeActivity&quot;, &quot;Already swiped user &quot; + nextSwipeUserId + &quot; — no more profiles&quot;);</span>
+<span class="nc" id="L201">                            runOnUiThread(this::showNoMoreUsers);</span>
+<span class="nc" id="L202">                            return;</span>
+                        }
+
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">                        if (status.isEmpty()) {</span>
+<span class="fc" id="L206">                            fetchMatchStatus(currentMatchId, () -&gt; fetchUser(nextSwipeUserId));</span>
+                        } else {
+<span class="nc" id="L208">                            fetchUser(nextSwipeUserId);</span>
+                        }
+
+<span class="nc" id="L211">                    } catch (Exception e) {</span>
+<span class="nc" id="L212">                        Log.e(&quot;SwipeActivity&quot;, &quot;Error parsing next: &quot; + e.getMessage());</span>
+<span class="nc" id="L213">                        runOnUiThread(this::showNoMoreUsers);</span>
+<span class="fc" id="L214">                    }</span>
+<span class="fc" id="L215">                },</span>
+                error -&gt; {
+<span class="nc" id="L217">                    Log.e(&quot;SwipeActivity&quot;, &quot;No more users to swipe: &quot; + error.toString());</span>
+<span class="nc" id="L218">                    isLoading = false;</span>
+<span class="nc" id="L219">                    runOnUiThread(this::showNoMoreUsers);</span>
+<span class="nc" id="L220">                }</span>
+        );
+
+<span class="fc" id="L223">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="fc" id="L224">    }</span>
+
+    private void fetchMatchStatus(int matchId, Runnable onComplete) {
+<span class="fc" id="L227">        String url = BASE_URL + &quot;/matches/&quot; + matchId;</span>
+
+<span class="fc" id="L229">        StringRequest request = new StringRequest(</span>
+                Request.Method.GET, url,
+                response -&gt; {
+                    try {
+<span class="fc" id="L233">                        JSONObject obj = new JSONObject(response);</span>
+<span class="fc" id="L234">                        currentMatchStatus = obj.optString(&quot;status&quot;, &quot;UNMATCHED&quot;);</span>
+<span class="fc" id="L235">                        Log.d(&quot;SwipeActivity&quot;, &quot;Match &quot; + matchId + &quot; status: &quot; + currentMatchStatus);</span>
+<span class="nc" id="L236">                    } catch (Exception e) {</span>
+<span class="nc" id="L237">                        currentMatchStatus = &quot;UNMATCHED&quot;;</span>
+<span class="fc" id="L238">                    }</span>
+<span class="fc" id="L239">                    onComplete.run();</span>
+<span class="fc" id="L240">                },</span>
+                error -&gt; {
+<span class="nc" id="L242">                    Log.e(&quot;SwipeActivity&quot;, &quot;Could not fetch match status, defaulting to UNMATCHED&quot;);</span>
+<span class="nc" id="L243">                    currentMatchStatus = &quot;UNMATCHED&quot;;</span>
+<span class="nc" id="L244">                    onComplete.run();</span>
+<span class="nc" id="L245">                }</span>
+        );
+
+<span class="fc" id="L248">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="fc" id="L249">    }</span>
+
+    private void updateMatchStatus(int matchId, String newStatus, Runnable onComplete) {
+<span class="nc" id="L252">        String url = BASE_URL + &quot;/matches/edit/&quot; + matchId;</span>
+<span class="nc" id="L253">        Log.d(&quot;SwipeActivity&quot;, &quot;PUT &quot; + url + &quot; → &quot; + newStatus);</span>
+
+<span class="nc" id="L255">        StringRequest request = new StringRequest(Request.Method.PUT, url,</span>
+                response -&gt; {
+<span class="nc" id="L257">                    Log.d(&quot;SwipeActivity&quot;, &quot;Match &quot; + matchId + &quot; updated to &quot; + newStatus);</span>
+<span class="nc" id="L258">                    onComplete.run();</span>
+<span class="nc" id="L259">                },</span>
+                error -&gt; {
+<span class="nc" id="L261">                    Log.e(&quot;SwipeActivity&quot;, &quot;Failed to update match &quot; + matchId + &quot;: &quot; + error.toString());</span>
+<span class="nc" id="L262">                    onComplete.run();</span>
+<span class="nc" id="L263">                }</span>
+<span class="nc" id="L264">        ) {</span>
+            @Override
+            public byte[] getBody() {
+                try {
+<span class="nc" id="L268">                    JSONObject body = new JSONObject();</span>
+<span class="nc" id="L269">                    body.put(&quot;status&quot;, newStatus);</span>
+<span class="nc" id="L270">                    return body.toString().getBytes(&quot;utf-8&quot;);</span>
+<span class="nc" id="L271">                } catch (Exception e) {</span>
+<span class="nc" id="L272">                    return null;</span>
+                }
+            }
+
+            @Override
+            public String getBodyContentType() {
+<span class="nc" id="L278">                return &quot;application/json; charset=utf-8&quot;;</span>
+            }
+        };
+
+<span class="nc" id="L282">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L283">    }</span>
+
+    private void showNoMoreUsers() {
+<span class="nc" id="L286">        isLoading = false;</span>
+<span class="nc" id="L287">        tvName.setText(&quot;No more profiles&quot;);</span>
+<span class="nc" id="L288">        tvBio.setText(&quot;Check back later for new people ✨&quot;);</span>
+<span class="nc" id="L289">        tvMajor.setText(&quot;&quot;);</span>
+<span class="nc" id="L290">        tvHobbies.setText(&quot;&quot;);</span>
+<span class="nc" id="L291">        tvRole.setText(&quot;&quot;);</span>
+<span class="nc" id="L292">        layoutMajor.setVisibility(View.GONE);</span>
+<span class="nc" id="L293">        layoutHobbies.setVisibility(View.GONE);</span>
+<span class="nc" id="L294">        ivProfilePhoto.setImageResource(android.R.drawable.ic_menu_gallery);</span>
+<span class="nc" id="L295">        btnLike.setEnabled(false);</span>
+<span class="nc" id="L296">        btnDislike.setEnabled(false);</span>
+<span class="nc" id="L297">        btnLike.setAlpha(0.4f);</span>
+<span class="nc" id="L298">        btnDislike.setAlpha(0.4f);</span>
+<span class="nc" id="L299">    }</span>
+
+    private void fetchUser(int userId) {
+<span class="fc" id="L302">        String url = BASE_URL + &quot;/users/&quot; + userId;</span>
+<span class="fc" id="L303">        Log.d(&quot;SwipeActivity&quot;, &quot;Fetching user profile: &quot; + url);</span>
+
+<span class="fc" id="L305">        runOnUiThread(() -&gt; ivProfilePhoto.setImageResource(android.R.drawable.ic_menu_gallery));</span>
+
+<span class="fc" id="L307">        StringRequest request = new StringRequest(</span>
+                Request.Method.GET, url,
+                response -&gt; {
+<span class="fc" id="L310">                    Log.d(&quot;SwipeActivity&quot;, &quot;User response: &quot; + response);</span>
+                    try {
+<span class="fc" id="L312">                        JSONObject userObj = new JSONObject(response);</span>
+
+<span class="fc" id="L314">                        String name = safeString(userObj, &quot;name&quot;);</span>
+<span class="pc bpc" id="L315" title="1 of 2 branches missed.">                        if (name.isEmpty()) name = safeString(userObj, &quot;displayName&quot;);</span>
+<span class="pc bpc" id="L316" title="1 of 2 branches missed.">                        if (name.isEmpty()) name = &quot;User &quot; + userId;</span>
+
+<span class="fc" id="L318">                        String bio     = safeString(userObj, &quot;bio&quot;);</span>
+<span class="fc" id="L319">                        String major   = safeString(userObj, &quot;major&quot;);</span>
+<span class="fc" id="L320">                        int age        = userObj.optInt(&quot;age&quot;, 0);</span>
+<span class="fc" id="L321">                        String hobbies = safeString(userObj, &quot;hobbies&quot;);</span>
+<span class="fc" id="L322">                        String role    = safeString(userObj, &quot;role&quot;);</span>
+
+<span class="fc" id="L324">                        final String displayName = name;</span>
+<span class="fc" id="L325">                        currentDisplayName = name;</span>
+<span class="fc" id="L326">                        final int displayAge = age;</span>
+<span class="fc" id="L327">                        runOnUiThread(() -&gt; {</span>
+                            // Name + Age on same line: &quot;Sarah, 21&quot;
+<span class="pc bpc" id="L329" title="1 of 2 branches missed.">                            if (displayAge &gt; 0) {</span>
+<span class="fc" id="L330">                                tvName.setText(displayName + &quot;,  &quot; + displayAge);</span>
+                            } else {
+<span class="nc" id="L332">                                tvName.setText(displayName);</span>
+                            }
+
+                            // Major — show/hide the whole row
+<span class="pc bpc" id="L336" title="1 of 2 branches missed.">                            if (major.isEmpty()) {</span>
+<span class="fc" id="L337">                                layoutMajor.setVisibility(View.GONE);</span>
+                            } else {
+<span class="nc" id="L339">                                layoutMajor.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L340">                                tvMajor.setText(major);</span>
+                            }
+
+                            // Bio in quotes
+<span class="pc bpc" id="L344" title="1 of 2 branches missed.">                            if (bio.isEmpty()) {</span>
+<span class="nc" id="L345">                                tvBio.setVisibility(View.GONE);</span>
+                            } else {
+<span class="fc" id="L347">                                tvBio.setVisibility(View.VISIBLE);</span>
+<span class="fc" id="L348">                                tvBio.setText(&quot;\&quot;&quot; + bio + &quot;\&quot;&quot;);</span>
+                            }
+
+                            // Hobbies as tag
+<span class="pc bpc" id="L352" title="1 of 2 branches missed.">                            if (hobbies.isEmpty()) {</span>
+<span class="fc" id="L353">                                layoutHobbies.setVisibility(View.GONE);</span>
+                            } else {
+<span class="nc" id="L355">                                layoutHobbies.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L356">                                tvHobbies.setText(hobbies);</span>
+                            }
+
+                            // Role badge
+<span class="pc bpc" id="L360" title="1 of 2 branches missed.">                            if (role.isEmpty()) {</span>
+<span class="fc" id="L361">                                tvRole.setVisibility(View.GONE);</span>
+                            } else {
+<span class="nc" id="L363">                                tvRole.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L364">                                tvRole.setText(&quot;● &quot; + role.toUpperCase());</span>
+                            }
+
+<span class="fc" id="L367">                            btnLike.setEnabled(true);</span>
+<span class="fc" id="L368">                            btnDislike.setEnabled(true);</span>
+<span class="fc" id="L369">                            btnLike.setAlpha(1f);</span>
+<span class="fc" id="L370">                            btnDislike.setAlpha(1f);</span>
+<span class="fc" id="L371">                            isLoading = false;</span>
+<span class="fc" id="L372">                        });</span>
+
+<span class="fc" id="L374">                        fetchUserPhoto(userId);</span>
+<span class="nc" id="L375">                    } catch (Exception e) {</span>
+<span class="nc" id="L376">                        Log.e(&quot;SwipeActivity&quot;, &quot;Error parsing user &quot; + userId + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L377">                        isLoading = false;</span>
+<span class="nc" id="L378">                        runOnUiThread(this::showNoMoreUsers);</span>
+<span class="fc" id="L379">                    }</span>
+<span class="fc" id="L380">                },</span>
+                error -&gt; {
+<span class="nc" id="L382">                    Log.e(&quot;SwipeActivity&quot;, &quot;Error fetching user &quot; + userId + &quot;: &quot; + error.toString());</span>
+<span class="nc" id="L383">                    isLoading = false;</span>
+<span class="nc" id="L384">                    runOnUiThread(this::showNoMoreUsers);</span>
+<span class="nc" id="L385">                }</span>
+        );
+
+<span class="fc" id="L388">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="fc" id="L389">    }</span>
+
+    private String safeString(JSONObject obj, String key) {
+<span class="fc bfc" id="L392" title="All 2 branches covered.">        if (obj.isNull(key)) return &quot;&quot;;</span>
+<span class="fc" id="L393">        return obj.optString(key, &quot;&quot;);</span>
+    }
+
+    private void fetchUserPhoto(int userId) {
+<span class="fc" id="L397">        String url = BASE_URL + &quot;/image/user/&quot; + userId;</span>
+<span class="fc" id="L398">        Log.d(&quot;SwipeActivity&quot;, &quot;GET photo: &quot; + url);</span>
+
+<span class="fc" id="L400">        StringRequest request = new StringRequest(</span>
+                Request.Method.GET, url,
+                response -&gt; {
+<span class="fc" id="L403">                    Log.d(&quot;SwipeActivity&quot;, &quot;Image raw for user &quot; + userId + &quot;: &quot; + response);</span>
+                    try {
+<span class="fc" id="L405">                        JSONArray arr = new JSONArray(response);</span>
+<span class="pc bpc" id="L406" title="1 of 2 branches missed.">                        if (arr.length() == 0) {</span>
+<span class="nc" id="L407">                            loadPlaceholderAvatar(userId);</span>
+<span class="nc" id="L408">                            return;</span>
+                        }
+
+<span class="fc" id="L411">                        JSONObject imgObj = arr.getJSONObject(0);</span>
+<span class="fc" id="L412">                        Log.d(&quot;SwipeActivity&quot;, &quot;Image obj: &quot; + imgObj);</span>
+
+<span class="fc" id="L414">                        String path = &quot;&quot;;</span>
+<span class="fc" id="L415">                        Iterator&lt;String&gt; keys = imgObj.keys();</span>
+<span class="pc bpc" id="L416" title="1 of 2 branches missed.">                        while (keys.hasNext()) {</span>
+<span class="fc" id="L417">                            String key = keys.next();</span>
+<span class="fc" id="L418">                            String val = imgObj.optString(key, &quot;&quot;);</span>
+<span class="pc bpc" id="L419" title="1 of 4 branches missed.">                            if (val.contains(&quot;/files/&quot;) || val.contains(&quot;/images/&quot;)</span>
+<span class="pc bpc" id="L420" title="2 of 4 branches missed.">                                    || val.endsWith(&quot;.jpg&quot;) || val.endsWith(&quot;.png&quot;)</span>
+<span class="pc bpc" id="L421" title="2 of 4 branches missed.">                                    || val.endsWith(&quot;.jpeg&quot;) || val.endsWith(&quot;.webp&quot;)) {</span>
+<span class="fc" id="L422">                                path = val;</span>
+<span class="fc" id="L423">                                Log.d(&quot;SwipeActivity&quot;, &quot;Path found in key '&quot; + key + &quot;' → &quot; + val);</span>
+<span class="fc" id="L424">                                break;</span>
+                            }
+<span class="fc" id="L426">                        }</span>
+
+<span class="pc bpc" id="L428" title="1 of 2 branches missed.">                        if (path.isEmpty()) {</span>
+<span class="nc" id="L429">                            String[] tryKeys = {&quot;path&quot;, &quot;filePath&quot;, &quot;url&quot;, &quot;imageUrl&quot;, &quot;imagePath&quot;, &quot;link&quot;, &quot;file&quot;, &quot;fileName&quot;, &quot;image&quot;};</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">                            for (String k : tryKeys) {</span>
+<span class="nc bnc" id="L431" title="All 4 branches missed.">                                if (imgObj.has(k) &amp;&amp; !imgObj.isNull(k)) {</span>
+<span class="nc" id="L432">                                    path = imgObj.getString(k);</span>
+<span class="nc" id="L433">                                    break;</span>
+                                }
+                            }
+                        }
+
+                        String imageUrl;
+<span class="pc bpc" id="L439" title="1 of 2 branches missed.">                        if (!path.isEmpty()) {</span>
+<span class="pc bpc" id="L440" title="1 of 2 branches missed.">                            imageUrl = path.startsWith(&quot;http&quot;) ? path</span>
+<span class="pc bpc" id="L441" title="1 of 2 branches missed.">                                    : BASE_URL + (path.startsWith(&quot;/&quot;) ? path : &quot;/&quot; + path);</span>
+                        } else {
+<span class="nc" id="L443">                            int imageId = imgObj.optInt(&quot;imageId&quot;, imgObj.optInt(&quot;image_id&quot;, imgObj.optInt(&quot;id&quot;, -1)));</span>
+<span class="nc bnc" id="L444" title="All 2 branches missed.">                            if (imageId &gt; 0) {</span>
+<span class="nc" id="L445">                                imageUrl = BASE_URL + &quot;/files/images/&quot; + imageId + &quot;/&quot; + imageId + &quot;.jpg&quot;;</span>
+                            } else {
+<span class="nc" id="L447">                                loadPlaceholderAvatar(userId);</span>
+<span class="nc" id="L448">                                return;</span>
+                            }
+                        }
+
+<span class="fc" id="L452">                        Log.d(&quot;SwipeActivity&quot;, &quot;Loading photo: &quot; + imageUrl);</span>
+<span class="fc" id="L453">                        final String fUrl = imageUrl;</span>
+<span class="fc" id="L454">                        runOnUiThread(() -&gt; {</span>
+<span class="pc bpc" id="L455" title="2 of 4 branches missed.">                            if (!isFinishing() &amp;&amp; !isDestroyed()) {</span>
+<span class="fc" id="L456">                                Glide.with(SwipeActivity.this)</span>
+<span class="fc" id="L457">                                        .load(fUrl)</span>
+<span class="fc" id="L458">                                        .placeholder(android.R.drawable.ic_menu_gallery)</span>
+<span class="fc" id="L459">                                        .error(android.R.drawable.ic_menu_gallery)</span>
+<span class="fc" id="L460">                                        .centerCrop()</span>
+<span class="fc" id="L461">                                        .into(ivProfilePhoto);</span>
+                            }
+<span class="fc" id="L463">                        });</span>
+
+<span class="nc" id="L465">                    } catch (Exception e) {</span>
+<span class="nc" id="L466">                        Log.e(&quot;SwipeActivity&quot;, &quot;Error parsing image: &quot; + e.getMessage());</span>
+<span class="nc" id="L467">                        loadPlaceholderAvatar(userId);</span>
+<span class="fc" id="L468">                    }</span>
+<span class="fc" id="L469">                },</span>
+                error -&gt; {
+<span class="nc" id="L471">                    Log.d(&quot;SwipeActivity&quot;, &quot;Image API unavailable for user &quot; + userId);</span>
+<span class="nc" id="L472">                    loadPlaceholderAvatar(userId);</span>
+<span class="nc" id="L473">                }</span>
+        );
+
+<span class="fc" id="L476">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="fc" id="L477">    }</span>
+
+    private void loadPlaceholderAvatar(int userId) {
+<span class="nc" id="L480">        String placeholderUrl = &quot;https://picsum.photos/seed/user&quot; + userId + &quot;/300/300&quot;;</span>
+<span class="nc" id="L481">        Log.d(&quot;SwipeActivity&quot;, &quot;Loading placeholder: &quot; + placeholderUrl);</span>
+<span class="nc" id="L482">        runOnUiThread(() -&gt; {</span>
+<span class="nc bnc" id="L483" title="All 4 branches missed.">            if (!isFinishing() &amp;&amp; !isDestroyed()) {</span>
+<span class="nc" id="L484">                Glide.with(SwipeActivity.this)</span>
+<span class="nc" id="L485">                        .load(placeholderUrl)</span>
+<span class="nc" id="L486">                        .placeholder(android.R.drawable.ic_menu_gallery)</span>
+<span class="nc" id="L487">                        .error(android.R.drawable.ic_menu_gallery)</span>
+<span class="nc" id="L488">                        .centerCrop()</span>
+<span class="nc" id="L489">                        .into(ivProfilePhoto);</span>
+            }
+<span class="nc" id="L491">        });</span>
+<span class="nc" id="L492">    }</span>
+
+    private void showMatchDialog(String matchedName, int matchedUserId) {
+<span class="nc bnc" id="L495" title="All 4 branches missed.">        if (isFinishing() || isDestroyed()) return;</span>
+
+        // Proactively create the conversation so chat is ready
+<span class="nc" id="L498">        String url = BASE_URL + &quot;/conversations/direct&quot;;</span>
+<span class="nc" id="L499">        JSONObject body = new JSONObject();</span>
+
+<span class="nc" id="L501">        View dialogView = getLayoutInflater().inflate(R.layout.dialog_match, null);</span>
+
+<span class="nc" id="L503">        TextView tvSubtitle = dialogView.findViewById(R.id.tvMatchSubtitle);</span>
+<span class="nc" id="L504">        Button btnSendMessage = dialogView.findViewById(R.id.btnSendMessage);</span>
+<span class="nc" id="L505">        Button btnKeepSwiping = dialogView.findViewById(R.id.btnKeepSwiping);</span>
+
+        // Disable send message button until ready
+<span class="nc" id="L508">        btnSendMessage.setEnabled(false);</span>
+<span class="nc" id="L509">        btnSendMessage.setText(&quot;Preparing chat...&quot;);</span>
+
+<span class="nc bnc" id="L511" title="All 2 branches missed.">        String subtitle = matchedName.isEmpty()</span>
+<span class="nc" id="L512">                ? &quot;You both liked each other!&quot;</span>
+<span class="nc" id="L513">                : &quot;You and &quot; + matchedName + &quot; liked each other!&quot;;</span>
+<span class="nc" id="L514">        tvSubtitle.setText(subtitle);</span>
+
+<span class="nc" id="L516">        AlertDialog dialog = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_NoActionBar)</span>
+<span class="nc" id="L517">                .setView(dialogView)</span>
+<span class="nc" id="L518">                .setCancelable(true)</span>
+<span class="nc" id="L519">                .create();</span>
+
+<span class="nc bnc" id="L521" title="All 2 branches missed.">        if (dialog.getWindow() != null) {</span>
+<span class="nc" id="L522">            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);</span>
+        }
+
+<span class="nc" id="L525">        btnSendMessage.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L526">            dialog.dismiss();</span>
+<span class="nc" id="L527">            Intent intent = new Intent(SwipeActivity.this, ChatActivity.class);</span>
+<span class="nc" id="L528">            intent.putExtra(&quot;USER_ID&quot;, currentUserId);</span>
+<span class="nc" id="L529">            intent.putExtra(&quot;OTHER_USER_ID&quot;, matchedUserId);</span>
+<span class="nc" id="L530">            intent.putExtra(&quot;OTHER_USERNAME&quot;, matchedName);</span>
+<span class="nc" id="L531">            startActivity(intent);</span>
+<span class="nc" id="L532">        });</span>
+
+<span class="nc" id="L534">        btnKeepSwiping.setOnClickListener(v -&gt; dialog.dismiss());</span>
+
+<span class="nc" id="L536">        dialog.show();</span>
+
+        // Now make the POST request to create the conversation
+        try {
+<span class="nc" id="L540">            body.put(&quot;user1Id&quot;, currentUserId);</span>
+<span class="nc" id="L541">            body.put(&quot;user2Id&quot;, matchedUserId);</span>
+<span class="nc" id="L542">        } catch (Exception ignored) {}</span>
+<span class="nc" id="L543">        final JSONObject postBody = body;</span>
+<span class="nc" id="L544">        StringRequest req = new StringRequest(Request.Method.POST, url,</span>
+                response -&gt; {
+<span class="nc" id="L546">                    Log.d(&quot;SwipeActivity&quot;, &quot;Proactively created conversation: &quot; + response);</span>
+                    // Enable the button now
+<span class="nc" id="L548">                    btnSendMessage.setEnabled(true);</span>
+<span class="nc" id="L549">                    btnSendMessage.setText(&quot;Go to Message&quot;);</span>
+<span class="nc" id="L550">                },</span>
+                error -&gt; {
+<span class="nc" id="L552">                    Log.e(&quot;SwipeActivity&quot;, &quot;Failed to proactively create conversation: &quot; + error);</span>
+<span class="nc" id="L553">                    btnSendMessage.setEnabled(true);</span>
+<span class="nc" id="L554">                    btnSendMessage.setText(&quot;Go to Message&quot;);</span>
+<span class="nc" id="L555">                    Toast.makeText(SwipeActivity.this, &quot;Could not prepare chat. Try again.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L556">                }) {</span>
+            @Override
+            public byte[] getBody() {
+                try {
+<span class="nc" id="L560">                    return postBody.toString().getBytes(&quot;utf-8&quot;);</span>
+<span class="nc" id="L561">                } catch (Exception e) {</span>
+<span class="nc" id="L562">                    return null;</span>
+                }
+            }
+
+            @Override
+            public String getBodyContentType() {
+<span class="nc" id="L568">                return &quot;application/json; charset=utf-8&quot;;</span>
+            }
+        };
+<span class="nc" id="L571">        req.setShouldCache(false);</span>
+<span class="nc" id="L572">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+
+        // Animate the dialog in with a scale + fade
+<span class="nc" id="L575">        View decorView = dialog.getWindow().getDecorView();</span>
+<span class="nc" id="L576">        decorView.setScaleX(0.8f);</span>
+<span class="nc" id="L577">        decorView.setScaleY(0.8f);</span>
+<span class="nc" id="L578">        decorView.setAlpha(0f);</span>
+<span class="nc" id="L579">        AnimatorSet animSet = new AnimatorSet();</span>
+<span class="nc" id="L580">        animSet.playTogether(</span>
+<span class="nc" id="L581">                ObjectAnimator.ofFloat(decorView, &quot;scaleX&quot;, 0.8f, 1f),</span>
+<span class="nc" id="L582">                ObjectAnimator.ofFloat(decorView, &quot;scaleY&quot;, 0.8f, 1f),</span>
+<span class="nc" id="L583">                ObjectAnimator.ofFloat(decorView, &quot;alpha&quot;, 0f, 1f)</span>
+        );
+<span class="nc" id="L585">        animSet.setDuration(350);</span>
+<span class="nc" id="L586">        animSet.start();</span>
+<span class="nc" id="L587">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

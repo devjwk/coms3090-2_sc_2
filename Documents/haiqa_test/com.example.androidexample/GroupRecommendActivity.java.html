@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupRecommendActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">GroupRecommendActivity.java</span></div><h1>GroupRecommendActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.util.Log;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.JsonArrayRequest;
+import org.json.JSONException;
+
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+
+import java.util.Collections;
+
+
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.EditText;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+
+import java.util.List;
+
+import android.widget.Toast;
+<span class="nc" id="L40">public class GroupRecommendActivity extends AppCompatActivity {</span>
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+    private RecyclerView recyclerViewRecommend;
+
+    private RecyclerView recyclerViewSearch;
+    private EditText etSearchKeyword;
+
+    private GroupRecommendAdapter searchAdapter;
+
+<span class="nc" id="L49">    private List&lt;RecommendGroup&gt; allGroups = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L50">    private List&lt;RecommendGroup&gt; filteredGroups = new ArrayList&lt;&gt;();</span>
+
+    private GroupRecommendAdapter adapter;
+
+    private Button btnShowSearch, btnShowRecommend;
+    private LinearLayout layoutSearchSection, layoutRecommendSection;
+
+    private TextView tvInterest1, tvInterest2, tvInterest3;
+
+    private Spinner spinnerCategory;
+<span class="nc" id="L60">    private String selectedCategory = &quot;All&quot;;</span>
+
+    private Spinner spinnerSort;
+<span class="nc" id="L63">    private String selectedSort = &quot;Alphabetical&quot;;</span>
+    private TextView btnBack;
+
+    private int userId;
+    private String userJson;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L71">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L72">        setContentView(R.layout.activity_group_recommend);</span>
+
+        // getting intent data
+<span class="nc" id="L75">        userId = getIntent().getIntExtra(&quot;USER_ID&quot;, 1);</span>
+<span class="nc" id="L76">        userJson = getIntent().getStringExtra(&quot;USER_JSON&quot;);</span>
+
+        // link view
+<span class="nc" id="L79">        recyclerViewRecommend = findViewById(R.id.recyclerViewRecommend);</span>
+
+<span class="nc" id="L81">        btnShowSearch = findViewById(R.id.btnShowSearch);</span>
+<span class="nc" id="L82">        btnShowRecommend = findViewById(R.id.btnShowRecommend);</span>
+
+<span class="nc" id="L84">        layoutSearchSection = findViewById(R.id.layoutSearchSection);</span>
+<span class="nc" id="L85">        layoutRecommendSection = findViewById(R.id.layoutRecommendSection);</span>
+
+<span class="nc" id="L87">        spinnerCategory = findViewById(R.id.spinnerCategory);</span>
+<span class="nc" id="L88">        spinnerSort = findViewById(R.id.spinnerSort);</span>
+
+<span class="nc" id="L90">        tvInterest1 = findViewById(R.id.tvInterest1);</span>
+<span class="nc" id="L91">        tvInterest2 = findViewById(R.id.tvInterest2);</span>
+<span class="nc" id="L92">        tvInterest3 = findViewById(R.id.tvInterest3);</span>
+        //find view by id
+<span class="nc" id="L94">        recyclerViewSearch = findViewById(R.id.recyclerViewSearch);</span>
+<span class="nc" id="L95">        etSearchKeyword = findViewById(R.id.etSearchKeyword);</span>
+
+        //search recyclerView setting
+<span class="nc" id="L98">        recyclerViewSearch.setLayoutManager(new LinearLayoutManager(this));</span>
+<span class="nc" id="L99">        searchAdapter = new GroupRecommendAdapter(filteredGroups, group -&gt; {</span>
+<span class="nc" id="L100">            joinGroup(group);</span>
+<span class="nc" id="L101">        });</span>
+<span class="nc" id="L102">        recyclerViewSearch.setAdapter(searchAdapter);</span>
+
+
+<span class="nc" id="L105">        btnBack = findViewById(R.id.btnBack);</span>
+        //set recyclerView
+<span class="nc" id="L107">        recyclerViewRecommend.setLayoutManager(new LinearLayoutManager(this));</span>
+
+<span class="nc" id="L109">        String[] categories = {&quot;All&quot;};</span>
+<span class="nc" id="L110">        String[] sortsOptions = {&quot;Alphabetical&quot;};</span>
+
+<span class="nc" id="L112">        ArrayAdapter&lt;String&gt; categoryAdapter = new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_spinner_item, categories);</span>
+<span class="nc" id="L113">        ArrayAdapter&lt;String&gt; sortAdapter = new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_spinner_item, sortsOptions);</span>
+
+<span class="nc" id="L115">        sortAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);</span>
+<span class="nc" id="L116">        spinnerSort.setAdapter(sortAdapter);</span>
+
+
+<span class="nc" id="L119">        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);</span>
+<span class="nc" id="L120">        spinnerCategory.setAdapter(categoryAdapter);</span>
+
+<span class="nc" id="L122">        filteredGroups.addAll(allGroups);</span>
+<span class="nc" id="L123">        searchAdapter.updateData(filteredGroups);</span>
+
+        //link adapter to recyclerView
+<span class="nc" id="L126">        adapter = new GroupRecommendAdapter(allGroups, group -&gt; {</span>
+<span class="nc" id="L127">            joinGroup(group);</span>
+<span class="nc" id="L128">        });</span>
+<span class="nc" id="L129">        recyclerViewRecommend.setAdapter(adapter);</span>
+<span class="nc" id="L130">        fetchRecommendedGroups();</span>
+<span class="nc" id="L131">        searchGroupsFromBackend(&quot;&quot;);</span>
+
+
+
+        // button click - Search / Recommend conversion
+<span class="nc" id="L136">        btnShowSearch.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L137">            layoutSearchSection.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L138">            layoutRecommendSection.setVisibility(View.GONE);</span>
+
+<span class="nc" id="L140">            btnShowSearch.setBackgroundTintList(getColorStateList(android.R.color.holo_blue_light));</span>
+<span class="nc" id="L141">            btnShowRecommend.setBackgroundTintList(getColorStateList(android.R.color.darker_gray));</span>
+<span class="nc" id="L142">        });</span>
+
+<span class="nc" id="L144">        btnShowRecommend.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L145">            layoutSearchSection.setVisibility(View.GONE);</span>
+<span class="nc" id="L146">            layoutRecommendSection.setVisibility(View.VISIBLE);</span>
+
+<span class="nc" id="L148">            btnShowRecommend.setBackgroundTintList(getColorStateList(android.R.color.holo_blue_light));</span>
+<span class="nc" id="L149">            btnShowSearch.setBackgroundTintList(getColorStateList(android.R.color.darker_gray));</span>
+<span class="nc" id="L150">        });</span>
+
+<span class="nc" id="L152">        etSearchKeyword.addTextChangedListener(new TextWatcher() {</span>
+            @Override
+<span class="nc" id="L154">            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}</span>
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+<span class="nc" id="L158">                searchGroupsFromBackend(s.toString());</span>
+<span class="nc" id="L159">            }</span>
+
+            @Override
+<span class="nc" id="L162">            public void afterTextChanged(Editable s) {}</span>
+        });
+
+<span class="nc" id="L165">        spinnerCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {</span>
+            @Override
+            public void onItemSelected(AdapterView&lt;?&gt; parent, View view, int position, long id) {
+<span class="nc" id="L168">                selectedCategory = parent.getItemAtPosition(position).toString();</span>
+<span class="nc" id="L169">                searchGroupsFromBackend(etSearchKeyword.getText().toString());</span>
+<span class="nc" id="L170">            }</span>
+
+            @Override
+            public void onNothingSelected(AdapterView&lt;?&gt; parent) {
+<span class="nc" id="L174">                selectedCategory = &quot;All&quot;;</span>
+<span class="nc" id="L175">            }</span>
+        });
+
+<span class="nc" id="L178">        spinnerSort.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {</span>
+            @Override
+            public void onItemSelected(AdapterView&lt;?&gt; parent, View view, int position, long id) {
+<span class="nc" id="L181">                selectedSort = parent.getItemAtPosition(position).toString();</span>
+<span class="nc" id="L182">                searchGroupsFromBackend(etSearchKeyword.getText().toString());</span>
+<span class="nc" id="L183">            }</span>
+
+            @Override
+            public void onNothingSelected(AdapterView&lt;?&gt; parent) {
+<span class="nc" id="L187">                selectedSort = &quot;Alphabetical&quot;;</span>
+<span class="nc" id="L188">            }</span>
+        });
+
+        // display user interests
+<span class="nc" id="L192">        setUserInterests();</span>
+
+
+
+<span class="nc" id="L196">        btnBack.setOnClickListener(v -&gt; finish());</span>
+<span class="nc" id="L197">    }</span>
+
+
+    // getting hobbies from user json and display it
+    private void setUserInterests() {
+<span class="nc bnc" id="L202" title="All 2 branches missed.">        if (userJson == null) return;</span>
+
+        try {
+<span class="nc" id="L205">            JSONObject jo = new JSONObject(userJson);</span>
+
+<span class="nc bnc" id="L207" title="All 4 branches missed.">            if (jo.has(&quot;interests&quot;) &amp;&amp; !jo.isNull(&quot;interests&quot;)) {</span>
+<span class="nc" id="L208">                JSONArray interests = jo.getJSONArray(&quot;interests&quot;);</span>
+
+<span class="nc bnc" id="L210" title="All 2 branches missed.">                if (interests.length() &gt; 0)</span>
+<span class="nc" id="L211">                    tvInterest1.setText(interests.getString(0));</span>
+
+<span class="nc bnc" id="L213" title="All 2 branches missed.">                if (interests.length() &gt; 1)</span>
+<span class="nc" id="L214">                    tvInterest2.setText(interests.getString(1));</span>
+
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                if (interests.length() &gt; 2)</span>
+<span class="nc" id="L217">                    tvInterest3.setText(interests.getString(2));</span>
+            }
+
+<span class="nc" id="L220">        } catch (Exception e) {</span>
+<span class="nc" id="L221">            e.printStackTrace();</span>
+<span class="nc" id="L222">        }</span>
+<span class="nc" id="L223">    }</span>
+
+    private List&lt;String&gt; getUserInterests() {
+<span class="nc" id="L226">        List&lt;String&gt; userInterests = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        if (userJson == null) return userInterests;</span>
+
+        try {
+<span class="nc" id="L231">            JSONObject jo = new JSONObject(userJson);</span>
+
+<span class="nc bnc" id="L233" title="All 4 branches missed.">            if (jo.has(&quot;interests&quot;) &amp;&amp; !jo.isNull(&quot;interests&quot;)) {</span>
+<span class="nc" id="L234">                JSONArray interests = jo.getJSONArray(&quot;interests&quot;);</span>
+
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                for (int i = 0; i &lt; interests.length(); i++) {</span>
+<span class="nc" id="L237">                    userInterests.add(interests.getString(i));</span>
+                }
+            }
+<span class="nc" id="L240">        } catch (Exception e) {</span>
+<span class="nc" id="L241">            e.printStackTrace();</span>
+<span class="nc" id="L242">        }</span>
+
+<span class="nc" id="L244">        return userInterests;</span>
+    }
+
+    private int calculateMatchScore(List&lt;String&gt; userInterests, List&lt;String&gt; groupInterests) {
+<span class="nc bnc" id="L248" title="All 6 branches missed.">        if (userInterests == null || userInterests.isEmpty() ||</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">                groupInterests == null || groupInterests.isEmpty()) {</span>
+<span class="nc" id="L250">            return 0;</span>
+        }
+
+<span class="nc" id="L253">        int overlap = 0;</span>
+
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        for (String userInterest : userInterests) {</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">            for (String groupInterest : groupInterests) {</span>
+<span class="nc" id="L257">                String u = userInterest.trim().toLowerCase();</span>
+<span class="nc" id="L258">                String g = groupInterest.trim().toLowerCase();</span>
+
+<span class="nc bnc" id="L260" title="All 6 branches missed.">                if (u.equals(g) || u.contains(g) || g.contains(u)) {</span>
+<span class="nc" id="L261">                    overlap++;</span>
+                }
+<span class="nc" id="L263">            }</span>
+<span class="nc" id="L264">        }</span>
+
+<span class="nc" id="L266">        return (overlap * 100) / userInterests.size();</span>
+    }
+
+    private void filterGroups(String keyword) {
+<span class="nc" id="L270">        filteredGroups.clear();</span>
+
+<span class="nc" id="L272">        String lowerKeyword = keyword.toLowerCase().trim();</span>
+
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        for (RecommendGroup group : allGroups) {</span>
+<span class="nc bnc" id="L275" title="All 2 branches missed.">            boolean matchesCategory = selectedCategory.equals(&quot;All&quot;) ||</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">                    group.getCategory().equalsIgnoreCase(selectedCategory);</span>
+
+            boolean matchesKeyword;
+
+<span class="nc bnc" id="L280" title="All 2 branches missed.">            if (lowerKeyword.isEmpty()) {</span>
+<span class="nc" id="L281">                matchesKeyword = true;</span>
+            } else {
+<span class="nc" id="L283">                boolean matchesName = group.getGroupName().toLowerCase().contains(lowerKeyword);</span>
+<span class="nc" id="L284">                boolean matchesDescription = group.getDescription().toLowerCase().contains(lowerKeyword);</span>
+<span class="nc" id="L285">                boolean matchesGroupCategory = group.getCategory().toLowerCase().contains(lowerKeyword);</span>
+
+<span class="nc" id="L287">                boolean matchesMatchedKeyword = false;</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">                for (String k : group.getMatchedKeywords()) {</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">                    if (k.toLowerCase().contains(lowerKeyword)) {</span>
+<span class="nc" id="L290">                        matchesMatchedKeyword = true;</span>
+<span class="nc" id="L291">                        break;</span>
+                    }
+<span class="nc" id="L293">                }</span>
+
+<span class="nc bnc" id="L295" title="All 8 branches missed.">                matchesKeyword = matchesName || matchesDescription || matchesGroupCategory || matchesMatchedKeyword;</span>
+            }
+
+<span class="nc bnc" id="L298" title="All 4 branches missed.">            if (matchesCategory &amp;&amp; matchesKeyword) {</span>
+<span class="nc" id="L299">                filteredGroups.add(group);</span>
+            }
+<span class="nc" id="L301">        }</span>
+
+<span class="nc bnc" id="L303" title="All 2 branches missed.">        if (selectedSort.equals(&quot;Best Match&quot;)) {</span>
+<span class="nc" id="L304">            Collections.sort(filteredGroups, (g1, g2) -&gt;</span>
+<span class="nc" id="L305">                    Integer.compare(g2.getMatchScore(), g1.getMatchScore()));</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">        } else if (selectedSort.equals(&quot;Most Members&quot;)) {</span>
+<span class="nc" id="L307">            Collections.sort(filteredGroups, (g1, g2) -&gt;</span>
+<span class="nc" id="L308">                    Integer.compare(g2.getMemberCount(), g1.getMemberCount()));</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">        } else if (selectedSort.equals(&quot;Alphabetical&quot;)) {</span>
+<span class="nc" id="L310">            Collections.sort(filteredGroups, (g1, g2) -&gt;</span>
+<span class="nc" id="L311">                    g1.getGroupName().compareToIgnoreCase(g2.getGroupName()));</span>
+        }
+
+<span class="nc" id="L314">        searchAdapter.updateData(filteredGroups);</span>
+<span class="nc" id="L315">    }</span>
+    private void joinGroup(RecommendGroup group) {
+<span class="nc" id="L317">        String url = BASE_URL + &quot;/gm/join&quot;;</span>
+
+<span class="nc" id="L319">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L321">            body.put(&quot;user_id&quot;, userId);</span>
+<span class="nc" id="L322">            body.put(&quot;group_id&quot;, group.getGroupId());</span>
+<span class="nc" id="L323">            body.put(&quot;is_moderator&quot;, false);</span>
+<span class="nc" id="L324">        } catch (JSONException e) {</span>
+<span class="nc" id="L325">            e.printStackTrace();</span>
+<span class="nc" id="L326">            Toast.makeText(this, &quot;Failed to build join request&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L327">            return;</span>
+<span class="nc" id="L328">        }</span>
+
+<span class="nc" id="L330">        Log.d(&quot;JOIN_GROUP&quot;, &quot;URL: &quot; + url);</span>
+<span class="nc" id="L331">        Log.d(&quot;JOIN_GROUP&quot;, &quot;userId: &quot; + userId);</span>
+<span class="nc" id="L332">        Log.d(&quot;JOIN_GROUP&quot;, &quot;groupId: &quot; + group.getGroupId());</span>
+<span class="nc" id="L333">        Log.d(&quot;JOIN_GROUP&quot;, &quot;body: &quot; + body.toString());</span>
+
+<span class="nc" id="L335">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.POST,
+                url,
+                body,
+                response -&gt; {
+<span class="nc" id="L340">                    Log.d(&quot;JOIN_GROUP_SUCCESS&quot;, response.toString());</span>
+
+<span class="nc" id="L342">                    String message = response.optString(&quot;message&quot;, &quot;failure&quot;);</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">                    if (message.equals(&quot;success&quot;)) {</span>
+<span class="nc" id="L344">                        Toast.makeText(this,</span>
+<span class="nc" id="L345">                                &quot;Joined group: &quot; + group.getGroupName(),</span>
+<span class="nc" id="L346">                                Toast.LENGTH_SHORT).show();</span>
+                    } else {
+<span class="nc" id="L348">                        Toast.makeText(this,</span>
+<span class="nc" id="L349">                                &quot;Join failed: &quot; + response.toString(),</span>
+<span class="nc" id="L350">                                Toast.LENGTH_LONG).show();</span>
+                    }
+<span class="nc" id="L352">                },</span>
+                error -&gt; {
+<span class="nc" id="L354">                    Log.e(&quot;JOIN_GROUP_ERROR&quot;, error.toString());</span>
+
+<span class="nc bnc" id="L356" title="All 2 branches missed.">                    if (error.networkResponse != null) {</span>
+<span class="nc" id="L357">                        Log.e(&quot;JOIN_GROUP_ERROR&quot;, &quot;Status code: &quot; + error.networkResponse.statusCode);</span>
+
+                        try {
+<span class="nc" id="L360">                            String errorBody = new String(error.networkResponse.data);</span>
+<span class="nc" id="L361">                            Log.e(&quot;JOIN_GROUP_ERROR&quot;, &quot;Error body: &quot; + errorBody);</span>
+<span class="nc" id="L362">                            Toast.makeText(this,</span>
+                                    &quot;Join failed (&quot; + error.networkResponse.statusCode + &quot;): &quot; + errorBody,
+<span class="nc" id="L364">                                    Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L365">                        } catch (Exception e) {</span>
+<span class="nc" id="L366">                            Toast.makeText(this,</span>
+                                    &quot;Join failed with status: &quot; + error.networkResponse.statusCode,
+<span class="nc" id="L368">                                    Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L369">                        }</span>
+                    } else {
+<span class="nc" id="L371">                        Toast.makeText(this,</span>
+<span class="nc" id="L372">                                &quot;Network error: &quot; + error.toString(),</span>
+<span class="nc" id="L373">                                Toast.LENGTH_LONG).show();</span>
+                    }
+<span class="nc" id="L375">                }</span>
+        );
+
+<span class="nc" id="L378">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L379">    }</span>
+    private void fetchRecommendedGroups() {
+<span class="nc" id="L381">        String url = BASE_URL + &quot;/groups/recommend/&quot; + userId;</span>
+
+<span class="nc" id="L383">        JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                url,
+                null,
+                response -&gt; {
+<span class="nc" id="L388">                    allGroups.clear();</span>
+
+                    try {
+<span class="nc bnc" id="L391" title="All 2 branches missed.">                        for (int i = 0; i &lt; response.length(); i++) {</span>
+<span class="nc" id="L392">                            JSONObject obj = response.getJSONObject(i);</span>
+
+<span class="nc" id="L394">                            int groupId = obj.optInt(&quot;groupId&quot;);</span>
+<span class="nc" id="L395">                            String groupName = obj.optString(&quot;groupName&quot;, &quot;&quot;);</span>
+<span class="nc" id="L396">                            String description = obj.optString(&quot;description&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L398">                            JSONArray interestsArray = obj.optJSONArray(&quot;interests&quot;);</span>
+<span class="nc" id="L399">                            List&lt;String&gt; interests = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L401" title="All 2 branches missed.">                            if (interestsArray != null) {</span>
+<span class="nc bnc" id="L402" title="All 2 branches missed.">                                for (int j = 0; j &lt; interestsArray.length(); j++) {</span>
+<span class="nc" id="L403">                                    interests.add(interestsArray.optString(j));</span>
+                                }
+                            }
+<span class="nc" id="L406">                            List&lt;String&gt; userInterests = getUserInterests();</span>
+<span class="nc" id="L407">                            int matchScore = calculateMatchScore(userInterests, interests);</span>
+
+<span class="nc" id="L409">                            allGroups.add(new RecommendGroup(</span>
+                                    groupId,
+                                    groupName,
+                                    description,
+                                    &quot;All&quot;,
+                                    0,
+                                    interests,
+                                    matchScore
+                            ));
+                        }
+
+<span class="nc" id="L420">                        adapter.updateData(allGroups);</span>
+<span class="nc" id="L421">                        Log.d(&quot;RECOMMEND_FETCH&quot;, &quot;Loaded recommended groups: &quot; + allGroups.size());</span>
+
+<span class="nc" id="L423">                    } catch (JSONException e) {</span>
+<span class="nc" id="L424">                        e.printStackTrace();</span>
+<span class="nc" id="L425">                        Toast.makeText(this, &quot;Failed to parse recommended groups&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L426">                    }</span>
+<span class="nc" id="L427">                },</span>
+                error -&gt; {
+<span class="nc" id="L429">                    Log.e(&quot;RECOMMEND_FETCH_ERROR&quot;, error.toString());</span>
+<span class="nc" id="L430">                    Toast.makeText(this, &quot;Failed to load recommended groups&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L431">                }</span>
+        );
+
+<span class="nc" id="L434">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L435">    }</span>
+
+    private void searchGroupsFromBackend(String keyword) {
+        String url;
+
+<span class="nc bnc" id="L440" title="All 4 branches missed.">        if (keyword == null || keyword.trim().isEmpty()) {</span>
+<span class="nc" id="L441">            url = BASE_URL + &quot;/groups&quot;;</span>
+        } else {
+<span class="nc" id="L443">            url = BASE_URL + &quot;/groups/search?keyword=&quot; + keyword.trim();</span>
+        }
+
+<span class="nc" id="L446">        JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                url,
+                null,
+                response -&gt; {
+<span class="nc" id="L451">                    filteredGroups.clear();</span>
+
+                    try {
+<span class="nc bnc" id="L454" title="All 2 branches missed.">                        for (int i = 0; i &lt; response.length(); i++) {</span>
+<span class="nc" id="L455">                            JSONObject obj = response.getJSONObject(i);</span>
+
+<span class="nc" id="L457">                            int groupId = obj.optInt(&quot;groupId&quot;);</span>
+<span class="nc" id="L458">                            String groupName = obj.optString(&quot;groupName&quot;, &quot;&quot;);</span>
+<span class="nc" id="L459">                            String description = obj.optString(&quot;description&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L461">                            JSONArray interestsArray = obj.optJSONArray(&quot;interests&quot;);</span>
+<span class="nc" id="L462">                            List&lt;String&gt; interests = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L464" title="All 2 branches missed.">                            if (interestsArray != null) {</span>
+<span class="nc bnc" id="L465" title="All 2 branches missed.">                                for (int j = 0; j &lt; interestsArray.length(); j++) {</span>
+<span class="nc" id="L466">                                    interests.add(interestsArray.optString(j));</span>
+                                }
+                            }
+<span class="nc" id="L469">                            List&lt;String&gt; userInterests = getUserInterests();</span>
+<span class="nc" id="L470">                            int matchScore = calculateMatchScore(userInterests, interests);</span>
+
+<span class="nc" id="L472">                            filteredGroups.add(new RecommendGroup(</span>
+                                    groupId,
+                                    groupName,
+                                    description,
+                                    &quot;All&quot;,
+                                    0,
+                                    interests,
+                                    matchScore
+                            ));
+                        }
+
+<span class="nc bnc" id="L483" title="All 2 branches missed.">                        if (selectedSort.equals(&quot;Alphabetical&quot;)) {</span>
+<span class="nc" id="L484">                            Collections.sort(filteredGroups, (g1, g2) -&gt;</span>
+<span class="nc" id="L485">                                    g1.getGroupName().compareToIgnoreCase(g2.getGroupName()));</span>
+                        }
+
+<span class="nc" id="L488">                        searchAdapter.updateData(filteredGroups);</span>
+<span class="nc" id="L489">                        Log.d(&quot;SEARCH_FETCH&quot;, &quot;Loaded search groups: &quot; + filteredGroups.size());</span>
+
+<span class="nc" id="L491">                    } catch (JSONException e) {</span>
+<span class="nc" id="L492">                        e.printStackTrace();</span>
+<span class="nc" id="L493">                        Toast.makeText(this, &quot;Failed to parse search results&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L494">                    }</span>
+<span class="nc" id="L495">                },</span>
+                error -&gt; {
+<span class="nc" id="L497">                    Log.e(&quot;SEARCH_FETCH_ERROR&quot;, error.toString());</span>
+<span class="nc" id="L498">                    Toast.makeText(this, &quot;Failed to search groups&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L499">                }</span>
+        );
+
+<span class="nc" id="L502">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L503">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

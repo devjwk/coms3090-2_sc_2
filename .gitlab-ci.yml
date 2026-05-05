@@ -1,0 +1,39 @@
+stages:
+  - mavenbuild
+  - maventest
+
+maven-build:
+  stage: mavenbuild
+  tags:
+    - jj_tag
+  script:
+    - export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+    - export PATH=$JAVA_HOME/bin:$PATH
+    - java -version
+    - javac -version
+    - cd Backend/BackendMain/springboot_example
+    - mvn package
+  only:
+    refs:
+      - JJ_CICD
+    changes:
+      - Backend/**/*
+      - .gitlab-ci.yml
+
+maven-test:
+  stage: maventest
+  tags:
+    - jj_tag
+  script:
+    - export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+    - export PATH=$JAVA_HOME/bin:$PATH
+    - java -version
+    - javac -version
+    - cd Backend/BackendMain/springboot_example
+    - mvn test
+  only:
+    refs:
+      - JJ_CICD
+    changes:
+      - Backend/**/*
+      - .gitlab-ci.yml

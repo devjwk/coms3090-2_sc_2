@@ -33,6 +33,13 @@
         <activity
             android:name=".MatchesActivity"
             android:exported="false" />
+        <activity 
+            android:name=".AdminDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminModeratorRequestsActivity"
+            android:exported="false"        
+        />
 
         <activity android:name=".GroupsActivity" />
         <activity android:name=".HomeActivity" />
@@ -44,6 +51,7 @@
         <activity android:name=".GroupChatActivity" />
         <activity android:name=".GroupChatListActivity" />
         <activity android:name=".SwipeActivity" />
+        <activity android:name=".NotificationActivity" />
         <activity
             android:name=".WebSocketConnectActivity"
             android:exported="false" />
@@ -59,6 +67,7 @@
         <activity
             android:name=".ModeratorGroupManagementActivity"
             android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

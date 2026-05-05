@@ -20,4 +20,5 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
           i LIKE CONCAT('%', :keyword, '%'))
     """)
     List<Group> searchGroups(@Param("keyword") String keyword);
+    List<Group> findByModeratorId(Long moderatorId);
 }

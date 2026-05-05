@@ -1,0 +1,203 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > AdminController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">onetoone.Administrators</a>
+</div>
+
+<h1>Coverage Summary for Class: AdminController (onetoone.Administrators)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">AdminController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    20%
+  </span>
+  <span class="absValue">
+    (1/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    3.6%
+  </span>
+  <span class="absValue">
+    (1/28)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package onetoone.Administrators;
+&nbsp;
+&nbsp;import onetoone.Administrators.AdminRepository;
+&nbsp;import onetoone.Matches.Match;
+&nbsp;import onetoone.Reports.Report;
+&nbsp;import onetoone.Reports.ReportStatus;
+&nbsp;import onetoone.Users.User;
+&nbsp;import onetoone.Users.UserRepository;
+&nbsp;import org.springframework.beans.factory.annotation.Autowired;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.util.Map;
+&nbsp;import java.util.Optional;
+&nbsp;
+&nbsp;@RestController
+<b class="fc">&nbsp;public class AdminController {</b>
+&nbsp;    @Autowired
+&nbsp;    AdminRepository AdminRepository;
+&nbsp;
+&nbsp;    @Autowired
+&nbsp;    UserRepository UserRepository;
+&nbsp;
+&nbsp;    //create
+&nbsp;    @PostMapping(&quot;/admin&quot;)
+&nbsp;    public ResponseEntity&lt;String&gt; createReport (@RequestBody Admin admin) {
+<b class="nc">&nbsp;        User adm = UserRepository.findById(admin.getUserId().getUserId()).orElse(null);</b>
+&nbsp;
+<b class="nc">&nbsp;        if (adm == null) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.status(404).body(&quot;User not found&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Admin r2 = AdminRepository.findByUserId_UserId(adm.getUserId());</b>
+&nbsp;
+<b class="nc">&nbsp;        if (r2 != null) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.status(404).body(&quot;User already has an admin listing. Please update it instead.&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        admin.setUserId(adm);</b>
+<b class="nc">&nbsp;        admin.setIsActiveAdmin(true);</b>
+<b class="nc">&nbsp;        AdminRepository.save(admin);</b>
+<b class="nc">&nbsp;        return ResponseEntity.ok(&quot;Admin created&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //verify
+&nbsp;    @GetMapping(&quot;/admin/{id}&quot;)
+&nbsp;    public ResponseEntity&lt;Boolean&gt; checkAdmin (@PathVariable Long id) {
+<b class="nc">&nbsp;        Admin adm = AdminRepository.findByUserId_UserId(id);</b>
+&nbsp;
+<b class="nc">&nbsp;        if (adm == null) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.status(404).body(false);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (adm.getIsActiveAdmin() == true) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.status(200).body(true);</b>
+&nbsp;        }
+&nbsp;        else {
+<b class="nc">&nbsp;            return ResponseEntity.status(200).body(false);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    //update isActiveAdmin (enable/disable admin powers)
+&nbsp;    @PutMapping(&quot;/admin/{id}&quot;)
+&nbsp;    public ResponseEntity&lt;String&gt; updateAdmin (@PathVariable Long id, @RequestBody Admin info) {
+<b class="nc">&nbsp;        Optional&lt;Admin&gt; matchOptional = AdminRepository.findById(id);</b>
+&nbsp;
+<b class="nc">&nbsp;        if(matchOptional.isEmpty()){</b>
+<b class="nc">&nbsp;            return ResponseEntity.status(404).body(&quot;Not found.&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Admin admin = matchOptional.get();</b>
+<b class="nc">&nbsp;        admin.setIsActiveAdmin(info.getIsActiveAdmin());</b>
+&nbsp;
+<b class="nc">&nbsp;        AdminRepository.save(admin);</b>
+<b class="nc">&nbsp;        return ResponseEntity.ok(&quot;Admin updated&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //delete
+&nbsp;    @DeleteMapping(&quot;/admin/{id}&quot;)
+&nbsp;    public ResponseEntity&lt;String&gt; deleteAdmin (@PathVariable Long id) {
+<b class="nc">&nbsp;        if(!AdminRepository.existsById(id)) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.status(404).body(&quot;Admin not found&quot;);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        AdminRepository.deleteById(id);</b>
+<b class="nc">&nbsp;        return ResponseEntity.ok(&quot;Admin deleted&quot;);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-05-01 23:01</div>
+</div>
+</body>
+</html>
