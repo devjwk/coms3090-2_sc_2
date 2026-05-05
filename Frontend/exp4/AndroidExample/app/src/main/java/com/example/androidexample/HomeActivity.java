@@ -106,7 +106,6 @@ public class HomeActivity extends AppCompatActivity implements NotificationWebSo
         btnReport      = findViewById(R.id.btnReport);
 
 
-
         // Parse and display user information if the JSON data is available
         if (userJson != null && !userJson.isEmpty()) {
             try {
@@ -207,15 +206,6 @@ public class HomeActivity extends AppCompatActivity implements NotificationWebSo
             startActivity(intent);
 
         });
-        View btnNotificationCenter = findViewById(R.id.btnNotificationCenter);
-
-        if (btnNotificationCenter != null) {
-            btnNotificationCenter.setOnClickListener(v -> {
-                Intent intent = new Intent(HomeActivity.this, NotificationActivity.class);
-                intent.putExtra("USER_ID", userId);
-                startActivity(intent);
-            });
-        }
 
 
     }
@@ -228,26 +218,41 @@ public class HomeActivity extends AppCompatActivity implements NotificationWebSo
 
     private void handleNotificationMessage(String message) {
         try {
-            Log.d("NOTIFY_DEBUG", "RAW DATA: " + message);
-
             org.json.JSONObject json = new org.json.JSONObject(message);
 
             String type = json.optString("type", "GENERAL");
-            String body = json.optString("message", "");
-            String timestampStr = json.optString("timestamp", "");
+            String body = json.optString("message", "New notification");
+            String timestamp = json.optString("timestamp", "");
 
-            String formattedMessage = NotificationFormatter.formatNotification(type, body, timestampStr);
+            String formattedMessage =
+                    NotificationFormatter.formatNotification(type, body, timestamp);
 
-            runOnUiThread(() -> showTopBanner(formattedMessage));
+            showTopBanner(formattedMessage);
 
-        } catch (Exception e) {
-            Log.e("NOTIFY_DEBUG", "Parsing Failed: " + e.getMessage());
+            // If this is a match notification, ensure a direct conversation exists
+            if ("MATCH_CREATED".equals(type) || "MATCH_ACCEPTED".equals(type) || "MATCH_UPDATED".equals(type)) {
+                int matchedUserId = -1;
+                // Common payload keys that might contain the other user's id
+                if (json.has("matchedUserId")) matchedUserId = json.optInt("matchedUserId", -1);
+                else if (json.has("otherUserId")) matchedUserId = json.optInt("otherUserId", -1);
+                else if (json.has("user1Id") && json.has("user2Id")) {
+                    int u1 = json.optInt("user1Id", -1);
+                    int u2 = json.optInt("user2Id", -1);
+                    matchedUserId = (u1 == userId) ? u2 : u1;
+                }
 
-            String fallbackMessage = message == null || message.isEmpty()
-                    ? "New notification"
-                    : message;
+                if (matchedUserId > 0 && matchedUserId != userId) {
+                    // Proactively create/direct the conversation for both users
+                    sendDirectConversationPost(userId, matchedUserId);
+                } else {
+                    // If notification didn't include the matched user id, fetch accepted matches
+                    fetchAcceptedMatchesAndEnsureConversations();
+                }
+            }
 
-            runOnUiThread(() -> showTopBanner(fallbackMessage));
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
     }
 
