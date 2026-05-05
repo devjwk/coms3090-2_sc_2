@@ -33,6 +33,13 @@
         <activity
             android:name=".MatchesActivity"
             android:exported="false" />
+        <activity 
+            android:name=".AdminDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminModeratorRequestsActivity"
+            android:exported="false"        
+        />
 
         <activity android:name=".GroupsActivity" />
         <activity android:name=".HomeActivity" />
