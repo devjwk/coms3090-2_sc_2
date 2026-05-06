@@ -1,0 +1,326 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > MatchController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">onetoone.Matches</a>
+</div>
+
+<h1>Coverage Summary for Class: MatchController (onetoone.Matches)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MatchController</td>
+<td class="coverageStat">
+  <span class="percent">
+    12.5%
+  </span>
+  <span class="absValue">
+    (1/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    5%
+  </span>
+  <span class="absValue">
+    (3/60)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">MatchController$NextMatchResponse</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    11.1%
+  </span>
+  <span class="absValue">
+    (1/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    4.9%
+  </span>
+  <span class="absValue">
+    (3/61)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package onetoone.Matches;
+&nbsp;
+&nbsp;import onetoone.Groups.Group;
+&nbsp;import onetoone.Groups.GroupRepository;
+&nbsp;import onetoone.Notifications.Notification;
+&nbsp;import onetoone.Users.User;
+&nbsp;import onetoone.Users.UserRepository;
+&nbsp;import org.springframework.beans.factory.annotation.Autowired;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.time.Instant;
+&nbsp;import java.time.temporal.ChronoUnit;
+&nbsp;import java.util.HashSet;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Optional;
+&nbsp;import java.util.Set;
+&nbsp;
+&nbsp;import io.swagger.v3.oas.annotations.Operation;
+&nbsp;import io.swagger.v3.oas.annotations.Parameter;
+&nbsp;import io.swagger.v3.oas.annotations.responses.ApiResponse;
+&nbsp;import io.swagger.v3.oas.annotations.responses.ApiResponses;
+&nbsp;import io.swagger.v3.oas.annotations.tags.Tag;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@Tag(name = &quot;Matches&quot;, description = &quot;Operations for managing user matches&quot;)
+<b class="fc">&nbsp;public class MatchController {</b>
+&nbsp;    @Autowired
+&nbsp;    MatchRepository MatchRepository;
+&nbsp;
+&nbsp;    @Autowired
+&nbsp;    UserRepository UserRepository;
+&nbsp;
+&nbsp;    @Autowired
+&nbsp;    Notification notification;
+&nbsp;
+<b class="nc">&nbsp;    public record NextMatchResponse(Long userId, Long matchId) {}</b>
+&nbsp;
+<b class="fc">&nbsp;    private String success = &quot;{\&quot;message\&quot;:\&quot;success\&quot;}&quot;;</b>
+<b class="fc">&nbsp;    private String failure = &quot;{\&quot;message\&quot;:\&quot;failure\&quot;}&quot;;</b>
+&nbsp;
+&nbsp;    /** Fetch full user profile by id (all fields from database). */
+&nbsp;    @GetMapping(path = &quot;/matches/user/{userId}&quot;)
+&nbsp;    @Operation(summary = &quot;Get matches by user ID&quot;,
+&nbsp;            description = &quot;Returns all matches where the user is either user1 or user2.&quot;)
+&nbsp;    @ApiResponses(value = {
+&nbsp;            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Matches retrieved successfully&quot;),
+&nbsp;            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;No matches found&quot;)
+&nbsp;    })
+&nbsp;    public List&lt;Match&gt; getMatchByUserId(@Parameter(description = &quot;ID of the user&quot;, required = true) @PathVariable Long userId) {
+<b class="nc">&nbsp;        return MatchRepository.findByUser1IdOrUser2Id(userId, userId);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(path = &quot;/matches/{id}&quot;)
+&nbsp;    @Operation(summary = &quot;Get match by ID&quot;,
+&nbsp;            description = &quot;Returns match details for a specific match ID.&quot;)
+&nbsp;    @ApiResponses(value = {
+&nbsp;            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Match found&quot;),
+&nbsp;            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Match not found&quot;)
+&nbsp;    })
+&nbsp;    ResponseEntity&lt;Match&gt; getMatchById(@Parameter(description = &quot;ID of the match&quot;, required = true) @PathVariable Long id) {
+<b class="nc">&nbsp;        Optional&lt;Match&gt; matchOptional = MatchRepository.findById(id);</b>
+<b class="nc">&nbsp;        if (matchOptional.isEmpty()) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.notFound().build();</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return ResponseEntity.ok(matchOptional.get());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PutMapping(&quot;/matches/edit/{id}&quot;)
+&nbsp;    @Operation(summary = &quot;Update match status&quot;,
+&nbsp;            description = &quot;Updates the status of a match (e.g., accepted, pending, rejected).&quot;)
+&nbsp;    @ApiResponses(value = {
+&nbsp;            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Match updated successfully&quot;),
+&nbsp;            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Match not found&quot;)
+&nbsp;    })
+&nbsp;    public ResponseEntity&lt;Match&gt; editGroup(@Parameter(description = &quot;ID of the match to update&quot;, required = true) @PathVariable Long id, @RequestBody Match req) {
+&nbsp;
+<b class="nc">&nbsp;        Optional&lt;Match&gt; matchOptional = MatchRepository.findById(id);</b>
+&nbsp;
+<b class="nc">&nbsp;        if(matchOptional.isEmpty()){</b>
+<b class="nc">&nbsp;            return ResponseEntity.notFound().build();</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Match match = matchOptional.get();</b>
+<b class="nc">&nbsp;        match.setStatus(req.getStatus());</b>
+&nbsp;
+<b class="nc">&nbsp;        if (req.getStatus() == MatchStatus.ACCEPTED) {</b>
+<b class="nc">&nbsp;            notification.sendNotification(match.getUser1Id(), &quot;MATCH_CREATED&quot;, &quot;You have a new match!&quot;);</b>
+<b class="nc">&nbsp;            notification.sendNotification(match.getUser2Id(), &quot;MATCH_CREATED&quot;, &quot;You have a new match!&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        MatchRepository.save(match);</b>
+&nbsp;
+<b class="nc">&nbsp;        return ResponseEntity.ok(match);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //s4c
+&nbsp;    @PostMapping(&quot;/matches&quot;)
+&nbsp;    public ResponseEntity&lt;String&gt; createMatch (@RequestBody Match match) {
+<b class="nc">&nbsp;        MatchRepository.save(match);</b>
+<b class="nc">&nbsp;        return ResponseEntity.ok(&quot;Match created&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //s4c
+&nbsp;    @DeleteMapping(&quot;/matches/del/{id}&quot;)
+&nbsp;    public ResponseEntity&lt;String&gt; deleteMatch (@PathVariable Long id) {
+<b class="nc">&nbsp;        if(!MatchRepository.existsById(id)) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.status(404).body(&quot;Match not found&quot;);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        MatchRepository.deleteById(id);</b>
+<b class="nc">&nbsp;        return ResponseEntity.ok(&quot;Match deleted&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/matches/next/{userId}&quot;)
+&nbsp;    public ResponseEntity&lt;NextMatchResponse&gt; getNextMatch(@PathVariable Long userId) {
+&nbsp;
+&nbsp;        // priority on pending matches created by another user towards you
+<b class="nc">&nbsp;        List&lt;Match&gt; pendingForU = MatchRepository.findByUser2IdAndStatus(userId, MatchStatus.PENDING);</b>
+<b class="nc">&nbsp;        if (!pendingForU.isEmpty()) {</b>
+<b class="nc">&nbsp;            Match leozack = pendingForU.get(0);</b>
+<b class="nc">&nbsp;            return ResponseEntity.ok(new NextMatchResponse(leozack.getUser1Id(), leozack.getMatchId()));</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // exclude your own ID and anyone already in a DECLINED, BLOCKED, ACCEPTED, or PENDING match
+<b class="nc">&nbsp;        Set&lt;Long&gt; unmatchedIds = new HashSet&lt;&gt;();</b>
+<b class="nc">&nbsp;        Set&lt;Long&gt; excludedIds = new HashSet&lt;&gt;();</b>
+<b class="nc">&nbsp;        excludedIds.add(userId);</b>
+&nbsp;
+<b class="nc">&nbsp;        List&lt;Match&gt; existingMatches = MatchRepository.findByUser1IdOrUser2Id(userId, userId);</b>
+<b class="nc">&nbsp;        for (Match lioconvoy : existingMatches) {</b>
+<b class="nc">&nbsp;            MatchStatus stat = lioconvoy.getStatus();</b>
+<b class="nc">&nbsp;            if (stat == MatchStatus.DECLINED || stat == MatchStatus.BLOCKED || stat == MatchStatus.ACCEPTED || stat == MatchStatus.PENDING) {</b>
+<b class="nc">&nbsp;                Long otherId = lioconvoy.getUser1Id().equals(userId) ? lioconvoy.getUser2Id() : lioconvoy.getUser1Id();</b>
+<b class="nc">&nbsp;                excludedIds.add(otherId);</b>
+&nbsp;            }
+<b class="nc">&nbsp;            if (stat == MatchStatus.UNMATCHED) {</b>
+<b class="nc">&nbsp;                Long otherId = lioconvoy.getUser1Id().equals(userId) ? lioconvoy.getUser2Id() : lioconvoy.getUser1Id();</b>
+<b class="nc">&nbsp;                unmatchedIds.add(otherId);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // resume an existing UNMATCHED entry where you are user1
+<b class="nc">&nbsp;        Optional&lt;Match&gt; existingUnmatched = MatchRepository</b>
+<b class="nc">&nbsp;                .findByUser1IdAndStatus(userId, MatchStatus.UNMATCHED)</b>
+<b class="nc">&nbsp;                .stream()</b>
+<b class="nc">&nbsp;                .findFirst();</b>
+&nbsp;
+<b class="nc">&nbsp;        if (existingUnmatched.isPresent()) {</b>
+<b class="nc">&nbsp;            Match cyandog = existingUnmatched.get();</b>
+<b class="nc">&nbsp;            return ResponseEntity.ok(new NextMatchResponse(cyandog.getUser2Id(), cyandog.getMatchId()));</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // find a new user if no unmatched to take care of
+<b class="nc">&nbsp;        List&lt;User&gt; allUsers = UserRepository.findAll();</b>
+<b class="nc">&nbsp;        for (User kogenta : allUsers) {</b>
+<b class="nc">&nbsp;            if (!excludedIds.contains(kogenta.getUserId()) &amp;&amp; !unmatchedIds.contains(kogenta.getUserId())) {</b>
+<b class="nc">&nbsp;                Match newMatch = new Match();</b>
+<b class="nc">&nbsp;                newMatch.setUser1Id(userId);</b>
+<b class="nc">&nbsp;                newMatch.setUser2Id(kogenta.getUserId());</b>
+<b class="nc">&nbsp;                newMatch.setStatus(MatchStatus.UNMATCHED);</b>
+<b class="nc">&nbsp;                MatchRepository.save(newMatch);</b>
+<b class="nc">&nbsp;                return ResponseEntity.ok(new NextMatchResponse(kogenta.getUserId(), newMatch.getMatchId()));</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // No users left to match with, returns zeros
+<b class="nc">&nbsp;        return ResponseEntity.ok(new NextMatchResponse(0L, 0L));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/matches/count/recent&quot;)
+&nbsp;    ResponseEntity&lt;Long&gt; getRecentMatchCount() {
+<b class="nc">&nbsp;        Instant seven = Instant.now().minus(7, ChronoUnit.DAYS);</b>
+<b class="nc">&nbsp;        long count = MatchRepository.countByCreatedAtAfter(seven);</b>
+<b class="nc">&nbsp;        return ResponseEntity.ok(count);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-05-01 23:01</div>
+</div>
+</body>
+</html>

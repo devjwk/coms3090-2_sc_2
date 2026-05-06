@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -163,5 +165,12 @@ public class MatchController {
 
         // No users left to match with, returns zeros
         return ResponseEntity.ok(new NextMatchResponse(0L, 0L));
+    }
+
+    @GetMapping("/matches/count/recent")
+    ResponseEntity<Long> getRecentMatchCount() {
+        Instant seven = Instant.now().minus(7, ChronoUnit.DAYS);
+        long count = MatchRepository.countByCreatedAtAfter(seven);
+        return ResponseEntity.ok(count);
     }
 }

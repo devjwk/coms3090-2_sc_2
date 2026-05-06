@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HomeActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">HomeActivity.java</span></div><h1>HomeActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+
+import android.view.View;
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.StringRequest;
+import org.json.JSONArray;
+
+import org.java_websocket.handshake.ServerHandshake;
+
+import android.widget.Button;
+
+
+/**
+ * Main dashboard activity shown to the user after a successful login.
+ * This screen displays the user's profile information, including their name,
+ * email, bio, and hobbies. It also serves as a navigation hub to access
+ * groups, group memberships, and matches.
+ */
+<span class="nc" id="L29">public class HomeActivity extends AppCompatActivity implements NotificationWebSocketListener {</span>
+
+    /** TextViews for displaying user greeting and initials */
+    private TextView tvWelcomeName, tvAvatarInitial, tvProfileInitial;
+
+    /** TextViews for displaying profile details: name, email, and bio */
+    private TextView tvProfileName, tvProfileEmail, tvProfileBio;
+
+    /** TextViews for displaying up to two hobbies of the user */
+    private TextView tvHobby1, tvHobby2;
+
+    /** Interactive text elements used as buttons for profile editing and viewing all groups */
+    private TextView btnEditProfile, btnSeeAllGroups;
+
+    /** Bottom navigation bar items represented as clickable layouts */
+    private LinearLayout navProfile, navGroups, navMembers, navMatches;
+
+    /** Unique identifier for the logged-in user */
+    private int userId;
+
+    /** Raw JSON string containing user details passed from the login screen */
+    private String userJson;
+
+    private androidx.cardview.widget.CardView cardGroup1, cardGroup2;
+
+    private TextView tvGroup1Name, tvGroup1Desc, tvGroup2Name, tvGroup2Desc;
+
+    private LinearLayout layoutNotificationBanner;
+    private TextView tvNotificationBanner;
+    private Button btnReport;
+
+    /**
+     * Initializes the activity, sets up the layout, retrieves user data from the intent,
+     * populates profile views, and configures navigation listeners.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *                           previously being shut down then this Bundle contains the data it most
+     *                           recently supplied in onSaveInstanceState(Bundle).
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L70">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L71">        setContentView(R.layout.activity_home);</span>
+
+<span class="nc" id="L73">        userId   = getIntent().getIntExtra(&quot;USER_ID&quot;, 1);</span>
+<span class="nc" id="L74">        userJson = getIntent().getStringExtra(&quot;USER_JSON&quot;);</span>
+
+<span class="nc" id="L76">        String wsUrl = &quot;ws://coms-3090-015.class.las.iastate.edu:8080/chat/&quot; + userId;</span>
+<span class="nc" id="L77">        Log.d(&quot;HomeActivity&quot;, &quot;Connecting WebSocket early: &quot; + wsUrl);</span>
+<span class="nc" id="L78">        WebSocketClientManager.getInstance().setCurrentUserId(userId);</span>
+<span class="nc" id="L79">        WebSocketClientManager.getInstance().connectWebSocket(wsUrl);</span>
+
+<span class="nc" id="L81">        tvWelcomeName  = findViewById(R.id.tvWelcomeName);</span>
+<span class="nc" id="L82">        tvAvatarInitial  = findViewById(R.id.tvAvatarInitial);</span>
+<span class="nc" id="L83">        tvProfileInitial = findViewById(R.id.tvProfileInitial);</span>
+<span class="nc" id="L84">        tvProfileName  = findViewById(R.id.tvProfileName);</span>
+<span class="nc" id="L85">        tvProfileEmail = findViewById(R.id.tvProfileEmail);</span>
+<span class="nc" id="L86">        tvProfileBio   = findViewById(R.id.tvProfileBio);</span>
+<span class="nc" id="L87">        tvHobby1       = findViewById(R.id.tvHobby1);</span>
+<span class="nc" id="L88">        tvHobby2       = findViewById(R.id.tvHobby2);</span>
+<span class="nc" id="L89">        btnEditProfile   = findViewById(R.id.btnEditProfile);</span>
+<span class="nc" id="L90">        btnSeeAllGroups  = findViewById(R.id.btnSeeAllGroups);</span>
+<span class="nc" id="L91">        navProfile     = findViewById(R.id.navProfile);</span>
+<span class="nc" id="L92">        navGroups      = findViewById(R.id.navGroups);</span>
+<span class="nc" id="L93">        navMembers     = findViewById(R.id.navMembers);</span>
+<span class="nc" id="L94">        navMatches     = findViewById(R.id.navMatches);</span>
+<span class="nc" id="L95">        cardGroup1     = findViewById(R.id.cardGroup1);</span>
+<span class="nc" id="L96">        cardGroup2     = findViewById(R.id.cardGroup2);</span>
+<span class="nc" id="L97">        tvGroup1Name   = findViewById(R.id.tvGroup1Name);</span>
+<span class="nc" id="L98">        tvGroup1Desc   = findViewById(R.id.tvGroup1Desc);</span>
+<span class="nc" id="L99">        tvGroup2Name   = findViewById(R.id.tvGroup2Name);</span>
+<span class="nc" id="L100">        tvGroup2Desc   = findViewById(R.id.tvGroup2Desc);</span>
+
+<span class="nc" id="L102">        layoutNotificationBanner = findViewById(R.id.layoutNotificationBanner);</span>
+<span class="nc" id="L103">        tvNotificationBanner = findViewById(R.id.tvNotificationBanner);</span>
+
+
+<span class="nc" id="L106">        btnReport      = findViewById(R.id.btnReport);</span>
+
+
+        // Parse and display user information if the JSON data is available
+<span class="nc bnc" id="L110" title="All 4 branches missed.">        if (userJson != null &amp;&amp; !userJson.isEmpty()) {</span>
+            try {
+<span class="nc" id="L112">                org.json.JSONObject jo = new org.json.JSONObject(userJson);</span>
+<span class="nc" id="L113">                String name  = jo.optString(&quot;name&quot;, jo.optString(&quot;displayName&quot;, &quot;User&quot;));</span>
+<span class="nc" id="L114">                String email = jo.optString(&quot;email&quot;, &quot;&quot;);</span>
+<span class="nc" id="L115">                String bio   = jo.optString(&quot;bio&quot;, &quot;&quot;);</span>
+
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                String initial = name.isEmpty() ? &quot;?&quot; : String.valueOf(name.charAt(0)).toUpperCase();</span>
+
+<span class="nc" id="L119">                tvWelcomeName.setText(name + &quot; 👋&quot;);</span>
+<span class="nc" id="L120">                tvAvatarInitial.setText(initial);</span>
+<span class="nc" id="L121">                tvProfileInitial.setText(initial);</span>
+<span class="nc" id="L122">                tvProfileName.setText(name);</span>
+<span class="nc" id="L123">                tvProfileEmail.setText(email);</span>
+<span class="nc" id="L124">                tvProfileBio.setText(bio);</span>
+
+<span class="nc bnc" id="L126" title="All 4 branches missed.">                if (jo.has(&quot;hobbies&quot;) &amp;&amp; !jo.isNull(&quot;hobbies&quot;)) {</span>
+<span class="nc" id="L127">                    org.json.JSONArray hobbies = jo.getJSONArray(&quot;hobbies&quot;);</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                    if (hobbies.length() &gt; 0) tvHobby1.setText(hobbies.optString(0));</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                    if (hobbies.length() &gt; 1) tvHobby2.setText(hobbies.optString(1));</span>
+                }
+
+<span class="nc" id="L132">            } catch (org.json.JSONException e) {</span>
+<span class="nc" id="L133">                e.printStackTrace();</span>
+<span class="nc" id="L134">            }</span>
+        }
+<span class="nc" id="L136">        tvGroup1Name.setText(&quot;Badminton Club&quot;);</span>
+<span class="nc" id="L137">        tvGroup1Desc.setText(&quot;Weekly badminton sessions&quot;);</span>
+<span class="nc" id="L138">        tvGroup2Name.setText(&quot;Coding Club&quot;);</span>
+<span class="nc" id="L139">        tvGroup2Desc.setText(&quot;Let's code together&quot;);</span>
+
+
+        // Set navigation listeners
+<span class="nc" id="L143">        btnEditProfile.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L144">            Intent intent = new Intent(HomeActivity.this, Login.class);</span>
+<span class="nc" id="L145">            intent.putExtra(&quot;USER_ID&quot;, userId);</span>
+<span class="nc" id="L146">            intent.putExtra(&quot;USER_JSON&quot;, userJson);</span>
+<span class="nc" id="L147">            startActivity(intent);</span>
+<span class="nc" id="L148">        });</span>
+
+<span class="nc" id="L150">        navGroups.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L151">            Intent intent = new Intent(HomeActivity.this, GroupsActivity.class);</span>
+<span class="nc" id="L152">            intent.putExtra(&quot;USER_ID&quot;, userId);</span>
+<span class="nc" id="L153">            intent.putExtra(&quot;USER_JSON&quot;, userJson);</span>
+<span class="nc" id="L154">            startActivity(intent);</span>
+<span class="nc" id="L155">        });</span>
+
+<span class="nc" id="L157">        navProfile.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L158">            Intent intent = new Intent(HomeActivity.this, SwipeActivity.class);</span>
+<span class="nc" id="L159">            intent.putExtra(&quot;USER_ID&quot;, userId);</span>
+<span class="nc" id="L160">            startActivity(intent);</span>
+<span class="nc" id="L161">        });</span>
+
+
+<span class="nc" id="L164">        cardGroup1.setOnClickListener(v -&gt; openGroupRecommendActivity());</span>
+<span class="nc" id="L165">        cardGroup2.setOnClickListener(v -&gt; openGroupRecommendActivity());</span>
+
+        // 🤝 Navigation to group membership management
+<span class="nc" id="L168">        navMembers.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L169">            Intent intent = new Intent(HomeActivity.this, GroupMembershipActivity.class);</span>
+<span class="nc" id="L170">            intent.putExtra(&quot;USER_ID&quot;, userId);</span>
+<span class="nc" id="L171">            startActivity(intent);</span>
+<span class="nc" id="L172">        });</span>
+
+        // 🔥 Navigation to matches management
+<span class="nc" id="L175">        navMatches.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L176">            Intent intent = new Intent(HomeActivity.this, MatchesActivity.class);</span>
+<span class="nc" id="L177">            intent.putExtra(&quot;USER_ID&quot;, userId);</span>
+<span class="nc" id="L178">            startActivity(intent);</span>
+<span class="nc" id="L179">        });</span>
+<span class="nc" id="L180">        LinearLayout navChat = findViewById(R.id.navChat);</span>
+<span class="nc" id="L181">        navChat.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L182">            Intent intent = new Intent(HomeActivity.this, ChatListActivity.class);</span>
+<span class="nc" id="L183">            intent.putExtra(&quot;USER_ID&quot;, userId);</span>
+<span class="nc" id="L184">            startActivity(intent);</span>
+<span class="nc" id="L185">        });</span>
+
+<span class="nc" id="L187">        NotificationWebSocketManager.getInstance().setNotificationWebSocketListener(this);</span>
+<span class="nc" id="L188">        connectNotificationSocket();</span>
+
+//        //dummy test notification
+//        layoutNotificationBanner.postDelayed(() -&gt; {
+//            String fakeMessage = &quot;{&quot;
+//                    + &quot;\&quot;type\&quot;:\&quot;GROUP_JOIN\&quot;,&quot;
+//                    + &quot;\&quot;message\&quot;:\&quot;John joined Coding Club\&quot;,&quot;
+//                    + &quot;\&quot;timestamp\&quot;:\&quot;\&quot;&quot;
+//                    + &quot;}&quot;;
+//
+//            handleNotificationMessage(fakeMessage);
+//        }, 2000);
+
+
+<span class="nc" id="L202">        btnReport.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L203">            Intent intent = new Intent(HomeActivity.this, ReportSubmitActivity.class);</span>
+<span class="nc" id="L204">            intent.putExtra(&quot;USER_ID&quot;, userId);</span>
+<span class="nc" id="L205">            intent.putExtra(&quot;USER_JSON&quot;, userJson);</span>
+<span class="nc" id="L206">            startActivity(intent);</span>
+
+<span class="nc" id="L208">        });</span>
+
+
+<span class="nc" id="L211">    }</span>
+    private void openGroupRecommendActivity() {
+<span class="nc" id="L213">        Intent intent = new Intent(HomeActivity.this, GroupRecommendActivity.class);</span>
+<span class="nc" id="L214">        intent.putExtra(&quot;USER_ID&quot;, userId);</span>
+<span class="nc" id="L215">        intent.putExtra(&quot;USER_JSON&quot;, userJson);</span>
+<span class="nc" id="L216">        startActivity(intent);</span>
+<span class="nc" id="L217">    }</span>
+
+    private void handleNotificationMessage(String message) {
+        try {
+<span class="nc" id="L221">            org.json.JSONObject json = new org.json.JSONObject(message);</span>
+
+<span class="nc" id="L223">            String type = json.optString(&quot;type&quot;, &quot;GENERAL&quot;);</span>
+<span class="nc" id="L224">            String body = json.optString(&quot;message&quot;, &quot;New notification&quot;);</span>
+<span class="nc" id="L225">            String timestamp = json.optString(&quot;timestamp&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L227">            String formattedMessage =</span>
+<span class="nc" id="L228">                    NotificationFormatter.formatNotification(type, body, timestamp);</span>
+
+<span class="nc" id="L230">            showTopBanner(formattedMessage);</span>
+
+            // If this is a match notification, ensure a direct conversation exists
+<span class="nc bnc" id="L233" title="All 6 branches missed.">            if (&quot;MATCH_CREATED&quot;.equals(type) || &quot;MATCH_ACCEPTED&quot;.equals(type) || &quot;MATCH_UPDATED&quot;.equals(type)) {</span>
+<span class="nc" id="L234">                int matchedUserId = -1;</span>
+                // Common payload keys that might contain the other user's id
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                if (json.has(&quot;matchedUserId&quot;)) matchedUserId = json.optInt(&quot;matchedUserId&quot;, -1);</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">                else if (json.has(&quot;otherUserId&quot;)) matchedUserId = json.optInt(&quot;otherUserId&quot;, -1);</span>
+<span class="nc bnc" id="L238" title="All 4 branches missed.">                else if (json.has(&quot;user1Id&quot;) &amp;&amp; json.has(&quot;user2Id&quot;)) {</span>
+<span class="nc" id="L239">                    int u1 = json.optInt(&quot;user1Id&quot;, -1);</span>
+<span class="nc" id="L240">                    int u2 = json.optInt(&quot;user2Id&quot;, -1);</span>
+<span class="nc bnc" id="L241" title="All 2 branches missed.">                    matchedUserId = (u1 == userId) ? u2 : u1;</span>
+                }
+
+<span class="nc bnc" id="L244" title="All 4 branches missed.">                if (matchedUserId &gt; 0 &amp;&amp; matchedUserId != userId) {</span>
+                    // Proactively create/direct the conversation for both users
+<span class="nc" id="L246">                    sendDirectConversationPost(userId, matchedUserId);</span>
+                } else {
+                    // If notification didn't include the matched user id, fetch accepted matches
+<span class="nc" id="L249">                    fetchAcceptedMatchesAndEnsureConversations();</span>
+                }
+            }
+
+        }
+<span class="nc" id="L254">        catch (Exception e){</span>
+<span class="nc" id="L255">            e.printStackTrace();</span>
+<span class="nc" id="L256">        }</span>
+<span class="nc" id="L257">    }</span>
+
+    private void showTopBanner(String message) {
+<span class="nc" id="L260">        tvNotificationBanner.setText(message);</span>
+<span class="nc" id="L261">        layoutNotificationBanner.setVisibility(View.VISIBLE);</span>
+
+<span class="nc" id="L263">        layoutNotificationBanner.removeCallbacks(hideBannerRunnable);</span>
+<span class="nc" id="L264">        layoutNotificationBanner.postDelayed(hideBannerRunnable, 3000);</span>
+<span class="nc" id="L265">    }</span>
+
+    // --- Matches / Conversation helpers ---
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+
+    /**
+     * Ensures a direct conversation exists for every ACCEPTED match for this user.
+     * If the backend already has a conversation this POST should be idempotent.
+     */
+    private void fetchAcceptedMatchesAndEnsureConversations() {
+<span class="nc" id="L275">        String url = BASE_URL + &quot;/matches/user/&quot; + userId;</span>
+<span class="nc" id="L276">        JsonArrayRequest req = new JsonArrayRequest(Request.Method.GET, url, null,</span>
+                response -&gt; {
+                    try {
+<span class="nc bnc" id="L279" title="All 2 branches missed.">                        for (int i = 0; i &lt; response.length(); i++) {</span>
+<span class="nc" id="L280">                            org.json.JSONObject match = response.getJSONObject(i);</span>
+<span class="nc" id="L281">                            String status = match.optString(&quot;status&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L282" title="All 2 branches missed.">                            if (status == null) status = &quot;&quot;;</span>
+<span class="nc bnc" id="L283" title="All 4 branches missed.">                            if (&quot;ACCEPTED&quot;.equalsIgnoreCase(status) || &quot;MATCHED&quot;.equalsIgnoreCase(status)) {</span>
+<span class="nc" id="L284">                                int u1 = match.optInt(&quot;user1Id&quot;, -1);</span>
+<span class="nc" id="L285">                                int u2 = match.optInt(&quot;user2Id&quot;, -1);</span>
+<span class="nc bnc" id="L286" title="All 4 branches missed.">                                if (u1 &gt; 0 &amp;&amp; u2 &gt; 0) {</span>
+<span class="nc bnc" id="L287" title="All 2 branches missed.">                                    int other = (u1 == userId) ? u2 : u1;</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">                                    if (other &gt; 0) sendDirectConversationPost(userId, other);</span>
+                                }
+                            }
+                        }
+<span class="nc" id="L292">                    } catch (Exception e) {</span>
+<span class="nc" id="L293">                        Log.e(&quot;HomeActivity&quot;, &quot;Error parsing matches response: &quot; + e.getMessage());</span>
+<span class="nc" id="L294">                    }</span>
+<span class="nc" id="L295">                },</span>
+<span class="nc" id="L296">                error -&gt; Log.e(&quot;HomeActivity&quot;, &quot;Failed to fetch matches: &quot; + error)</span>
+        );
+<span class="nc" id="L298">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(req);</span>
+<span class="nc" id="L299">    }</span>
+
+    /**
+     * POST /conversations/direct with both user IDs to ensure the conversation exists
+     * and both users are added as participants.
+     */
+    private void sendDirectConversationPost(int user1Id, int user2Id) {
+<span class="nc" id="L306">        String url = BASE_URL + &quot;/conversations/direct&quot;;</span>
+<span class="nc" id="L307">        org.json.JSONObject body = new org.json.JSONObject();</span>
+        try {
+<span class="nc" id="L309">            body.put(&quot;user1Id&quot;, user1Id);</span>
+<span class="nc" id="L310">            body.put(&quot;user2Id&quot;, user2Id);</span>
+<span class="nc" id="L311">        } catch (Exception e) {</span>
+<span class="nc" id="L312">            Log.e(&quot;HomeActivity&quot;, &quot;Error building request body&quot;, e);</span>
+<span class="nc" id="L313">            return;</span>
+<span class="nc" id="L314">        }</span>
+
+<span class="nc" id="L316">        StringRequest request = new StringRequest(Request.Method.POST, url,</span>
+<span class="nc" id="L317">                response -&gt; Log.d(&quot;HomeActivity&quot;, &quot;Ensured direct conversation: &quot; + response),</span>
+<span class="nc" id="L318">                error -&gt; Log.e(&quot;HomeActivity&quot;, &quot;Failed to ensure direct conversation: &quot; + error)</span>
+<span class="nc" id="L319">        ) {</span>
+            @Override
+            public byte[] getBody() {
+<span class="nc" id="L322">                return body.toString().getBytes();</span>
+            }
+
+            @Override
+            public String getBodyContentType() {
+<span class="nc" id="L327">                return &quot;application/json; charset=utf-8&quot;;</span>
+            }
+        };
+<span class="nc" id="L330">        request.setShouldCache(false);</span>
+<span class="nc" id="L331">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L332">    }</span>
+
+<span class="nc" id="L334">    private final Runnable hideBannerRunnable = new Runnable() {</span>
+        @Override
+        public void run() {
+<span class="nc" id="L337">            layoutNotificationBanner.setVisibility(View.GONE);</span>
+<span class="nc" id="L338">        }</span>
+    };
+
+    @Override
+    protected void onDestroy() {
+<span class="nc" id="L343">        super.onDestroy();</span>
+<span class="nc" id="L344">        NotificationWebSocketManager.getInstance().removeNotificationWebSocketListener();</span>
+<span class="nc" id="L345">    }</span>
+
+    private void connectNotificationSocket() {
+<span class="nc" id="L348">        String wsUrl = &quot;ws://coms-3090-015.class.las.iastate.edu:8080/uver/notify/&quot; + userId;</span>
+<span class="nc" id="L349">        NotificationWebSocketManager.getInstance().connectWebSocket(wsUrl);</span>
+<span class="nc" id="L350">    }</span>
+    @Override
+    public void onNotificationOpen(ServerHandshake handshakedata) {
+<span class="nc" id="L353">        Log.d(&quot;HOME_WS&quot;, &quot;Notification WebSocket Connected&quot;);</span>
+<span class="nc" id="L354">    }</span>
+
+    @Override
+    public void onNotificationMessage(String message) {
+<span class="nc" id="L358">        Log.d(&quot;HOME_WS&quot;, &quot;Notification Received: &quot; + message);</span>
+<span class="nc" id="L359">        runOnUiThread(() -&gt; handleNotificationMessage(message));</span>
+<span class="nc" id="L360">    }</span>
+
+    @Override
+    public void onNotificationClose(int code, String reason, boolean remote) {
+<span class="nc" id="L364">        Log.d(&quot;HOME_WS&quot;, &quot;Notification WebSocket Closed: &quot; + reason);</span>
+<span class="nc" id="L365">    }</span>
+
+    @Override
+    public void onNotificationError(Exception ex) {
+<span class="nc" id="L369">        Log.e(&quot;HOME_WS&quot;, &quot;Notification WebSocket Error: &quot; + ex.getMessage());</span>
+<span class="nc" id="L370">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

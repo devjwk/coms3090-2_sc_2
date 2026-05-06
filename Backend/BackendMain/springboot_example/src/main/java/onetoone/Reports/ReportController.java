@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static onetoone.Reports.ReportStatus.IN_REVIEW;
+import static onetoone.Users.UserStatus.NEED_APPROVAL;
 
 @RestController
 public class ReportController {
@@ -104,5 +105,16 @@ public class ReportController {
     @GetMapping("/reports/reported/{id}")
     public List<Report> getReportsOfReported(@PathVariable Long id) {
         return reportRepository.findByReportedId_UserId(id);
+    }
+
+    @GetMapping("/reports/status/{status}")
+    public List<Report> getReportsByStatus(@PathVariable ReportStatus status) {
+        return reportRepository.findByStatus(status);
+    }
+
+    @GetMapping(path = "/reports/count/pending")
+    ResponseEntity<Long> getPendingCount() {
+        long count = reportRepository.countByStatus(IN_REVIEW);
+        return ResponseEntity.ok(count);
     }
 }

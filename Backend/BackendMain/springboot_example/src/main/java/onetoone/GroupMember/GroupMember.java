@@ -34,11 +34,9 @@ public class GroupMember {
     @Column(name = "joined_at", nullable = false, updatable = false)
     private Instant joined_at;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
-
-    @Column(nullable = false)
-    private Boolean is_moderator;
+    private MembershipStatus status;
 
     // =============================== Getters and Setters for each field ================================== //
 
@@ -53,9 +51,4 @@ public class GroupMember {
 
     public Instant getJoinedAt() { return joined_at; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public Boolean getModStatus() { return is_moderator; }
-    public void setModStatus(Boolean modStatus) { is_moderator = modStatus; }
 }

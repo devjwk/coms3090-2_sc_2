@@ -1,0 +1,261 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > UserController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">onetoone.Users</a>
+</div>
+
+<h1>Coverage Summary for Class: UserController (onetoone.Users)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">UserController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (13/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.5%
+  </span>
+  <span class="absValue">
+    (29/40)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package onetoone.Users;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Optional;
+&nbsp;
+&nbsp;import org.springframework.beans.factory.annotation.Autowired;
+&nbsp;import org.springframework.boot.autoconfigure.security.SecurityProperties;
+&nbsp;import org.springframework.transaction.annotation.Transactional;
+&nbsp;import org.springframework.web.bind.annotation.DeleteMapping;
+&nbsp;import org.springframework.web.bind.annotation.GetMapping;
+&nbsp;import org.springframework.web.bind.annotation.PathVariable;
+&nbsp;import org.springframework.web.bind.annotation.PostMapping;
+&nbsp;import org.springframework.web.bind.annotation.PutMapping;
+&nbsp;import org.springframework.web.bind.annotation.RequestBody;
+&nbsp;import org.springframework.web.bind.annotation.RequestParam;
+&nbsp;import org.springframework.web.bind.annotation.RestController;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import io.swagger.v3.oas.annotations.Operation;
+&nbsp;import io.swagger.v3.oas.annotations.Parameter;
+&nbsp;import io.swagger.v3.oas.annotations.responses.ApiResponse;
+&nbsp;import io.swagger.v3.oas.annotations.responses.ApiResponses;
+&nbsp;import io.swagger.v3.oas.annotations.tags.Tag;
+&nbsp;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@Tag(name = &quot;Users&quot;, description = &quot;Operations for managing users&quot;)
+<b class="fc">&nbsp;public class UserController {</b>
+&nbsp;
+&nbsp;    @Autowired
+&nbsp;    UserRepository UserRepository;
+&nbsp;
+<b class="fc">&nbsp;    private String success = &quot;{\&quot;message\&quot;:\&quot;success\&quot;}&quot;;</b>
+<b class="fc">&nbsp;    private String failure = &quot;{\&quot;message\&quot;:\&quot;failure\&quot;}&quot;;</b>
+&nbsp;
+&nbsp;    /** Fetch full user profile by id (all fields from database). */
+&nbsp;    @GetMapping(path = &quot;/users/{id}&quot;)
+&nbsp;    @Operation(summary = &quot;Get user by ID&quot;, description = &quot;Returns the user associated with the given ID.&quot;)
+&nbsp;    @ApiResponses(value = {
+&nbsp;            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;User found&quot;),
+&nbsp;            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;User not found&quot;)
+&nbsp;    })
+&nbsp;    ResponseEntity&lt;User&gt; getUserById(@Parameter(description = &quot;ID of the user&quot;, required = true) @PathVariable Long id) {
+<b class="fc">&nbsp;        Optional&lt;User&gt; userOptional = UserRepository.findById(id);</b>
+<b class="pc">&nbsp;        if (userOptional.isEmpty()) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.notFound().build();</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return ResponseEntity.ok(userOptional.get());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    @PostMapping(path = &quot;/users&quot;)
+&nbsp;    @Operation(summary = &quot;Create user&quot;, description = &quot;Creates a new user account.&quot;)
+&nbsp;    @ApiResponses(value = {
+&nbsp;            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;User created successfully&quot;),
+&nbsp;            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid input&quot;)
+&nbsp;    })
+&nbsp;    String createUser(@Parameter(description = &quot;Information for a new user&quot;, required = true)@RequestBody User User){
+<b class="pc">&nbsp;        if (User == null)</b>
+<b class="nc">&nbsp;            return failure;</b>
+<b class="fc">&nbsp;        UserRepository.save(User);</b>
+<b class="fc">&nbsp;        return success;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @DeleteMapping(path = &quot;/users/{id}&quot;)
+&nbsp;    @Operation(summary = &quot;Delete user&quot;, description = &quot;Deletes a user account by ID.&quot;)
+&nbsp;    @ApiResponses(value = {
+&nbsp;            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;User deleted&quot;),
+&nbsp;            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;User not found&quot;)
+&nbsp;    })
+&nbsp;    String deletePerson(@Parameter(description = &quot;ID of the user to delete&quot;, required = true) @PathVariable Long id){
+<b class="nc">&nbsp;        UserRepository.deleteById(id);</b>
+<b class="nc">&nbsp;        return success;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //s4c
+&nbsp;    //Edit profile
+&nbsp;    @PutMapping(path = &quot;/users/edit/{id}&quot;)
+&nbsp;    @Operation(summary = &quot;Update user&quot;, description = &quot;Updates user profile fields such as email, name, bio, etc.&quot;)
+&nbsp;    @ApiResponses(value = {
+&nbsp;            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;User updated successfully&quot;),
+&nbsp;            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;User not found&quot;)
+&nbsp;    })
+&nbsp;    String editPerson(@Parameter(description = &quot;ID of the user to update&quot;, required = true) @PathVariable Long id, @RequestBody User userReq){
+&nbsp;        //find the user being updated through ID
+<b class="fc">&nbsp;        Optional&lt;User&gt; userOptional = UserRepository.findById(id);</b>
+&nbsp;
+&nbsp;        //return a failure here if no user is found
+<b class="pc">&nbsp;        if (userOptional.isEmpty()) {</b>
+<b class="nc">&nbsp;            return failure;</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        User user = userOptional.get();</b>
+&nbsp;
+&nbsp;        //update any attributes that have been added to the request
+<b class="pc">&nbsp;        if (userReq.getEmail() != null) {</b>
+<b class="nc">&nbsp;            user.setEmail(userReq.getEmail());</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (userReq.getPasswordHash() != null) {</b>
+<b class="nc">&nbsp;            user.setPasswordHash(userReq.getPasswordHash());</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (userReq.getDisplayName() != null) {</b>
+<b class="fc">&nbsp;            user.setDisplayName(userReq.getDisplayName());</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (userReq.getBio() != null) {</b>
+<b class="fc">&nbsp;            user.setBio(userReq.getBio());</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (userReq.getMajor() != null) {</b>
+<b class="fc">&nbsp;            user.setMajor(userReq.getMajor());</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (userReq.getAge() != null) {</b>
+<b class="fc">&nbsp;            user.setAge(userReq.getAge());</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        //save
+<b class="fc">&nbsp;        UserRepository.save(user);</b>
+<b class="fc">&nbsp;        return success;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //s4c
+&nbsp;    @GetMapping(path = &quot;/login&quot;)
+&nbsp;    @Operation(summary = &quot;User login&quot;, description = &quot;Authenticates a user using email and password hash.&quot;)
+&nbsp;    @ApiResponses(value = {
+&nbsp;            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Login successful&quot;),
+&nbsp;            @ApiResponse(responseCode = &quot;401&quot;, description = &quot;Invalid credentials&quot;)
+&nbsp;    })
+&nbsp;    ResponseEntity&lt;?&gt; login(@Parameter(description = &quot;User email&quot;, required = true) @RequestParam String email, @Parameter(description = &quot;User password hash&quot;, required = true) @RequestParam String passwordHash) {
+<b class="pc">&nbsp;        if (email == null || email.isEmpty()) {</b>
+<b class="fc">&nbsp;            return ResponseEntity.status(401).body(failure);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        Optional&lt;User&gt; userOptional = UserRepository.findByEmail(email);</b>
+&nbsp;
+<b class="pc">&nbsp;        if (userOptional.isEmpty()) {</b>
+<b class="fc">&nbsp;            return ResponseEntity.status(401).body(failure);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        User user = userOptional.get();</b>
+&nbsp;
+&nbsp;        //return failure if the password hashes do not match up
+<b class="nc">&nbsp;        if (!user.getPasswordHash().equals(passwordHash)) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.status(401).body(failure);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return ResponseEntity.ok(user);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-05-01 17:10</div>
+</div>
+</body>
+</html>
