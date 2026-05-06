@@ -12,6 +12,7 @@ public class ChatMessage {
     private String timestamp;
     private boolean sent;
     private String senderName; // for group chat
+    private boolean moderatedRemoved;
 
     public ChatMessage(String content, boolean sent) {
         this.content = content;
@@ -47,4 +48,12 @@ public class ChatMessage {
 
     public String getSenderName() { return senderName; }
     public void setSenderName(String senderName) { this.senderName = senderName; }
+
+    public boolean isModeratedRemoved() { return moderatedRemoved; }
+    public void setModeratedRemoved(boolean moderatedRemoved) { this.moderatedRemoved = moderatedRemoved; }
+
+    public void markRemovedByModerator() {
+        this.moderatedRemoved = true;
+        this.content = "Message removed by moderator";
+    }
 }

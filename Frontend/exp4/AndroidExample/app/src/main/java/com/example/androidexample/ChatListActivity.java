@@ -35,6 +35,12 @@ public class ChatListActivity extends AppCompatActivity {
     private Button tabDirect, tabGroups;
     private int currentUserId;
 
+    // Moderator fields (from doc 1)
+    private ModeratorSessionManager moderatorSessionManager;
+    private int moderatorId = -1;
+    private boolean isModeratorLoggedIn = false;
+    private final java.util.Set<Integer> moderatedGroupIds = new java.util.HashSet<>();
+
     private boolean isDirectTab = true;
     private boolean directLoaded = false;
     private boolean groupsLoaded = false;
@@ -49,6 +55,7 @@ public class ChatListActivity extends AppCompatActivity {
         int groupId;
         String groupName;
         String description;
+        boolean canModerate; // from doc 1
         List<String> memberNames = new ArrayList<>();
         List<Integer> memberIds = new ArrayList<>();
         GroupInfo(int id, String name, String desc) {
@@ -63,7 +70,18 @@ public class ChatListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_list);
 
-        currentUserId      = getIntent().getIntExtra("USER_ID", 1);
+        currentUserId = getIntent().getIntExtra("USER_ID", 1);
+
+        // Moderator session init (from doc 1)
+        moderatorSessionManager = new ModeratorSessionManager(this);
+        ModeratorAccount moderatorAccount = moderatorSessionManager.getSession();
+        if (moderatorAccount != null) {
+            moderatorId = moderatorAccount.getModeratorId();
+            isModeratorLoggedIn = moderatorId > 0;
+            moderatedGroupIds.clear();
+            moderatedGroupIds.addAll(moderatorAccount.getAssignedGroups());
+        }
+
         chatListContainer  = findViewById(R.id.chatListContainer);
         groupListContainer = findViewById(R.id.groupListContainer);
         scrollDirect       = findViewById(R.id.scrollDirect);
@@ -121,7 +139,6 @@ public class ChatListActivity extends AppCompatActivity {
             }
         }
     }
-
 
     private void fetchAcceptedMatches() {
         String url = BASE_URL + "/matches/user/" + currentUserId;
@@ -280,7 +297,6 @@ public class ChatListActivity extends AppCompatActivity {
         }
     }
 
-
     private void fetchAllGroups() {
         String url = BASE_URL + "/groups/me/" + currentUserId;
         Log.d(TAG, "GET groups: " + url);
@@ -302,7 +318,10 @@ public class ChatListActivity extends AppCompatActivity {
                                             obj.optString("group_name", "Group " + gid)));
                             String desc = obj.optString("description", "");
                             if (gid > 0 && !seenGroupIds.contains(gid)) {
-                                groups.add(new GroupInfo(gid, name, desc));
+                                GroupInfo group = new GroupInfo(gid, name, desc);
+                                // Moderator permission check (from doc 1)
+                                group.canModerate = isModeratorLoggedIn && moderatedGroupIds.contains(gid);
+                                groups.add(group);
                                 seenGroupIds.add(gid);
                             }
                         }
@@ -327,7 +346,6 @@ public class ChatListActivity extends AppCompatActivity {
 
         VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
     }
-
 
     private void fetchGroupMembers(List<GroupInfo> groups, int index) {
         if (index >= groups.size()) {
@@ -378,7 +396,6 @@ public class ChatListActivity extends AppCompatActivity {
 
         VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
     }
-
 
     private void resolveGroupMemberNames(List<GroupInfo> groups, int groupIdx, int memberIdx) {
         if (groupIdx >= groups.size()) {
@@ -470,7 +487,6 @@ public class ChatListActivity extends AppCompatActivity {
                 textCol.addView(tvDesc);
             }
 
-
             card.addView(textCol);
 
             TextView arrow = new TextView(this);
@@ -478,6 +494,37 @@ public class ChatListActivity extends AppCompatActivity {
             arrow.setTextColor(Color.parseColor("#7B6FFF"));
             arrow.setTextSize(22);
             card.addView(arrow);
+
+            // Moderator "Manage" chip (from doc 1)
+            if (g.canModerate) {
+                TextView manageChip = new TextView(this);
+                manageChip.setText("Manage");
+                manageChip.setTextColor(Color.WHITE);
+                manageChip.setTextSize(11);
+                manageChip.setPadding(dp(10), dp(6), dp(10), dp(6));
+                manageChip.setBackgroundColor(Color.parseColor("#5A4DFF"));
+
+                LinearLayout.LayoutParams chipParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+                chipParams.setMargins(dp(8), 0, dp(8), 0);
+                manageChip.setLayoutParams(chipParams);
+
+                manageChip.setOnClickListener(v -> {
+                    Intent manageIntent;
+                    if (isModeratorLoggedIn && moderatorId > 0) {
+                        manageIntent = new Intent(ChatListActivity.this, ModeratorGroupManagementActivity.class);
+                        manageIntent.putExtra("MODERATOR_ID", moderatorId);
+                        manageIntent.putExtra("GROUP_ID", g.groupId);
+                        manageIntent.putExtra("GROUP_NAME", g.groupName);
+                    } else {
+                        manageIntent = new Intent(ChatListActivity.this, ModeratorLoginActivity.class);
+                    }
+                    startActivity(manageIntent);
+                });
+                card.addView(manageChip);
+            }
 
             final int gId = g.groupId;
             final String gName = g.groupName;
@@ -492,7 +539,6 @@ public class ChatListActivity extends AppCompatActivity {
             groupListContainer.addView(card);
         }
     }
-
 
     private void showEmpty(String msg) {
         runOnUiThread(() -> {

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F0F1A"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Moderator Dashboard"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Manage your groups, members, and moderation actions in one place."
+            android:textColor="#AFAFD2"
+            android:textSize="13sp"
+            android:layout_marginBottom="14dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#1A1A2A"
+            android:padding="12dp"
+            android:layout_marginBottom="14dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Create Group"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="17sp"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/etCreateModeratorGroupName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Group name"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#9B9BB4"
+                android:backgroundTint="#2A2A42"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/etCreateModeratorGroupDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Description"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#9B9BB4"
+                android:backgroundTint="#2A2A42"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/etCreateModeratorGroupInterests"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Interests (comma separated)"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#9B9BB4"
+                android:backgroundTint="#2A2A42"
+                android:layout_marginBottom="10dp" />
+
+            <Button
+                android:id="@+id/btnCreateModeratorGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Create Group"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#7B6FFF" />
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Managed Groups"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/layoutModeratorGroups"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="14dp" />
+
+        <Button
+            android:id="@+id/btnRefreshModeratorDashboard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Refresh"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#3C3C50"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnModeratorLogout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Logout"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#8A3A4A" />
+
+    </LinearLayout>
+
+</ScrollView>

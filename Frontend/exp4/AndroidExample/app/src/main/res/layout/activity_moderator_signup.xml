@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F0F1A">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="28dp">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AntiSocial"
+            android:textColor="#7B6FFF"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Moderator Registration"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="32dp"/>
+
+        <!-- Email Field -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="EMAIL"
+            android:textColor="#9B9BB4"
+            android:textSize="11sp"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etModeratorSignupEmail"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="moderator@example.com"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555570"
+            android:textSize="15sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="20dp"
+            android:inputType="textEmailAddress"/>
+
+        <!-- Password Field -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="PASSWORD"
+            android:textColor="#9B9BB4"
+            android:textSize="11sp"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etModeratorSignupPassword"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="••••••••"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555570"
+            android:textSize="15sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="20dp"
+            android:inputType="textPassword"/>
+
+        <!-- Display Name Field -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DISPLAY NAME"
+            android:textColor="#9B9BB4"
+            android:textSize="11sp"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etModeratorSignupDisplayName"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="Your full name"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555570"
+            android:textSize="15sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="32dp"
+            android:inputType="text"/>
+
+        <!-- Info Text -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Note: Moderator accounts require admin approval after signup."
+            android:textColor="#9B9BB4"
+            android:textSize="12sp"
+            android:layout_marginBottom="20dp"
+            android:textAlignment="center"/>
+
+        <!-- Buttons -->
+        <Button
+            android:id="@+id/btnModeratorSignup"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Create Moderator Account"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="12dp"/>
+
+        <Button
+            android:id="@+id/btnModeratorSignupBack"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Back to Login"
+            android:textColor="#9B9BB4"
+            android:textSize="14sp"
+            android:backgroundTint="#1E1E30"/>
+
+    </LinearLayout>
+
+</ScrollView>
+
