@@ -1,0 +1,205 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > User</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">onetoone.Users</a>
+</div>
+
+<h1>Coverage Summary for Class: User (onetoone.Users)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">User</td>
+<td class="coverageStat">
+  <span class="percent">
+    77.3%
+  </span>
+  <span class="absValue">
+    (17/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (20/25)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">User$HibernateInstantiator$c6hCYEmh</td>
+  </tr>
+  <tr>
+    <td class="name">User$HibernateProxy$jHMrLFfb</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    77.3%
+  </span>
+  <span class="absValue">
+    (17/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (20/25)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package onetoone.Users;
+&nbsp;
+&nbsp;import jakarta.validation.constraints.Email;
+&nbsp;import jakarta.validation.constraints.Pattern;
+&nbsp;import lombok.Getter;
+&nbsp;import lombok.Setter;
+&nbsp;import jakarta.persistence.*;
+&nbsp;import onetoone.Matches.MatchStatus;
+&nbsp;import org.hibernate.annotations.CreationTimestamp;
+&nbsp;
+&nbsp;import java.time.Instant;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;@Entity
+&nbsp;@Getter
+&nbsp;@Setter
+&nbsp;@Table(name = &quot;users&quot;)
+<b class="fc">&nbsp;public class User {</b>
+&nbsp;
+&nbsp;    @Id
+&nbsp;    @GeneratedValue(strategy = GenerationType.IDENTITY)
+&nbsp;    private Long userId;
+&nbsp;
+&nbsp;    @Column(nullable = false, unique = true)
+&nbsp;    private String email;
+&nbsp;
+&nbsp;    @Column(name = &quot;password_hash&quot;, nullable = false)
+&nbsp;    private String passwordHash;
+&nbsp;
+&nbsp;    @CreationTimestamp
+&nbsp;    @Column(name = &quot;created_ts&quot;, nullable = false, updatable = false)
+&nbsp;    private Instant createdTs;
+&nbsp;
+<b class="fc">&nbsp;    @Column(nullable = false)</b>
+<b class="fc">&nbsp;    private Boolean active = true;</b>
+&nbsp;
+&nbsp;    private String displayName;
+&nbsp;
+&nbsp;    @Column(length = 280)
+&nbsp;    private String bio;
+&nbsp;
+&nbsp;    @ElementCollection
+&nbsp;    @CollectionTable(name = &quot;user_interests&quot;, joinColumns = @JoinColumn(name = &quot;user_id&quot;))
+&nbsp;    @Column(name = &quot;interest&quot;)
+&nbsp;    private List&lt;String&gt; interests;
+&nbsp;
+&nbsp;    private String major;
+&nbsp;
+&nbsp;    private Integer age;
+&nbsp;
+<b class="fc">&nbsp;    @Enumerated(EnumType.STRING)</b>
+&nbsp;    @Column(name = &quot;status&quot;, nullable = false)
+&nbsp;    private UserStatus status = UserStatus.NEED_APPROVAL;
+&nbsp;
+&nbsp;    // =============================== Getters and Setters for each field ================================== //
+&nbsp;
+<b class="fc">&nbsp;    public Long getUserId() { return userId; }</b>
+<b class="fc">&nbsp;    public void setUserId(Long userId) { this.userId = userId; }</b>
+&nbsp;
+<b class="fc">&nbsp;    public String getEmail() { return email; }</b>
+<b class="fc">&nbsp;    public void setEmail(String email) { this.email = email; }</b>
+&nbsp;
+<b class="fc">&nbsp;    public String getPasswordHash() { return passwordHash; }</b>
+<b class="fc">&nbsp;    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }</b>
+&nbsp;
+<b class="fc">&nbsp;    public Instant getCreatedTs() { return createdTs; }</b>
+&nbsp;
+<b class="fc">&nbsp;    public Boolean getActive() { return active; }</b>
+<b class="nc">&nbsp;    public void setActive(Boolean active) { this.active = active; }</b>
+&nbsp;
+<b class="fc">&nbsp;    public String getDisplayName() { return displayName; }</b>
+<b class="fc">&nbsp;    public void setDisplayName(String displayName) { this.displayName = displayName; }</b>
+&nbsp;
+<b class="fc">&nbsp;    public String getBio() { return bio; }</b>
+<b class="nc">&nbsp;    public void setBio(String bio) { this.bio = bio; }</b>
+&nbsp;
+<b class="fc">&nbsp;    public String getMajor() { return major; }</b>
+<b class="nc">&nbsp;    public void setMajor(String major) { this.major = major; }</b>
+&nbsp;
+<b class="fc">&nbsp;    public Integer getAge() { return age; }</b>
+<b class="nc">&nbsp;    public void setAge(Integer age) { this.age = age; }</b>
+&nbsp;
+<b class="fc">&nbsp;    public List&lt;String&gt; getInterests() { return interests; }</b>
+<b class="nc">&nbsp;    public void setInterests(List&lt;String&gt; interests) { this.interests = interests; }</b>
+&nbsp;
+<b class="fc">&nbsp;    public UserStatus getStatus() { return status; }</b>
+<b class="fc">&nbsp;    public void setStatus(UserStatus status) { this.status = status; }</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-05-06 13:38</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,291 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > ConversationController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">onetoone.Conversations</a>
+</div>
+
+<h1>Coverage Summary for Class: ConversationController (onetoone.Conversations)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ConversationController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    14.3%
+  </span>
+  <span class="absValue">
+    (1/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/36)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    1.3%
+  </span>
+  <span class="absValue">
+    (1/76)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package onetoone.Conversations;
+&nbsp;
+&nbsp;import onetoone.ConverstaionMembers.ConversationMember;
+&nbsp;import onetoone.ConverstaionMembers.ConvoMemRepository;
+&nbsp;import onetoone.Conversations.dto.DirectConversationRequest;
+&nbsp;import onetoone.Conversations.dto.GroupConversationRequest;
+&nbsp;import onetoone.Matches.MatchRepository;
+&nbsp;import org.springframework.beans.factory.annotation.Autowired;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.time.LocalDateTime;
+&nbsp;import java.util.ArrayList;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Optional;
+&nbsp;
+&nbsp;@RestController
+<b class="fc">&nbsp;public class ConversationController {</b>
+&nbsp;
+&nbsp;    @Autowired
+&nbsp;    MatchRepository matchRepository;
+&nbsp;
+&nbsp;    @Autowired
+&nbsp;    ConvoRepository convoRepository;
+&nbsp;
+&nbsp;    @Autowired
+&nbsp;    ConvoMemRepository convoMemRepository;
+&nbsp;
+&nbsp;    @PostMapping(&quot;/conversations/direct&quot;)
+&nbsp;    public Conversation createDirectConversation(@RequestBody DirectConversationRequest req) {
+<b class="nc">&nbsp;        Long user1 = req.getUser1Id();</b>
+<b class="nc">&nbsp;        Long user2 = req.getUser2Id();</b>
+&nbsp;
+<b class="nc">&nbsp;        if (user1.equals(user2)) {</b>
+<b class="nc">&nbsp;            throw new RuntimeException(&quot;Cannot create conversation with yourself&quot;);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // find existing direct convo
+<b class="nc">&nbsp;        List&lt;ConversationMember&gt; user1Memberships = convoMemRepository.findByUserId(user1);</b>
+&nbsp;
+<b class="nc">&nbsp;        for (ConversationMember membership : user1Memberships) {</b>
+<b class="nc">&nbsp;            Long convoId = membership.getConversationId();</b>
+&nbsp;
+<b class="nc">&nbsp;            Optional&lt;Conversation&gt; convoOpt = convoRepository.findById(convoId);</b>
+<b class="nc">&nbsp;            if (convoOpt.isEmpty()) continue;</b>
+&nbsp;
+<b class="nc">&nbsp;            Conversation convo = convoOpt.get();</b>
+&nbsp;
+<b class="nc">&nbsp;            if (!&quot;DIRECT&quot;.equals(convo.getType())) continue;</b>
+&nbsp;
+<b class="nc">&nbsp;            List&lt;ConversationMember&gt; members = convoMemRepository.findByConversationId(convoId);</b>
+&nbsp;
+<b class="nc">&nbsp;            if (members.size() == 2) {</b>
+<b class="nc">&nbsp;                boolean hasUser1 = false;</b>
+<b class="nc">&nbsp;                boolean hasUser2 = false;</b>
+&nbsp;
+<b class="nc">&nbsp;                for (ConversationMember member : members) {</b>
+<b class="nc">&nbsp;                    if (member.getUserId().equals(user1)) hasUser1 = true;</b>
+<b class="nc">&nbsp;                    if (member.getUserId().equals(user2)) hasUser2 = true;</b>
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;                if (hasUser1 &amp;&amp; hasUser2) {</b>
+<b class="nc">&nbsp;                    return convo;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // create new if none exists
+<b class="nc">&nbsp;        Conversation conversation = new Conversation();</b>
+<b class="nc">&nbsp;        conversation.setType(&quot;DIRECT&quot;);</b>
+<b class="nc">&nbsp;        conversation.setName(null);</b>
+<b class="nc">&nbsp;        conversation.setCreatedAt(LocalDateTime.now());</b>
+&nbsp;
+<b class="nc">&nbsp;        Conversation savedConversation = convoRepository.save(conversation);</b>
+&nbsp;
+<b class="nc">&nbsp;        ConversationMember m1 = new ConversationMember();</b>
+<b class="nc">&nbsp;        m1.setConversationId(savedConversation.getConversationId());</b>
+<b class="nc">&nbsp;        m1.setUserId(user1);</b>
+&nbsp;
+<b class="nc">&nbsp;        ConversationMember m2 = new ConversationMember();</b>
+<b class="nc">&nbsp;        m2.setConversationId(savedConversation.getConversationId());</b>
+<b class="nc">&nbsp;        m2.setUserId(user2);</b>
+&nbsp;
+<b class="nc">&nbsp;        convoMemRepository.save(m1);</b>
+<b class="nc">&nbsp;        convoMemRepository.save(m2);</b>
+&nbsp;
+<b class="nc">&nbsp;        return savedConversation;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PostMapping(&quot;/conversations/group&quot;)
+&nbsp;    public Conversation createGroupConversation(@RequestBody GroupConversationRequest req) {
+<b class="nc">&nbsp;        if (req.getGroupId() == null) {</b>
+<b class="nc">&nbsp;            throw new RuntimeException(&quot;groupId is required&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Optional&lt;Conversation&gt; existingConversation = convoRepository.findByGroupId(req.getGroupId());</b>
+<b class="nc">&nbsp;        if (existingConversation.isPresent()) {</b>
+<b class="nc">&nbsp;            return existingConversation.get();</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Conversation conversation = new Conversation();</b>
+<b class="nc">&nbsp;        conversation.setType(&quot;GROUP&quot;);</b>
+<b class="nc">&nbsp;        conversation.setName(req.getName());</b>
+<b class="nc">&nbsp;        conversation.setGroupId(req.getGroupId());</b>
+<b class="nc">&nbsp;        conversation.setCreatedAt(LocalDateTime.now());</b>
+&nbsp;
+<b class="nc">&nbsp;        Conversation savedConversation = convoRepository.save(conversation);</b>
+&nbsp;
+<b class="nc">&nbsp;        for (Long userId : req.getUserIds()) {</b>
+<b class="nc">&nbsp;            ConversationMember member = new ConversationMember();</b>
+<b class="nc">&nbsp;            member.setConversationId(savedConversation.getConversationId());</b>
+<b class="nc">&nbsp;            member.setUserId(userId);</b>
+<b class="nc">&nbsp;            convoMemRepository.save(member);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return savedConversation;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/conversations/user/{userId}&quot;)
+&nbsp;    public List&lt;Conversation&gt; getUserConversations(@PathVariable Long userId) {
+<b class="nc">&nbsp;        List&lt;ConversationMember&gt; memberships = convoMemRepository.findByUserId(userId);</b>
+<b class="nc">&nbsp;        List&lt;Conversation&gt; conversations = new ArrayList&lt;&gt;();</b>
+&nbsp;
+<b class="nc">&nbsp;        for (ConversationMember membership : memberships) {</b>
+<b class="nc">&nbsp;            Optional&lt;Conversation&gt; convo = convoRepository.findById(membership.getConversationId());</b>
+<b class="nc">&nbsp;            convo.ifPresent(conversations::add);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return conversations;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/conversations/{conversationId}&quot;)
+&nbsp;    public Conversation getConversation(@PathVariable Long conversationId) {
+<b class="nc">&nbsp;        return convoRepository.findById(conversationId).orElse(null);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PostMapping(&quot;/conversations/{conversationId}/join/{userId}&quot;)
+&nbsp;    public ConversationMember joinConversation(@PathVariable Long conversationId,
+&nbsp;                                               @PathVariable Long userId) {
+&nbsp;
+&nbsp;        // check if already in conversation
+<b class="nc">&nbsp;        boolean exists = convoMemRepository</b>
+<b class="nc">&nbsp;                .existsByConversationIdAndUserId(conversationId, userId);</b>
+&nbsp;
+<b class="nc">&nbsp;        if (exists) {</b>
+<b class="nc">&nbsp;            throw new RuntimeException(&quot;User already in conversation&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        if (!convoRepository.existsById(conversationId)) {</b>
+<b class="nc">&nbsp;            throw new RuntimeException(&quot;Conversation does not exist&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        ConversationMember member = new ConversationMember();</b>
+<b class="nc">&nbsp;        member.setConversationId(conversationId);</b>
+<b class="nc">&nbsp;        member.setUserId(userId);</b>
+&nbsp;
+<b class="nc">&nbsp;        return convoMemRepository.save(member);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @DeleteMapping(&quot;/conversations/{conversationId}/leave/{userId}&quot;)
+&nbsp;    public String leaveConversation(@PathVariable Long conversationId,
+&nbsp;                                    @PathVariable Long userId) {
+&nbsp;
+<b class="nc">&nbsp;        List&lt;ConversationMember&gt; members =</b>
+<b class="nc">&nbsp;                convoMemRepository.findByConversationId(conversationId);</b>
+&nbsp;
+<b class="nc">&nbsp;        for (ConversationMember member : members) {</b>
+<b class="nc">&nbsp;            if (member.getUserId().equals(userId)) {</b>
+<b class="nc">&nbsp;                convoMemRepository.delete(member);</b>
+<b class="nc">&nbsp;                return &quot;User removed from conversation&quot;;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return &quot;User not found in conversation&quot;;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-05-06 13:38</div>
+</div>
+</body>
+</html>

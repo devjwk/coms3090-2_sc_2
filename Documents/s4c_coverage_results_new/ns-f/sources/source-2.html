@@ -1,0 +1,236 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > ReportController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">onetoone.Reports</a>
+</div>
+
+<h1>Coverage Summary for Class: ReportController (onetoone.Reports)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ReportController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70%
+  </span>
+  <span class="absValue">
+    (7/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (8/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.4%
+  </span>
+  <span class="absValue">
+    (28/34)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package onetoone.Reports;
+&nbsp;
+&nbsp;import io.swagger.v3.oas.annotations.Parameter;
+&nbsp;import onetoone.Groups.Group;
+&nbsp;import onetoone.Reports.Report;
+&nbsp;import onetoone.Reports.ReportRepository;
+&nbsp;import onetoone.Users.User;
+&nbsp;import onetoone.Reports.ReportStatus;
+&nbsp;import onetoone.Users.UserRepository;
+&nbsp;import org.springframework.beans.factory.annotation.Autowired;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Optional;
+&nbsp;
+&nbsp;import static onetoone.Reports.ReportStatus.IN_REVIEW;
+&nbsp;import static onetoone.Users.UserStatus.NEED_APPROVAL;
+&nbsp;
+&nbsp;@RestController
+<b class="fc">&nbsp;public class ReportController {</b>
+&nbsp;
+&nbsp;    @Autowired
+&nbsp;    ReportRepository reportRepository;
+&nbsp;
+&nbsp;    @Autowired
+&nbsp;    private UserRepository userRepository;
+&nbsp;
+&nbsp;    //create report
+&nbsp;    @PostMapping(&quot;/reports&quot;)
+&nbsp;    public ResponseEntity&lt;String&gt; createReport (@RequestBody Report report) {
+<b class="fc">&nbsp;        User reporter = userRepository.findById(report.getReporterId().getUserId()).orElse(null);</b>
+<b class="fc">&nbsp;        User reported = userRepository.findById(report.getReportedId().getUserId()).orElse(null);</b>
+&nbsp;
+<b class="fc">&nbsp;        if (reporter == null) {</b>
+<b class="fc">&nbsp;            return ResponseEntity.status(404).body(&quot;User reporter not found&quot;);</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (reported == null) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.status(404).body(&quot;User reported not found&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        report.setReporterId(reporter);</b>
+<b class="fc">&nbsp;        report.setReportedId(reported);</b>
+<b class="fc">&nbsp;        report.setStatus(ReportStatus.IN_REVIEW);</b>
+<b class="fc">&nbsp;        reportRepository.save(report);</b>
+<b class="fc">&nbsp;        return ResponseEntity.ok(&quot;Report created&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //delete report
+&nbsp;    @DeleteMapping(&quot;/reports/{id}&quot;)
+&nbsp;    public ResponseEntity&lt;String&gt; delete (@PathVariable Long id) {
+<b class="pc">&nbsp;        if(!reportRepository.existsById(id)) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.status(404).body(&quot;Report not found&quot;);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        reportRepository.deleteById(id);</b>
+<b class="fc">&nbsp;        return ResponseEntity.ok(&quot;Report deleted&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //edit report status
+&nbsp;    @PutMapping(&quot;/reports/{id}&quot;)
+&nbsp;    public ResponseEntity&lt;String&gt; editPerson(@PathVariable Long id, @RequestBody Report reportReq){
+&nbsp;        //find the report being updated through ID
+<b class="fc">&nbsp;        Optional&lt;Report&gt; reportOptional = reportRepository.findById(id);</b>
+&nbsp;
+&nbsp;        //return a failure here if no report is found
+<b class="pc">&nbsp;        if (reportOptional.isEmpty()) {</b>
+<b class="nc">&nbsp;            return ResponseEntity.status(404).body(&quot;Report not found&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        Report report = reportOptional.get();</b>
+&nbsp;
+&nbsp;        //status
+<b class="pc">&nbsp;        if (reportReq.getStatus() != null) {</b>
+<b class="fc">&nbsp;            report.setStatus(reportReq.getStatus());</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        //save
+<b class="fc">&nbsp;        reportRepository.save(report);</b>
+<b class="fc">&nbsp;        return ResponseEntity.ok(&quot;Report successfully edited&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //retrieve report
+&nbsp;    @GetMapping(&quot;/reports/{id}&quot;)
+&nbsp;    ResponseEntity&lt;Report&gt; getReportById(@PathVariable Long id) {
+<b class="fc">&nbsp;        Optional&lt;Report&gt; reportOptional = reportRepository.findById(id);</b>
+<b class="fc">&nbsp;        if (reportOptional.isEmpty()) {</b>
+<b class="fc">&nbsp;            return ResponseEntity.notFound().build();</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return ResponseEntity.ok(reportOptional.get());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //retrieve all reports
+&nbsp;    @GetMapping(&quot;/reports/all&quot;)
+&nbsp;    public List&lt;Report&gt; getAllReports() {
+<b class="fc">&nbsp;        return reportRepository.findAll();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //retrieve all reports made by a certain reporter
+&nbsp;    @GetMapping(&quot;/reports/reporter/{id}&quot;)
+&nbsp;    public List&lt;Report&gt; getReportsOfReporter(@PathVariable Long id) {
+<b class="nc">&nbsp;        return reportRepository.findByReporterId_UserId(id);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //retrieve all reports made against a certain user
+&nbsp;    @GetMapping(&quot;/reports/reported/{id}&quot;)
+&nbsp;    public List&lt;Report&gt; getReportsOfReported(@PathVariable Long id) {
+<b class="nc">&nbsp;        return reportRepository.findByReportedId_UserId(id);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/reports/status/{status}&quot;)
+&nbsp;    public List&lt;Report&gt; getReportsByStatus(@PathVariable ReportStatus status) {
+<b class="nc">&nbsp;        return reportRepository.findByStatus(status);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(path = &quot;/reports/count/pending&quot;)
+&nbsp;    ResponseEntity&lt;Long&gt; getPendingCount() {
+<b class="fc">&nbsp;        long count = reportRepository.countByStatus(IN_REVIEW);</b>
+<b class="fc">&nbsp;        return ResponseEntity.ok(count);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-05-06 13:38</div>
+</div>
+</body>
+</html>
