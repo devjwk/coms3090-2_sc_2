@@ -88,16 +88,6 @@ public class ModeratorRepository {
         VolleySingleton.getInstance(context).addToRequestQueue(request);
     }
 
-    public void getModeratorProfile(android.content.Context context,
-                                    int moderatorId,
-                                    ModeratorAccountCallback callback) {
-        String url = BASE_URL + "/" + moderatorId;
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
-                response -> callback.onSuccess(ModeratorAccount.fromJson(response)),
-                error -> callback.onError("Failed to load moderator profile"));
-        VolleySingleton.getInstance(context).addToRequestQueue(request);
-    }
-
     public void getManagedGroups(android.content.Context context,
                                  int moderatorId,
                                  GroupsCallback callback) {
@@ -148,64 +138,9 @@ public class ModeratorRepository {
         VolleySingleton.getInstance(context).addToRequestQueue(request);
     }
 
-    public void editGroup(android.content.Context context,
-                          int moderatorId,
-                          int groupId,
-                          String groupName,
-                          String description,
-                          List<String> interests,
-                          JsonObjectCallback callback) {
-        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId;
-        JSONObject body = new JSONObject();
-        try {
-            body.put("groupName", groupName);
-            body.put("description", description);
-            JSONArray interestArray = new JSONArray();
-            if (interests != null) {
-                for (String interest : interests) {
-                    if (interest != null && !interest.trim().isEmpty()) {
-                        interestArray.put(interest.trim());
-                    }
-                }
-            }
-            body.put("interests", interestArray);
-        } catch (JSONException e) {
-            callback.onError("Failed to build group payload");
-            return;
-        }
 
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, url, body,
-                callback::onSuccess,
-                error -> callback.onError("Failed to update group"));
-        VolleySingleton.getInstance(context).addToRequestQueue(request);
-    }
 
-    public void deleteGroup(android.content.Context context,
-                            int moderatorId,
-                            int groupId,
-                            ActionCallback callback) {
-        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId;
-        sendAction(context, Request.Method.DELETE, url, null, callback, "Failed to delete group");
-    }
 
-    public void getGroupDetails(android.content.Context context,
-                                int moderatorId,
-                                int groupId,
-                                JsonObjectCallback callback) {
-        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId;
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
-                callback::onSuccess,
-                error -> callback.onError("Failed to load group details"));
-        VolleySingleton.getInstance(context).addToRequestQueue(request);
-    }
-
-    public void getGroupMembers(android.content.Context context,
-                                int moderatorId,
-                                int groupId,
-                                JsonArrayCallback callback) {
-        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/members";
-        getArray(context, url, "Failed to load members", callback);
-    }
 
     public void getPendingMembers(android.content.Context context,
                                   int moderatorId,
@@ -215,13 +150,6 @@ public class ModeratorRepository {
         getArray(context, url, "Failed to load pending members", callback);
     }
 
-    public void getGroupEvents(android.content.Context context,
-                               int moderatorId,
-                               int groupId,
-                               JsonArrayCallback callback) {
-        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/events";
-        getArray(context, url, "Failed to load events", callback);
-    }
 
     public void getGroupEventsForChat(android.content.Context context,
                                       int groupId,
@@ -460,17 +388,7 @@ public class ModeratorRepository {
         sendAction(context, Request.Method.PUT, url, null, callback, "Failed to pin announcement");
     }
 
-    public void getEventDetails(android.content.Context context,
-                                int moderatorId,
-                                int groupId,
-                                int eventId,
-                                JsonObjectCallback callback) {
-        String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/events/" + eventId;
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
-                callback::onSuccess,
-                error -> callback.onError("Failed to load event details"));
-        VolleySingleton.getInstance(context).addToRequestQueue(request);
-    }
+
 
     public void editEvent(android.content.Context context,
                           int moderatorId,
@@ -533,40 +451,6 @@ public class ModeratorRepository {
                                    ActionCallback callback) {
         String url = BASE_URL + "/" + moderatorId + "/groups/" + groupId + "/announcements/" + announcementId;
         sendAction(context, Request.Method.DELETE, url, null, callback, "Failed to delete announcement");
-    }
-
-    public void joinGroupRequest(android.content.Context context,
-                                 int userId,
-                                 int groupId,
-                                 ActionCallback callback) {
-        String url = ROOT_URL + "/gm/join";
-        JSONObject body = new JSONObject();
-        try {
-            body.put("user_id", userId);
-            body.put("group_id", groupId);
-        } catch (JSONException e) {
-            callback.onError("Failed to build join request body");
-            return;
-        }
-        sendAction(context, Request.Method.POST, url, body, callback, "Failed to join group");
-    }
-
-
-
-    public void getAllGroups(android.content.Context context,
-                             JsonArrayCallback callback) {
-        String url = ROOT_URL + "/groups";
-        getArray(context, url, "Failed to load all groups", callback);
-    }
-
-    public void getGroupById(android.content.Context context,
-                             int groupId,
-                             JsonObjectCallback callback) {
-        String url = ROOT_URL + "/groups/" + groupId;
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
-                callback::onSuccess,
-                error -> callback.onError("Failed to load group"));
-        VolleySingleton.getInstance(context).addToRequestQueue(request);
     }
 
     public void signupModerator(android.content.Context context,
