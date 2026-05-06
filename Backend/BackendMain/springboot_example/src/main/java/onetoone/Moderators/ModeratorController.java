@@ -12,6 +12,7 @@ import onetoone.GroupMember.MembershipStatus;
 import onetoone.Groups.Group;
 import onetoone.Groups.GroupRepository;
 import onetoone.Messages.MessagesRepository;
+import onetoone.Notifications.Notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,6 +45,9 @@ public class ModeratorController {
 
     @Autowired
     private AnnouncementRepository announcementRepository;
+
+    @Autowired
+    private Notification notification;
 
     @PostMapping
     public ResponseEntity<Moderator> createModerator(@RequestBody Moderator moderator) {
@@ -226,6 +230,10 @@ public class ModeratorController {
         event.setGroupId(groupId);
         event.setModeratorId(moderatorId);
 
+        String message = "New event in " + group.getGroupName();
+        GMRepository.findByGroupId_GroupIdAndStatus(groupId, MembershipStatus.APPROVED)
+                .forEach(member -> notification.sendNotification(member.getUserId().getUserId(), "GROUP_EVENT", message));
+
         return ResponseEntity.ok(groupEventRepository.save(event));
     }
 
@@ -368,6 +376,10 @@ public class ModeratorController {
         announcement.setGroupId(groupId);
         announcement.setModeratorId(moderatorId);
         announcement.setPinned(false);
+
+        String message = "New announcement in " + group.getGroupName();
+        GMRepository.findByGroupId_GroupIdAndStatus(groupId, MembershipStatus.APPROVED)
+                .forEach(member -> notification.sendNotification(member.getUserId().getUserId(), "GROUP_ANNOUNCEMENT", message));
 
         return ResponseEntity.ok(announcementRepository.save(announcement));
     }

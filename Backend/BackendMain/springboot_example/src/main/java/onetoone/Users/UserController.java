@@ -2,6 +2,8 @@ package onetoone.Users;
 import java.util.List;
 import java.util.Optional;
 
+import onetoone.Administrators.AdminController;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,8 +30,14 @@ public class UserController {
     @Autowired
     UserRepository UserRepository;
 
+    @Autowired
+    AdminController AdminController;
+
     private String success = "{\"message\":\"success\"}";
     private String failure = "{\"message\":\"failure\"}";
+
+    private record LoginResponse(User user, String userRole) {}
+    private record UserSummary(long userID, String displayName, UserStatus status) {}
 
     /** Fetch full user profile by id (all fields from database). */
     @GetMapping(path = "/users/{id}")
@@ -168,11 +176,53 @@ public class UserController {
             return ResponseEntity.status(401).body(failure);
         }
 
-        return ResponseEntity.ok(user);
+        boolean isAdmin = AdminController.checkAdminInternal(user.getUserId());
+        String userRole = isAdmin ? "ADMIN" : "USER";
+
+        return ResponseEntity.ok(new LoginResponse(user, userRole));
     }
 
     @GetMapping("/users/status/{status}")
-    public List<User> getUsersByStatus(@PathVariable UserStatus status) {
-        return UserRepository.findByStatus(status);
+    public ResponseEntity<List<User>> getUsersByStatus(@PathVariable UserStatus status, @RequestParam long requesterID) {
+        if (!AdminController.checkAdminInternal(requesterID)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        return ResponseEntity.ok(UserRepository.findByStatus(status));
+    }
+
+    @PutMapping(path = "/users/status_edit/{id}")
+    public ResponseEntity<String> editPersonStatus(@Parameter(description = "ID of the user to update", required = true) @PathVariable Long id, @RequestBody User userReq, @RequestParam long requesterID){
+        if (!AdminController.checkAdminInternal(requesterID)) {
+            return ResponseEntity.status(403).body("Requester is not an admin.");
+        }
+
+        //find the user being updated through ID
+        Optional<User> userOptional = UserRepository.findById(id);
+
+        //return a failure here if no user is found
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(404).body("User not found.");
+        }
+
+        User user = userOptional.get();
+
+        if (userReq.getStatus() != null) {
+            user.setStatus(userReq.getStatus());
+        }
+
+        //save
+        UserRepository.save(user);
+        return ResponseEntity.ok("Success");
+    }
+
+    @GetMapping(path = "/users/all")
+    public ResponseEntity<?> userList () {
+        List<UserSummary> users = UserRepository.findAll()
+                .stream()
+                .map(u -> new UserSummary(u.getUserId(), u.getDisplayName(), u.getStatus()))
+                .toList();
+
+        return ResponseEntity.ok(users);
     }
 }

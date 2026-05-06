@@ -13,6 +13,7 @@ import onetoone.GroupMember.GroupMember;
 import onetoone.GroupMember.MembershipStatus;
 import onetoone.Moderators.Moderator;
 import onetoone.Moderators.ModeratorRepository;
+import onetoone.Notifications.Notification;
 import onetoone.Users.User;
 import onetoone.Users.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +56,9 @@ public class GroupController {
 
     @Autowired
     AnnouncementRepository announcementRepository;
+
+    @Autowired
+    private Notification notification;
 
     private final String success = "{\"message\":\"success\"}";
     private final String failure = "{\"message\":\"failure\"}";
@@ -333,6 +337,9 @@ public class GroupController {
         GroupMember groupMember = memberOpt.get();
         groupMember.setStatus(MembershipStatus.APPROVED);
         groupMemberRepository.save(groupMember);
+
+        String groupName = groupMember.getGroupId().getGroupName();
+        notification.sendNotification(groupMember.getUserId().getUserId(), "GROUP_APPROVED", "Your membership to group " + groupName + " was approved!");
 
         Optional<Conversation> convoOpt = convoRepository.findByGroupId(groupId);
         if (convoOpt.isEmpty()) {

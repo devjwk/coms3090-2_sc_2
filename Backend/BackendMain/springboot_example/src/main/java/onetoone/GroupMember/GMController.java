@@ -24,6 +24,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import static onetoone.GroupMember.MembershipStatus.APPROVED;
+
 @RestController
 @Tag(name = "GroupMembers", description = "Operations for managing group memberships")
 public class GMController {
@@ -76,6 +78,8 @@ public class GMController {
 
         gmRepository.save(member);
 
+        notification.sendNotification(userId,"GROUP_JOIN", "Your request to join " + group.getGroupName() + " was submitted.");
+
         return "{\"message\":\"success\"}";
     }
     // get - list group members (req: group id)
@@ -83,7 +87,7 @@ public class GMController {
     @GetMapping(path = "/gm/glist/{id}")
     ResponseEntity<List<UserInfo>> listGroupMembers(@PathVariable Long id) {
         List<GroupMember> members =
-                gmRepository.findByGroupId_GroupIdAndStatus(id, MembershipStatus.APPROVED);
+                gmRepository.findByGroupId_GroupIdAndStatus(id, APPROVED);
 
         List<UserInfo> users = members.stream()
                 .map(member -> new UserInfo(
@@ -101,7 +105,7 @@ public class GMController {
     @GetMapping(path = "/gm/ulist/{id}")
     ResponseEntity<List<GroupInfo>> listUserGroups(@PathVariable Long id) {
         List<GroupMember> memberships =
-                gmRepository.findByUserId_UserIdAndStatus(id, MembershipStatus.APPROVED);
+                gmRepository.findByUserId_UserIdAndStatus(id, APPROVED);
 
         List<GroupInfo> groups = memberships.stream()
                 .map(member -> new GroupInfo(
@@ -133,6 +137,11 @@ public class GMController {
             gmRepository.save(member);
         } catch (IllegalArgumentException e) {
             return "{\"message\":\"invalid_status\"}";
+        }
+
+        String groupName = member.getGroupId().getGroupName();
+        if (member.getStatus() == APPROVED) {
+            notification.sendNotification(member.getUserId().getUserId(), "GROUP_APPROVED", "Your membership to group " + groupName + " was approved!");
         }
 
         return "{\"message\":\"success\"}";

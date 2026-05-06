@@ -61,6 +61,22 @@ public class AdminController {
         }
     }
 
+    //verify (for internal use)
+    public Boolean checkAdminInternal (@PathVariable Long id) {
+        Admin adm = AdminRepository.findByUserId_UserId(id);
+
+        if (adm == null) {
+            return false;
+        }
+
+        if (adm.getActiveAdmin() == true) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
     @GetMapping("/admin/all")
     public List<Admin> listAdmins() {
         return AdminRepository.findAll();

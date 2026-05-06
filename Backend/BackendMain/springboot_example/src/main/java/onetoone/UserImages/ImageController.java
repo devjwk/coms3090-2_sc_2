@@ -11,10 +11,14 @@ import onetoone.Users.User;
 import onetoone.Users.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.io.IOException;
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.StandardCopyOption;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -66,6 +70,7 @@ public class ImageController {
         return ResponseEntity.ok(image.getImageLink());
     }
 
+    /*
     //delete image
     //only deletes the table listing, not the actual image
     @DeleteMapping(path = "/image/{id}")
@@ -77,5 +82,59 @@ public class ImageController {
         imageRepository.deleteById(id);
         return ResponseEntity.ok("Image deleted");
     }
+     */
 
+    //delete image
+    @DeleteMapping(path = "/image/{id}")
+    public ResponseEntity<String> deleteImage(@PathVariable Long id) {
+        if (!imageRepository.existsById(id)) {
+            return ResponseEntity.status(404).body("Image not found");
+        }
+
+        Image image = imageRepository.findByImageId(id);
+
+        String imageLink = image.getImageLink();
+        Path filePath = Paths.get("/home" + imageLink);
+
+        try {
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body("Failed to delete image file: " + e.getMessage());
+        }
+
+        imageRepository.deleteById(id);
+        return ResponseEntity.ok("Image deleted");
+    }
+
+    @PostMapping(path = "/image/user/{id}")
+    public ResponseEntity<String> uploadImage(@PathVariable Long id,
+                                              @RequestParam("file") MultipartFile file) {
+        if (!userRepository.existsById(id)) {
+            return ResponseEntity.status(404).body("User not found");
+        }
+
+        if (file.isEmpty()) {
+            return ResponseEntity.status(400).body("No file provided");
+        }
+
+        try {
+            Path userDir = Paths.get("/home/files/images/" + id);
+            Files.createDirectories(userDir);
+
+            String filename = file.getOriginalFilename();
+            Path filePath = userDir.resolve(filename);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            String imageLink = "/files/images/" + id + "/" + filename;
+            Image image = new Image();
+            image.setUserId(userRepository.findById(id).get());
+            image.setImageLink(imageLink);
+            imageRepository.save(image);
+
+            return ResponseEntity.ok(imageLink);
+
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body("Upload failed: " + e.getMessage());
+        }
+    }
 }
