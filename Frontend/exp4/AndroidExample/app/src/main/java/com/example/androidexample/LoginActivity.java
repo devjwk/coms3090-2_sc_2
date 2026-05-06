@@ -14,6 +14,8 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.view.View;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
@@ -39,8 +41,8 @@ public class LoginActivity extends AppCompatActivity {
         btnDeleteUser = findViewById(R.id.login_delete_user_btn);
         btnModerator  = findViewById(R.id.login_moderator_btn);
         btnModeratorLogin = findViewById(R.id.login_moderator_login_btn);
-
-        btnAdmin      = findViewById(R.id.login_admin_btn);
+        btnAdmin = findViewById(R.id.login_admin_btn);
+        btnAdmin.setVisibility(View.GONE);
         btnLogin.setOnClickListener(v -> loginUser());
 
         btnSignup.setOnClickListener(v ->
@@ -55,9 +57,6 @@ public class LoginActivity extends AppCompatActivity {
 
         btnModeratorLogin.setOnClickListener(v ->
                 startActivity(new Intent(LoginActivity.this, ModeratorLoginActivity.class))
-
-        btnAdmin.setOnClickListener(v ->
-                startActivity(new Intent(LoginActivity.this, AdminDashboardActivity.class))
         );
     }
 
@@ -84,17 +83,45 @@ public class LoginActivity extends AppCompatActivity {
                 url,
                 null,
                 response -> {
+                    android.util.Log.d("LOGIN_RESPONSE", response.toString());
                     try {
-                        if (!"success".equals(response.optString("message", "")) && !response.has("user_id") && !response.has("userId")) {
+                        JSONObject userObject = response.optJSONObject("user");
+                        if (userObject == null) {
+                            userObject = response;
+                        }
+
+                        boolean hasValidLoginResponse = "success".equalsIgnoreCase(response.optString("message", ""))
+                                || response.has("user_id")
+                                || response.has("userId")
+                                || response.has("user");
+
+                        if (!hasValidLoginResponse) {
                             Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                        int uid = response.optInt("userId", response.optInt("user_id", 1));
-                        intent.putExtra("USER_ID", uid);
-                        if (response.has("email") || response.has("bio")) {
-                            intent.putExtra("USER_JSON", response.toString());
+
+                        int uid = userObject.optInt("userId", userObject.optInt("user_id", -1));
+                        if (uid <= 0) {
+                            Toast.makeText(this, "Invalid user ID from server", Toast.LENGTH_SHORT).show();
+                            return;
                         }
+
+                        boolean isAdmin = response.optBoolean("isAdmin", false);
+
+                        String userRole = response.optString("UserRole",
+                                response.optString("userRole",
+                                        userObject.optString("role", "")));
+
+                        Intent intent;
+                        if (isAdmin || "ADMIN".equalsIgnoreCase(userRole)) {
+                            intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
+                            intent.putExtra("ADMIN_USER_ID", uid);
+                        } else {
+                            intent = new Intent(LoginActivity.this, HomeActivity.class);
+                        }
+
+                        intent.putExtra("USER_ID", uid);
+                        intent.putExtra("USER_JSON", userObject.toString());
                         startActivity(intent);
                     } catch (Exception e) {
                         Toast.makeText(this, "Invalid server response", Toast.LENGTH_SHORT).show();

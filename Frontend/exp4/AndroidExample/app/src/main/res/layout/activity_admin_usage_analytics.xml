@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F0F1A"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvUsageAnalyticsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Usage Analytics"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvUsageAnalyticsSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View user, report, and match activity summaries."
+            android:textColor="#CCCCCC"
+            android:textSize="14sp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tvAnalyticsStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Loading analytics..."
+            android:textColor="#9B9BB4"
+            android:textSize="13sp"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnRefreshAnalytics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Refresh Analytics"
+            android:textAllCaps="false"
+            android:backgroundTint="#7B6FFF"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="User Analytics"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#1E1E30"
+            android:padding="14dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/tvTotalUsers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Total Users: ..."
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvPendingUsers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pending Users: ..."
+                android:textColor="#C4C4D4"
+                android:textSize="15sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvApprovedUsers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Approved Users: ..."
+                android:textColor="#C4C4D4"
+                android:textSize="15sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvSuspendedUsers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Suspended Users: ..."
+                android:textColor="#C4C4D4"
+                android:textSize="15sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvDisabledUsers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Disabled Users: ..."
+                android:textColor="#C4C4D4"
+                android:textSize="15sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvDeclinedUsers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Declined Users: ..."
+                android:textColor="#C4C4D4"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Report Analytics"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#1E1E30"
+            android:padding="14dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/tvPendingReports"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pending Reports: ..."
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvApprovedReports"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Approved Reports: ..."
+                android:textColor="#C4C4D4"
+                android:textSize="15sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvDeclinedReports"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Declined Reports: ..."
+                android:textColor="#C4C4D4"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Match Analytics"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#1E1E30"
+            android:padding="14dp"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:id="@+id/tvRecentMatches"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Recent Matches: ..."
+                android:textColor="#FFFFFF"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnBackUsageAnalytics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Back"
+            android:textAllCaps="false"
+            android:backgroundTint="#444444"
+            android:textColor="#FFFFFF" />
+
+    </LinearLayout>
+</ScrollView>
