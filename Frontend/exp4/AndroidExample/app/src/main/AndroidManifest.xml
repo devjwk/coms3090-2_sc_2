@@ -40,6 +40,15 @@
             android:name=".AdminModeratorRequestsActivity"
             android:exported="false"        
         />
+        <activity
+            android:name=".AdminReportActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminAccountStatusActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminUsageAnalyticsActivity"
+            android:exported="false" />
 
         <activity android:name=".GroupsActivity" />
         <activity android:name=".HomeActivity" />

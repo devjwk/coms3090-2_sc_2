@@ -13,19 +13,18 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private Button btnReportedUsers;
     private Button btnSuspendedAccounts;
     private Button btnUsageAnalytics;
-    private Button btnAppSettings;
     private Button btnBackAdminDashboard;
-
+    private int adminUserId;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_dashboard);
 
+        adminUserId = getIntent().getIntExtra("USER_ID", -1);
         btnModeratorRequests = findViewById(R.id.btnModeratorRequests);
         btnReportedUsers = findViewById(R.id.btnReportedUsers);
         btnSuspendedAccounts = findViewById(R.id.btnSuspendedAccounts);
         btnUsageAnalytics = findViewById(R.id.btnUsageAnalytics);
-        btnAppSettings = findViewById(R.id.btnAppSettings);
         btnBackAdminDashboard = findViewById(R.id.btnBackAdminDashboard);
 
         btnModeratorRequests.setOnClickListener(v -> {
@@ -33,40 +32,36 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     AdminDashboardActivity.this,
                     AdminModeratorRequestsActivity.class
             );
+            intent.putExtra("ADMIN_USER_ID", adminUserId);
             startActivity(intent);
         });
 
-        btnReportedUsers.setOnClickListener(v ->
-                Toast.makeText(
-                        AdminDashboardActivity.this,
-                        "Reported users management coming soon",
-                        Toast.LENGTH_SHORT
-                ).show()
-        );
+        btnReportedUsers.setOnClickListener(v -> {
+            Intent intent = new Intent(
+                    AdminDashboardActivity.this,
+                    AdminReportActivity.class
+            );
+            intent.putExtra("ADMIN_USER_ID", adminUserId);
+            startActivity(intent);
+        });
 
-        btnSuspendedAccounts.setOnClickListener(v ->
-                Toast.makeText(
-                        AdminDashboardActivity.this,
-                        "Account suspension management coming soon",
-                        Toast.LENGTH_SHORT
-                ).show()
-        );
+        btnSuspendedAccounts.setOnClickListener(v -> {
+            Intent intent = new Intent(
+                    AdminDashboardActivity.this,
+                    AdminAccountStatusActivity.class
+            );
+            intent.putExtra("ADMIN_USER_ID", adminUserId);
+            startActivity(intent);
+        });
 
-        btnUsageAnalytics.setOnClickListener(v ->
-                Toast.makeText(
-                        AdminDashboardActivity.this,
-                        "Usage analytics coming soon",
-                        Toast.LENGTH_SHORT
-                ).show()
-        );
-
-        btnAppSettings.setOnClickListener(v ->
-                Toast.makeText(
-                        AdminDashboardActivity.this,
-                        "App-wide settings coming soon",
-                        Toast.LENGTH_SHORT
-                ).show()
-        );
+        btnUsageAnalytics.setOnClickListener(v -> {
+            Intent intent = new Intent(
+                    AdminDashboardActivity.this,
+                    AdminUsageAnalyticsActivity.class
+            );
+            intent.putExtra("ADMIN_USER_ID", adminUserId);
+            startActivity(intent);
+        });
 
         btnBackAdminDashboard.setOnClickListener(v -> finish());
     }
