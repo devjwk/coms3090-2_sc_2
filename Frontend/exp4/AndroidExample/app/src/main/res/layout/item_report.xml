@@ -25,9 +25,13 @@
         android:textSize="14sp"
         android:layout_marginTop="6dp" />
 
-    <Spinner
-        android:id="@+id/spinnerReportStatus"
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/tvReportStatus"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="Status: IN_REVIEW"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
         android:layout_marginTop="10dp" />
 </LinearLayout>

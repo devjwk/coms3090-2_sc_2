@@ -3,8 +3,6 @@ package com.example.androidexample;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -38,35 +36,9 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
                         "\nDescription: " + report.getDescription()
         );
 
-        String[] statuses = {"IN_REVIEW", "CLOSED"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                holder.itemView.getContext(),
-                android.R.layout.simple_spinner_item,
-                statuses
-        );
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        holder.spinnerReportStatus.setAdapter(adapter);
-
-        int selectedIndex = 0;
-        if (report.getStatus().equals("CLOSED")) {
-            selectedIndex = 1;
-        }
-
-        holder.spinnerReportStatus.setSelection(selectedIndex);
-
-        holder.spinnerReportStatus.setOnItemSelectedListener(
-                new android.widget.AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(android.widget.AdapterView<?> parent, View view, int pos, long id) {
-                        report.setStatus(statuses[pos]);
-                    }
-
-                    @Override
-                    public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                    }
-                }
-        );
+        holder.tvReportStatus.setText("Status: " + report.getStatus());
     }
+
 
     @Override
     public int getItemCount() {
@@ -74,14 +46,13 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
     }
 
     static class ReportViewHolder extends RecyclerView.ViewHolder {
-        TextView tvReportType, tvReportDescription;
-        Spinner spinnerReportStatus;
+        TextView tvReportType, tvReportDescription, tvReportStatus;
 
         public ReportViewHolder(@NonNull View itemView) {
             super(itemView);
             tvReportType = itemView.findViewById(R.id.tvReportType);
             tvReportDescription = itemView.findViewById(R.id.tvReportDescription);
-            spinnerReportStatus = itemView.findViewById(R.id.spinnerReportStatus);
+            tvReportStatus = itemView.findViewById(R.id.tvReportStatus);
         }
     }
 }
