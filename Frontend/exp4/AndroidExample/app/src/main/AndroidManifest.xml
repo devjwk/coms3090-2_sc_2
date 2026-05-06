@@ -59,6 +59,16 @@
             android:name=".WebSocketNotificationActivity"
             android:exported="false" />
         <activity
+            android:name=".ModeratorLoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ModeratorDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ModeratorGroupManagementActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

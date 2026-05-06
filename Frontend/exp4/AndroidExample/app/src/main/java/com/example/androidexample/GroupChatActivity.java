@@ -5,16 +5,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,19 +30,23 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class GroupChatActivity extends AppCompatActivity implements WebSocketEventListener {
 
     private static final String TAG = "GroupChatActivity";
     private static final String PREFS_NAME = "GroupChatPrefs";
 
-    private Button sendBtn, backBtn;
+    private Button sendBtn, backBtn, btnManageGroupChat, btnViewEvents, btnViewAnnouncements;
     private EditText msgEtx;
     private RecyclerView recyclerChat;
     private TextView tvGroupName, tvMemberCount;
+    private LinearLayout layoutPinnedAnnouncement;
+    private TextView tvPinnedAnnouncement;
 
     private ChatAdapter chatAdapter;
     private final List<ChatMessage> messageList = new ArrayList<>();
+    private ModeratorRepository moderatorRepository;
 
     // Maps senderId -> display name for group members
     private final Map<Integer, String> memberNames = new HashMap<>();
@@ -50,9 +54,12 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
 
     private int currentUserId;
     private int groupId;
+    private int moderatorId = -1;
+    private boolean isModeratorView = false;
     private int conversationId = -1;
     private String groupName;
     private String lastSentMessage = null;
+    private boolean canModerateMessages = false;
 
     private static final String WS_BASE = "ws://coms-3090-015.class.las.iastate.edu:8080/chat/";
     private static final String BASE_URL = "http://coms-3090-015.class.las.iastate.edu:8080";
@@ -62,27 +69,86 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_chat);
 
-        currentUserId = getIntent().getIntExtra("USER_ID", 1);
+        currentUserId = getIntent().getIntExtra("USER_ID", -1);
         groupId       = getIntent().getIntExtra("GROUP_ID", -1);
         groupName     = getIntent().getStringExtra("GROUP_NAME");
+        moderatorId   = getIntent().getIntExtra("MODERATOR_ID", -1);
+        isModeratorView = getIntent().getBooleanExtra("IS_MODERATOR", false);
 
         sendBtn       = findViewById(R.id.sendBtn);
         backBtn       = findViewById(R.id.backBtn);
+        btnManageGroupChat = findViewById(R.id.btnManageGroupChat);
+        btnViewEvents = findViewById(R.id.btnViewEvents);
+        btnViewAnnouncements = findViewById(R.id.btnViewAnnouncements);
         msgEtx        = findViewById(R.id.msgEdt);
         recyclerChat  = findViewById(R.id.recyclerChat);
         tvGroupName   = findViewById(R.id.tvGroupName);
         tvMemberCount = findViewById(R.id.tvMemberCount);
+        layoutPinnedAnnouncement = findViewById(R.id.layoutPinnedAnnouncement);
+        tvPinnedAnnouncement = findViewById(R.id.tvPinnedAnnouncement);
+
+        moderatorRepository = new ModeratorRepository();
+
+        // If USER_ID was not passed for a normal user flow, fall back to the WebSocket manager's
+        // current identity instead of hardcoding a user id. That keeps sent/received alignment
+        // tied to the real logged-in user.
+        if (!isModeratorView && currentUserId <= 0) {
+            int wsUserId = WebSocketClientManager.getInstance().getCurrentUserId();
+            if (wsUserId > 0) {
+                currentUserId = wsUserId;
+                Log.d(TAG, "Recovered currentUserId from WebSocket manager: " + currentUserId);
+            }
+        }
+
+        ModeratorSessionManager moderatorSessionManager = new ModeratorSessionManager(this);
+        ModeratorAccount moderatorAccount = moderatorSessionManager.getSession();
+        if (moderatorId <= 0 && moderatorAccount != null) {
+            moderatorId = moderatorAccount.getModeratorId();
+        }
+        boolean hasAssignedGroupsPayload = moderatorAccount != null
+                && moderatorAccount.getAssignedGroups() != null
+                && !moderatorAccount.getAssignedGroups().isEmpty();
+        boolean canManageThisGroup = !hasAssignedGroupsPayload
+                || (moderatorAccount != null && moderatorAccount.getAssignedGroups().contains(groupId));
+        // IMPORTANT: Only show the Manage button for an explicit moderator view. Do NOT show
+        // it to regular users even if a stale moderator session exists on the device.
+        boolean showManageButton = isModeratorView && moderatorId > 0 && canManageThisGroup;
+        Set<String> moderatorPermissions = moderatorSessionManager.getPermissions();
+        boolean hasPermissionPayload = moderatorPermissions != null && !moderatorPermissions.isEmpty();
+        canModerateMessages = showManageButton
+                && (!hasPermissionPayload || moderatorPermissions.contains(ModeratorPermissions.MODERATE_CONVERSATIONS));
+        btnManageGroupChat.setVisibility(showManageButton ? View.VISIBLE : View.GONE);
+        btnViewEvents.setVisibility(groupId > 0 ? View.VISIBLE : View.GONE);
+        btnViewAnnouncements.setVisibility(groupId > 0 ? View.VISIBLE : View.GONE);
+        btnViewEvents.setOnClickListener(v -> loadAndShowGroupEvents());
+        btnViewAnnouncements.setOnClickListener(v -> loadAndShowAnnouncements());
+        btnManageGroupChat.setOnClickListener(v -> {
+            if (!showManageButton || moderatorId <= 0) {
+                Toast.makeText(this, "Moderator session required", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Intent manageIntent = new Intent(GroupChatActivity.this, ModeratorGroupManagementActivity.class);
+            manageIntent.putExtra("MODERATOR_ID", moderatorId);
+            manageIntent.putExtra("GROUP_ID", groupId);
+            manageIntent.putExtra("GROUP_NAME", groupName);
+            startActivity(manageIntent);
+        });
 
         sendBtn.setEnabled(true); // Always enable send button immediately
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
         recyclerChat.setLayoutManager(layoutManager);
-        chatAdapter = new ChatAdapter(messageList);
+        chatAdapter = new ChatAdapter(
+                messageList,
+                canDeleteMessagesInThisChat() ? this::showMessageActionMenu : null,
+                isModeratorView
+        );
         recyclerChat.setAdapter(chatAdapter);
 
         tvGroupName.setText(groupName != null ? groupName : "Group Chat");
-        tvMemberCount.setVisibility(View.GONE);
+        tvMemberCount.setVisibility(View.VISIBLE);
+        tvMemberCount.setOnClickListener(v -> showMembersDialog());
 
         backBtn.setOnClickListener(v -> {
             WebSocketClientManager.getInstance().removeWebSocketEventListener();
@@ -90,9 +156,10 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         });
 
         if (groupId > 0) {
+            loadPinnedAnnouncement();
             conversationId = getCachedConversationId(groupId);
             Log.d(TAG, "Cached conversationId for group " + groupId + " = " + conversationId);
-            startConversationFlow();
+            fetchGroupMembers();
         } else {
             Toast.makeText(this, "No group specified", Toast.LENGTH_SHORT).show();
             finish();
@@ -111,27 +178,90 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
     }
 
     private void fetchGroupMembers() {
-        String url = BASE_URL + "/groups/" + groupId;
-        Log.d(TAG, "Step 1: GET group: " + url);
+        String url = BASE_URL + "/gm/glist/" + groupId;
+        Log.d(TAG, "Step 1: GET members: " + url);
 
         StringRequest request = new StringRequest(Request.Method.GET, url,
                 response -> {
-                    Log.d(TAG, "Group response: " + response);
+                    Log.d(TAG, "Members response: " + response);
                     try {
-                        JSONObject group = new JSONObject(response);
-                        parseMembersFromGroupJson(group);
+                        memberNames.clear();
+                        memberUserIds.clear();
+                        JSONArray arr = new JSONArray(response);
+                        for (int i = 0; i < arr.length(); i++) {
+                            JSONObject obj = arr.getJSONObject(i);
+                            int uid = obj.optInt("userId", obj.optInt("userid", -1));
+                            if (uid <= 0) {
+                                continue;
+                            }
+                            String name = obj.optString("displayName",
+                                    obj.optString("displayname",
+                                            obj.optString("name",
+                                                    obj.optString("userName",
+                                                            obj.optString("username", "")))));
+                            if (name.isEmpty()) {
+                                continue;
+                            }
+                            memberNames.put(uid, name);
+                            if (!memberUserIds.contains(uid)) {
+                                memberUserIds.add(uid);
+                            }
+                        }
+                        tvMemberCount.setText(memberUserIds.size() + " members · Tap to view");
+                        Log.d(TAG, "Loaded members from /gm/glist: " + memberNames);
                     } catch (Exception e) {
-                        Log.e(TAG, "Error parsing group response: " + e.getMessage());
-                        fetchGroupMembersFallback();
-                        return;
+                        Log.e(TAG, "Error parsing members response: " + e.getMessage());
                     }
-                    resolveRealNames(0);
                     startConversationFlow();
                 },
                 error -> {
-                    Log.w(TAG, "GET /groups/" + groupId + " failed, falling back to /gm/glist: " + error);
-                    fetchGroupMembersFallback();
+                    Log.e(TAG, "GET /gm/glist/" + groupId + " failed: " + error);
+                    tvMemberCount.setText("Group Chat");
+                    startConversationFlow();
                 });
+
+        VolleySingleton.getInstance(this).addToRequestQueue(request);
+    }
+
+    private void refreshGroupMembersForDialog() {
+        if (groupId <= 0) {
+            return;
+        }
+        String url = BASE_URL + "/gm/glist/" + groupId;
+        Log.d(TAG, "Refreshing members list: " + url);
+
+        StringRequest request = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        memberNames.clear();
+                        memberUserIds.clear();
+                        JSONArray arr = new JSONArray(response);
+                        for (int i = 0; i < arr.length(); i++) {
+                            JSONObject obj = arr.getJSONObject(i);
+                            int uid = obj.optInt("userId", obj.optInt("userid", -1));
+                            if (uid <= 0) {
+                                continue;
+                            }
+                            String name = obj.optString("displayName",
+                                    obj.optString("displayname",
+                                            obj.optString("name",
+                                                    obj.optString("userName",
+                                                            obj.optString("username", "")))));
+                            if (name.isEmpty()) {
+                                continue;
+                            }
+                            memberNames.put(uid, name);
+                            if (!memberUserIds.contains(uid)) {
+                                memberUserIds.add(uid);
+                            }
+                        }
+                        tvMemberCount.setText(memberUserIds.size() + " members · Tap to view");
+                        Log.d(TAG, "Refreshed members: " + memberNames);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error refreshing members: " + e.getMessage());
+                    }
+                },
+                error -> Log.e(TAG, "Refresh members failed: " + error));
 
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
@@ -311,12 +441,19 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
                         }
                     } catch (Exception ignored) {}
                 }, error -> {
-                    Log.d(TAG, "Failed to fetch user " + uid + " : " + error);
-                });
+            Log.d(TAG, "Failed to fetch user " + uid + " : " + error);
+        });
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
     private void startConversationFlow() {
+        // For moderator view, skip conversation API and load messages directly
+        if (isModeratorView && moderatorId > 0) {
+            Log.d(TAG, "Moderator view: Loading messages directly from group endpoint");
+            loadModeratorGroupMessages();
+            return;
+        }
+
         if (conversationId > 0) {
             Log.d(TAG, "Step 2: Using cached conversationId = " + conversationId);
             loadChatHistoryThenConnect();
@@ -482,12 +619,15 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
                             + " keys=" + obj.keys().toString() + " raw=" + obj.toString().substring(0, Math.min(200, obj.toString().length())));
                 }
 
-                boolean isSent = (senderId == currentUserId);
+                String senderName = extractSenderName(obj, senderId);
+                boolean isSent = isOutgoingMessage(senderId, senderName);
                 ChatMessage msg = new ChatMessage(id, senderId, receiverId, content, timestamp, isSent);
+                if (isMessageRemoved(obj, content)) {
+                    msg.markRemovedByModerator();
+                }
                 if (!isSent) {
-                    String extracted = extractSenderName(obj, senderId);
-                    if (extracted != null && !extracted.isEmpty()) {
-                        msg.setSenderName(extracted);
+                    if (senderName != null && !senderName.isEmpty()) {
+                        msg.setSenderName(senderName);
                     } else if (memberNames.containsKey(senderId)) {
                         msg.setSenderName(memberNames.get(senderId));
                     } else {
@@ -504,6 +644,25 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
             Log.e(TAG, "Error parsing history: " + e.getMessage());
             return 0;
         }
+    }
+
+    private boolean isMessageRemoved(JSONObject obj, String content) {
+        if (obj == null) {
+            return false;
+        }
+        if (obj.optBoolean("removed", false)
+                || obj.optBoolean("isRemoved", false)
+                || obj.optBoolean("deleted", false)
+                || obj.optBoolean("hidden", false)) {
+            return true;
+        }
+        if (obj.has("active") && !obj.optBoolean("active", true)) {
+            return true;
+        }
+        String lowered = content == null ? "" : content.trim().toLowerCase();
+        return lowered.equals("[deleted]")
+                || lowered.equals("message removed by moderator")
+                || lowered.equals("this message was deleted");
     }
 
     private int extractUserId(JSONObject obj, String objectKey, String... flatKeys) {
@@ -566,6 +725,23 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
             if (memberNames.containsKey(senderId)) return memberNames.get(senderId);
         } catch (Exception ignored) {}
         return "";
+    }
+
+    private boolean isOutgoingMessage(int senderId, String senderName) {
+        if (senderId > 0 && currentUserId > 0) {
+            return senderId == currentUserId;
+        }
+
+        if (senderName == null || senderName.trim().isEmpty() || currentUserId <= 0) {
+            return false;
+        }
+
+        String currentName = memberNames.get(currentUserId);
+        if (currentName == null || currentName.trim().isEmpty()) {
+            return false;
+        }
+
+        return senderName.trim().equalsIgnoreCase(currentName.trim());
     }
 
     private boolean isMemberActive(JSONObject obj) {
@@ -661,69 +837,62 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         VolleySingleton.getInstance(this).addToRequestQueue(request);
     }
 
-    // Force re-create group conversation with current user included
-    private void fetchGroupConversationIdForceAdd() {
-        String url = BASE_URL + "/conversations/group";
-        List<Integer> userIds = new ArrayList<>();
-        if (!memberUserIds.contains(currentUserId)) {
-            userIds.add(currentUserId);
-        }
-        userIds.addAll(memberUserIds);
-        Collections.sort(userIds);
-        JSONObject body = new JSONObject();
-        try {
-            body.put("groupId", groupId);
-            body.put("name", groupName != null ? groupName : "Group " + groupId);
-            JSONArray idsArray = new JSONArray();
-            for (int uid : userIds) {
-                idsArray.put(uid);
-            }
-            body.put("userIds", idsArray);
-        } catch (Exception e) {
-            Log.e(TAG, "Error building body (force add)", e);
-            connectWebSocket();
+    private void loadModeratorGroupMessages() {
+        if (moderatorId <= 0 || groupId <= 0) {
+            Log.w(TAG, "Invalid moderatorId (" + moderatorId + ") or groupId (" + groupId + ")");
+            Toast.makeText(this, "Moderator data missing", Toast.LENGTH_SHORT).show();
             return;
         }
-        Log.d(TAG, "FORCE Step 2: POST " + url + " body=" + body);
-        StringRequest request = new StringRequest(Request.Method.POST, url,
-                response -> {
-                    Log.d(TAG, "FORCE Conversation response: " + response);
-                    try {
-                        JSONObject json = new JSONObject(response);
-                        conversationId = json.optInt("conversationId",
-                                json.optInt("id",
-                                        json.optInt("conversation_id", -1)));
-                    } catch (Exception e) {
-                        try {
-                            conversationId = Integer.parseInt(response.trim());
-                        } catch (NumberFormatException nfe) {
-                            Log.e(TAG, "Could not parse conversationId from: " + response);
-                        }
-                    }
-                    Log.d(TAG, "FORCE Got conversationId = " + conversationId);
-                    if (conversationId > 0) {
-                        cacheConversationId(groupId, conversationId);
-                        // After force-adding, check again
-                        fetchConversationDetails(conversationId);
-                    } else {
-                        // Only show error if still not a participant
-                        runOnUiThread(() -> {
-                            Toast.makeText(this, "You are not a participant on the server for this conversation.", Toast.LENGTH_LONG).show();
-                        });
-                    }
-                },
-                error -> {
-                    Log.e(TAG, "FORCE Failed to create group conversation: " + error);
+        // If we have a cached conversationId prefer the conversation messages endpoint
+        if (conversationId > 0) {
+            Log.d(TAG, "Loading messages from conversation endpoint: conversationId=" + conversationId);
+            moderatorRepository.getConversationMessages(this, conversationId, new ModeratorRepository.JsonArrayCallback() {
+                @Override
+                public void onSuccess(JSONArray array) {
+                    Log.d(TAG, "Conversation loaded " + array.length() + " messages");
                     runOnUiThread(() -> {
-                        Toast.makeText(this, "You are not a participant on the server for this conversation.", Toast.LENGTH_LONG).show();
+                        messageList.clear();
+                        parseAndLoadMessages(array.toString());
+                        Log.d(TAG, "Moderator view: conversation messages loaded, not connecting WebSocket");
                     });
-                }) {
+                }
+
+                @Override
+                public void onError(String error) {
+                    Log.w(TAG, "Conversation endpoint failed, falling back to moderator group messages: " + error);
+                    // Try the moderator-specific group messages endpoint as a fallback
+                    loadModeratorGroupMessagesFallback();
+                }
+            });
+            return;
+        }
+
+        // No conversationId available - use moderator-specific group messages endpoint
+        loadModeratorGroupMessagesFallback();
+    }
+
+    private void loadModeratorGroupMessagesFallback() {
+        Log.d(TAG, "Loading messages from moderator endpoint: moderatorId=" + moderatorId + " groupId=" + groupId);
+        moderatorRepository.getModeratorGroupMessages(this, moderatorId, groupId, new ModeratorRepository.JsonArrayCallback() {
             @Override
-            public byte[] getBody() { return body.toString().getBytes(); }
+            public void onSuccess(JSONArray array) {
+                Log.d(TAG, "Moderator loaded " + array.length() + " messages");
+                runOnUiThread(() -> {
+                    messageList.clear();
+                    parseAndLoadMessages(array.toString());
+                    // For moderator view, don't connect WebSocket - just show message history
+                    Log.d(TAG, "Moderator view: loading complete, not connecting WebSocket");
+                });
+            }
+
             @Override
-            public String getBodyContentType() { return "application/json"; }
-        };
-        VolleySingleton.getInstance(this).addToRequestQueue(request);
+            public void onError(String error) {
+                Log.e(TAG, "Failed to load moderator messages: " + error);
+                runOnUiThread(() -> {
+                    Toast.makeText(GroupChatActivity.this, "Failed to load messages: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void connectWebSocket() {
@@ -792,12 +961,16 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
             Log.d(TAG, "WS message: " + message);
             try {
                 JSONObject json = new JSONObject(message);
-                String content = json.optString("content", json.optString("message", ""));
-                int senderId = json.optInt("senderUserId",
-                        json.optInt("senderId", json.optInt("sender_id", -1)));
+                if (handleDeleteEvent(json)) {
+                    return;
+                }
+                 String content = json.optString("content", json.optString("message", ""));
+                 int senderId = json.optInt("senderUserId",
+                         json.optInt("senderId", json.optInt("sender_id", -1)));
 
                 if (!content.isEmpty()) {
-                    boolean isSent = (senderId == currentUserId);
+                    String senderName = extractSenderName(json, senderId);
+                    boolean isSent = isOutgoingMessage(senderId, senderName);
 
                     // Detect echo
                     if (!isSent && lastSentMessage != null && content.equals(lastSentMessage)) {
@@ -808,7 +981,7 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
                         return;
                     }
 
-                    String name = extractSenderName(json, senderId);
+                    String name = senderName;
                     if (name == null || name.isEmpty()) {
                         if (memberNames.containsKey(senderId)) {
                             name = memberNames.get(senderId);
@@ -818,7 +991,13 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
                             fetchUserNameAndUpdate(senderId);
                         }
                     }
-                    appendMessage(content, false, name);
+                    long messageId = json.optLong("messageId", json.optLong("id", 0));
+                    String timestamp = json.optString("sentAt", json.optString("timestamp", ""));
+                    ChatMessage incoming = new ChatMessage(messageId, senderId, currentUserId, content, timestamp, false);
+                    incoming.setSenderName(name);
+                    messageList.add(incoming);
+                    chatAdapter.notifyItemInserted(messageList.size() - 1);
+                    scrollToBottom();
                     return;
                 }
             } catch (Exception ignored) {}
@@ -860,50 +1039,23 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
         LinearLayout container = dialogView.findViewById(R.id.membersContainer);
         Button btnClose = dialogView.findViewById(R.id.btnCloseMembersDialog);
 
+        container.setVisibility(View.VISIBLE);
         tvCount.setText(memberNames.size() + " members");
 
         for (Map.Entry<Integer, String> entry : memberNames.entrySet()) {
-            int uid = entry.getKey();
+            int userId = entry.getKey();
             String name = entry.getValue();
 
             LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setOrientation(LinearLayout.VERTICAL);
             row.setPadding(dp(8), dp(10), dp(8), dp(10));
 
-            FrameLayout avatarFrame = new FrameLayout(this);
-            LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(dp(36), dp(36));
-            ap.setMargins(0, 0, dp(12), 0);
-            avatarFrame.setLayoutParams(ap);
-            avatarFrame.setBackgroundColor(Color.parseColor("#7B6FFF"));
-
-            TextView avatarText = new TextView(this);
-            avatarText.setText(name.isEmpty() ? "?" : String.valueOf(name.charAt(0)).toUpperCase());
-            avatarText.setTextColor(Color.WHITE);
-            avatarText.setTextSize(14);
-            avatarText.setGravity(Gravity.CENTER);
-            avatarText.setLayoutParams(new FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-            avatarFrame.addView(avatarText);
-            row.addView(avatarFrame);
-
-            LinearLayout textCol = new LinearLayout(this);
-            textCol.setOrientation(LinearLayout.VERTICAL);
-
             TextView tvName = new TextView(this);
-            tvName.setText(name);
+            tvName.setText(name + " (User ID: " + userId + ")");
             tvName.setTextColor(Color.WHITE);
             tvName.setTextSize(15);
             tvName.setTypeface(null, android.graphics.Typeface.BOLD);
-            textCol.addView(tvName);
-
-            TextView tvId = new TextView(this);
-            boolean isYou = (uid == currentUserId);
-            tvId.setText(isYou ? "You" : "ID: " + uid);
-            tvId.setTextColor(isYou ? Color.parseColor("#7B6FFF") : Color.parseColor("#9B9BB4"));
-            tvId.setTextSize(11);
-            textCol.addView(tvId);
-            row.addView(textCol);
+            row.addView(tvName);
 
             View divider = new View(this);
             divider.setLayoutParams(new LinearLayout.LayoutParams(
@@ -923,6 +1075,15 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (groupId > 0) {
+            loadPinnedAnnouncement();
+            refreshGroupMembersForDialog();
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         WebSocketClientManager.getInstance().removeWebSocketEventListener();
@@ -930,5 +1091,419 @@ public class GroupChatActivity extends AppCompatActivity implements WebSocketEve
 
     private int dp(int value) {
         return (int) (value * getResources().getDisplayMetrics().density);
+    }
+
+    private void showMessageActionMenu(View anchor, ChatMessage message, int position) {
+        if (!canDeleteMessagesInThisChat()) {
+            return;
+        }
+        if (message == null || message.getId() <= 0) {
+            Toast.makeText(this, "Message cannot be moderated yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        PopupMenu popupMenu = new PopupMenu(this, anchor);
+        if (message.isModeratedRemoved()) {
+            popupMenu.getMenu().add("Restore");
+        } else {
+            popupMenu.getMenu().add("Delete");
+        }
+        popupMenu.setOnMenuItemClickListener(item -> {
+            String title = item.getTitle() == null ? "" : item.getTitle().toString();
+            if ("Delete".equalsIgnoreCase(title)) {
+                confirmDeleteMessage(message, position);
+                return true;
+            }
+            if ("Restore".equalsIgnoreCase(title)) {
+                confirmRestoreMessage(message, position);
+                return true;
+            }
+            return false;
+        });
+        popupMenu.show();
+    }
+
+    private void confirmRestoreMessage(ChatMessage message, int position) {
+        new AlertDialog.Builder(this)
+                .setTitle("Restore message")
+                .setMessage("This will restore the message for everyone.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Restore", (dialog, which) -> restoreMessageForEveryone(message, position))
+                .show();
+    }
+
+    private void restoreMessageForEveryone(ChatMessage message, int position) {
+        if (moderatorId <= 0) {
+            Toast.makeText(this, "Moderator session required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        moderatorRepository.restoreMessage(this, moderatorId, (int) message.getId(), new ModeratorRepository.ActionCallback() {
+            @Override
+            public void onSuccess(String response) {
+                if (position >= 0 && position < messageList.size()) {
+                    messageList.get(position).setModeratedRemoved(false);
+                    chatAdapter.notifyItemChanged(position);
+                }
+                Toast.makeText(GroupChatActivity.this, "Message restored", Toast.LENGTH_SHORT).show();
+                reloadConversationMessages();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(GroupChatActivity.this, error, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private boolean canDeleteMessagesInThisChat() {
+        return isModeratorView && moderatorId > 0 && canModerateMessages;
+    }
+
+    private void confirmDeleteMessage(ChatMessage message, int position) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete message")
+                .setMessage("This will remove the message for everyone.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Delete", (dialog, which) -> deleteMessageForEveryone(message, position))
+                .show();
+    }
+
+    private void deleteMessageForEveryone(ChatMessage message, int position) {
+        if (moderatorId <= 0) {
+            Toast.makeText(this, "Moderator session required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        moderatorRepository.removeMessage(this, moderatorId, (int) message.getId(), new ModeratorRepository.ActionCallback() {
+            @Override
+            public void onSuccess(String response) {
+                if (position >= 0 && position < messageList.size()) {
+                    messageList.get(position).markRemovedByModerator();
+                    chatAdapter.notifyItemChanged(position);
+                }
+                Toast.makeText(GroupChatActivity.this, "Message deleted", Toast.LENGTH_SHORT).show();
+                reloadConversationMessages();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(GroupChatActivity.this, error, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void reloadConversationMessages() {
+        if (conversationId <= 0) {
+            return;
+        }
+        moderatorRepository.getConversationMessages(this, conversationId, new ModeratorRepository.JsonArrayCallback() {
+            @Override
+            public void onSuccess(JSONArray array) {
+                messageList.clear();
+                parseAndLoadMessages(array.toString());
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Failed to refresh messages after moderation: " + error);
+            }
+        });
+    }
+
+    private boolean handleDeleteEvent(JSONObject json) {
+        if (json == null) {
+            return false;
+        }
+        String action = json.optString("action", json.optString("type", "")).toLowerCase();
+        boolean looksLikeDelete = action.contains("delete") || action.contains("remove") || action.contains("hide");
+        if (!looksLikeDelete) {
+            return false;
+        }
+
+        long messageId = json.optLong("messageId", json.optLong("id", -1));
+        if (messageId <= 0) {
+            return false;
+        }
+
+        int index = -1;
+        for (int i = 0; i < messageList.size(); i++) {
+            if (messageList.get(i).getId() == messageId) {
+                index = i;
+                break;
+            }
+        }
+        if (index < 0) {
+            reloadConversationMessages();
+            return false;
+        }
+
+        messageList.get(index).markRemovedByModerator();
+        chatAdapter.notifyItemChanged(index);
+        return true;
+    }
+
+    private void loadAndShowGroupEvents() {
+        if (groupId <= 0) {
+            Toast.makeText(this, "Invalid group", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        moderatorRepository.getGroupEventsForChat(this, groupId, moderatorId, new ModeratorRepository.JsonArrayCallback() {
+            @Override
+            public void onSuccess(JSONArray array) {
+                runOnUiThread(() -> showEventsDialog(array));
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> Toast.makeText(GroupChatActivity.this, error, Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private void showEventsDialog(JSONArray events) {
+        String message = formatEventsForDialog(events);
+        new AlertDialog.Builder(this)
+                .setTitle("Group Events")
+                .setMessage(message)
+                .setPositiveButton("Close", null)
+                .show();
+    }
+
+    private String formatEventsForDialog(JSONArray events) {
+        if (events == null || events.length() == 0) {
+            return "No events yet.";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < events.length(); i++) {
+            Object raw = events.opt(i);
+            String line = extractEventDisplayLine(raw);
+            if (line.isEmpty()) {
+                continue;
+            }
+            sb.append(i + 1).append(". ").append(line).append("\n");
+        }
+
+        if (sb.length() == 0) {
+            return "No events yet.";
+        }
+        return sb.toString().trim();
+    }
+
+    private String extractEventDisplayLine(Object raw) {
+        if (raw == null) return "";
+        if (raw instanceof String) return ((String) raw).trim();
+        if (!(raw instanceof JSONObject)) return String.valueOf(raw);
+
+        JSONObject obj = (JSONObject) raw;
+        String title = obj.optString("title",
+                obj.optString("event",
+                        obj.optString("name", ""))).trim();
+        String id = obj.optString("eventId", obj.optString("id", "")).trim();
+        String when = obj.optString("when",
+                obj.optString("timestamp",
+                        obj.optString("scheduledAt",
+                                obj.optString("eventTime", "")))).trim();
+        String location = obj.optString("location",
+                obj.optString("eventLocation",
+                        obj.optString("place", ""))).trim();
+        String description = obj.optString("description",
+                obj.optString("details",
+                        obj.optString("content", ""))).trim();
+
+        String titleWithId = title.isEmpty()
+                ? ""
+                : (id.isEmpty() ? title : title + " (ID: " + id + ")");
+
+        StringBuilder line = new StringBuilder();
+        if (!titleWithId.isEmpty()) {
+            line.append(titleWithId);
+        }
+        if (!when.isEmpty()) {
+            if (line.length() > 0) line.append("\n");
+            line.append("Time: ").append(when);
+        }
+        if (!location.isEmpty()) {
+            if (line.length() > 0) line.append("\n");
+            line.append("Location: ").append(location);
+        }
+        if (!description.isEmpty()) {
+            if (line.length() > 0) line.append("\n");
+            line.append("Description: ").append(description);
+        }
+
+        if (line.length() == 0) return obj.toString();
+        return line.toString();
+    }
+
+    private void loadAndShowAnnouncements() {
+        if (groupId <= 0) {
+            Toast.makeText(this, "Invalid group", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        moderatorRepository.getOrderedAnnouncementsForChat(this, groupId, moderatorId, new ModeratorRepository.JsonArrayCallback() {
+            @Override
+            public void onSuccess(JSONArray array) {
+                runOnUiThread(() -> showAnnouncementsDialog(array));
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> Toast.makeText(GroupChatActivity.this, error, Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private void showAnnouncementsDialog(JSONArray announcements) {
+        String message = formatAnnouncementsForDialog(announcements);
+        new AlertDialog.Builder(this)
+                .setTitle("Announcements")
+                .setMessage(message)
+                .setPositiveButton("Close", null)
+                .show();
+    }
+
+    private String formatAnnouncementsForDialog(JSONArray announcements) {
+        if (announcements == null || announcements.length() == 0) {
+            return "No announcements yet.";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < announcements.length(); i++) {
+            JSONObject announcement = announcements.optJSONObject(i);
+            if (announcement == null) {
+                continue;
+            }
+            String block = extractAnnouncementDisplayBlock(announcement);
+            if (block.isEmpty()) {
+                continue;
+            }
+            sb.append(i + 1).append(". ").append(block).append("\n\n");
+        }
+
+        if (sb.length() == 0) {
+            return "No announcements yet.";
+        }
+        return sb.toString().trim();
+    }
+
+    private String extractAnnouncementDisplayBlock(JSONObject announcement) {
+        if (announcement == null) {
+            return "";
+        }
+
+        String title = announcement.optString("title", "").trim();
+        String content = announcement.optString("content",
+                announcement.optString("announcement", "")).trim();
+        String createdAt = announcement.optString("createdAt", "").trim();
+        boolean pinned = announcement.optBoolean("pinned", false)
+                || announcement.optBoolean("isPinned", false);
+
+        StringBuilder block = new StringBuilder();
+        if (pinned) {
+            block.append("[PINNED]");
+        }
+
+        if (!title.isEmpty()) {
+            if (block.length() > 0) block.append(" ");
+            block.append(title);
+        }
+        if (!content.isEmpty()) {
+            if (block.length() > 0) block.append("\n");
+            block.append(content);
+        }
+        if (!createdAt.isEmpty()) {
+            if (block.length() > 0) block.append("\n");
+            block.append("Created: ").append(createdAt);
+        }
+
+        return block.toString().trim();
+    }
+
+    private void loadPinnedAnnouncement() {
+        moderatorRepository.getPinnedAnnouncementsForGroup(this, groupId, new ModeratorRepository.JsonArrayCallback() {
+            @Override
+            public void onSuccess(JSONArray array) {
+                runOnUiThread(() -> renderPinnedAnnouncement(array));
+            }
+
+            @Override
+            public void onError(String error) {
+                // Fallback to broader announcements endpoint if pinned endpoint is unavailable.
+                moderatorRepository.getOrderedAnnouncementsForChat(GroupChatActivity.this, groupId, moderatorId, new ModeratorRepository.JsonArrayCallback() {
+                    @Override
+                    public void onSuccess(JSONArray array) {
+                        runOnUiThread(() -> renderPinnedAnnouncement(array));
+                    }
+
+                    @Override
+                    public void onError(String fallbackError) {
+                        Log.d(TAG, "Pinned announcement unavailable: " + fallbackError);
+                        runOnUiThread(() -> hidePinnedAnnouncement());
+                    }
+                });
+            }
+        });
+    }
+
+    private void renderPinnedAnnouncement(JSONArray announcements) {
+        JSONObject pinned = selectPinnedAnnouncement(announcements);
+        if (pinned == null) {
+            hidePinnedAnnouncement();
+            return;
+        }
+
+        String displayText = formatPinnedAnnouncement(pinned);
+        if (displayText.isEmpty()) {
+            hidePinnedAnnouncement();
+            return;
+        }
+
+        tvPinnedAnnouncement.setText(displayText);
+        layoutPinnedAnnouncement.setVisibility(View.VISIBLE);
+    }
+
+    private void hidePinnedAnnouncement() {
+        tvPinnedAnnouncement.setText("");
+        layoutPinnedAnnouncement.setVisibility(View.GONE);
+    }
+
+    private JSONObject selectPinnedAnnouncement(JSONArray announcements) {
+        if (announcements == null || announcements.length() == 0) {
+            return null;
+        }
+
+        for (int i = 0; i < announcements.length(); i++) {
+            JSONObject obj = announcements.optJSONObject(i);
+            if (obj == null) {
+                continue;
+            }
+            if (obj.optBoolean("pinned", false) || obj.optBoolean("isPinned", false)) {
+                return obj;
+            }
+        }
+        return null;
+    }
+
+    private String formatPinnedAnnouncement(JSONObject announcement) {
+        if (announcement == null) {
+            return "";
+        }
+
+        String title = announcement.optString("title", "").trim();
+        String content = announcement.optString("content",
+                announcement.optString("announcement", "")).trim();
+
+        if (title.isEmpty() && content.isEmpty()) {
+            return "";
+        }
+        if (title.isEmpty()) {
+            return content;
+        }
+        if (content.isEmpty()) {
+            return title;
+        }
+        return title + "\n" + content;
     }
 }

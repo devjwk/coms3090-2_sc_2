@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F0F1A"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvModGroupHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"
+            android:text="Manage Group" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Member Actions"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etApproveMemberId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Pending member ID"
+            android:inputType="number"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#9B9BB4"
+            android:backgroundTint="#2A2A42" />
+
+        <Button
+            android:id="@+id/btnApproveMember"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Approve Member"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etRemoveMemberId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Member ID to remove"
+            android:inputType="number"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#9B9BB4"
+            android:backgroundTint="#2A2A42" />
+
+        <Button
+            android:id="@+id/btnRemoveMember"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Remove Member"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Message Moderation"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etModerationMessageId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Message ID (for remove/restore)"
+            android:inputType="number"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#9B9BB4"
+            android:backgroundTint="#2A2A42" />
+
+        <Button
+            android:id="@+id/btnRemoveMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Remove Message"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnRestoreMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Restore Message"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Events"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etEventTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Event title"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#9B9BB4"
+            android:backgroundTint="#2A2A42" />
+
+        <EditText
+            android:id="@+id/etEventDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Event description"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#9B9BB4"
+            android:backgroundTint="#2A2A42" />
+
+        <EditText
+            android:id="@+id/etEventLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Event location"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#9B9BB4"
+            android:backgroundTint="#2A2A42" />
+
+        <EditText
+            android:id="@+id/etEventTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Event time (e.g. 2026-05-02T18:30:00)"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#9B9BB4"
+            android:backgroundTint="#2A2A42"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnScheduleEvent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Schedule Event"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etEventId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Event ID (for edit/delete)"
+            android:inputType="number"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#9B9BB4"
+            android:backgroundTint="#2A2A42" />
+
+        <Button
+            android:id="@+id/btnEditEvent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Edit Event"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnDeleteEvent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Delete Event"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#D9534F"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/etAnnouncementTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Announcement title"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#9B9BB4"
+            android:backgroundTint="#2A2A42" />
+
+        <EditText
+            android:id="@+id/etAnnouncementContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Announcement content"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#9B9BB4"
+            android:backgroundTint="#2A2A42" />
+
+        <EditText
+            android:id="@+id/etAnnouncementId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Announcement ID (for pin/unpin/delete)"
+            android:inputType="number"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#9B9BB4"
+            android:backgroundTint="#2A2A42" />
+
+        <Button
+            android:id="@+id/btnCreateAnnouncement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Create Announcement"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnPinAnnouncement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pin Announcement"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#7B6FFF"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnUnpinAnnouncement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Unpin Announcement"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#3C3C50"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnDeleteAnnouncement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Delete Announcement"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#D9534F"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tvModPendingMembers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1E1E30"
+            android:padding="12dp"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="8dp"
+            android:text="Pending Members" />
+
+        <LinearLayout
+            android:id="@+id/layoutPendingActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tvModEvents"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1E1E30"
+            android:padding="12dp"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="8dp"
+            android:text="Events"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvModAnnouncements"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1E1E30"
+            android:padding="12dp"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="8dp"
+            android:text="Announcements" />
+
+        <TextView
+            android:id="@+id/tvModMessages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1E1E30"
+            android:padding="12dp"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp"
+            android:text="Messages"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnRefreshGroupManagement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Refresh Group Data"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#3C3C50"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnBackGroupManagement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Back"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#3C3C50" />
+
+    </LinearLayout>
+
+</ScrollView>
