@@ -54,7 +54,7 @@ public class LoginActivity extends AppCompatActivity {
                 );
 
         btnModeratorLogin.setOnClickListener(v ->
-                startActivity(new Intent(LoginActivity.this, ModeratorLoginActivity.class))
+                startActivity(new Intent(LoginActivity.this, ModeratorLoginActivity.class)));
 
         btnAdmin.setOnClickListener(v ->
                 startActivity(new Intent(LoginActivity.this, AdminDashboardActivity.class))
