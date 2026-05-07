@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ModeratorSessionManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">ModeratorSessionManager.java</span></div><h1>ModeratorSessionManager.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class ModeratorSessionManager {
+    private static final String PREF_NAME = &quot;moderator_session&quot;;
+    private static final String KEY_MODERATOR_ID = &quot;moderator_id&quot;;
+    private static final String KEY_EMAIL = &quot;email&quot;;
+    private static final String KEY_DISPLAY_NAME = &quot;display_name&quot;;
+    private static final String KEY_AUTH_PROVIDER = &quot;auth_provider&quot;;
+    private static final String KEY_PROVIDER_USER_ID = &quot;provider_user_id&quot;;
+    private static final String KEY_ROLES = &quot;roles&quot;;
+    private static final String KEY_PERMISSIONS = &quot;permissions&quot;;
+    private static final String KEY_ASSIGNED_GROUP_IDS = &quot;assigned_group_ids&quot;;
+
+    private final SharedPreferences prefs;
+
+<span class="fc" id="L24">    public ModeratorSessionManager(Context context) {</span>
+<span class="fc" id="L25">        prefs = context.getApplicationContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);</span>
+<span class="fc" id="L26">    }</span>
+
+    public void saveSession(ModeratorAccount account) {
+<span class="nc" id="L29">        Set&lt;String&gt; groupIdStrings = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        for (Integer id : account.getAssignedGroups()) {</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">            if (id != null) {</span>
+<span class="nc" id="L32">                groupIdStrings.add(String.valueOf(id));</span>
+            }
+<span class="nc" id="L34">        }</span>
+
+<span class="nc" id="L36">        prefs.edit()</span>
+<span class="nc" id="L37">                .putInt(KEY_MODERATOR_ID, account.getModeratorId())</span>
+<span class="nc" id="L38">                .putString(KEY_EMAIL, account.getEmail())</span>
+<span class="nc" id="L39">                .putString(KEY_DISPLAY_NAME, account.getDisplayName())</span>
+<span class="nc" id="L40">                .putString(KEY_AUTH_PROVIDER, account.getAuthProvider())</span>
+<span class="nc" id="L41">                .putString(KEY_PROVIDER_USER_ID, account.getProviderUserId())</span>
+<span class="nc" id="L42">                .putStringSet(KEY_ROLES, new HashSet&lt;&gt;(account.getRoles()))</span>
+<span class="nc" id="L43">                .putStringSet(KEY_PERMISSIONS, new HashSet&lt;&gt;(account.getPermissions()))</span>
+<span class="nc" id="L44">                .putStringSet(KEY_ASSIGNED_GROUP_IDS, groupIdStrings)</span>
+<span class="nc" id="L45">                .apply();</span>
+<span class="nc" id="L46">    }</span>
+
+    public ModeratorAccount getSession() {
+<span class="fc" id="L49">        int moderatorId = prefs.getInt(KEY_MODERATOR_ID, -1);</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        if (moderatorId &lt;= 0) {</span>
+<span class="fc" id="L51">            return null;</span>
+        }
+
+<span class="nc" id="L54">        String email = prefs.getString(KEY_EMAIL, &quot;&quot;);</span>
+<span class="nc" id="L55">        String displayName = prefs.getString(KEY_DISPLAY_NAME, &quot;&quot;);</span>
+<span class="nc" id="L56">        String authProvider = prefs.getString(KEY_AUTH_PROVIDER, &quot;&quot;);</span>
+<span class="nc" id="L57">        String providerUserId = prefs.getString(KEY_PROVIDER_USER_ID, &quot;&quot;);</span>
+
+<span class="nc" id="L59">        Set&lt;String&gt; roleSet = prefs.getStringSet(KEY_ROLES, new HashSet&lt;&gt;());</span>
+<span class="nc" id="L60">        Set&lt;String&gt; permissions = prefs.getStringSet(KEY_PERMISSIONS, new HashSet&lt;&gt;());</span>
+<span class="nc" id="L61">        Set&lt;String&gt; assignedGroupSet = prefs.getStringSet(KEY_ASSIGNED_GROUP_IDS, new HashSet&lt;&gt;());</span>
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        List&lt;String&gt; roles = new ArrayList&lt;&gt;(roleSet != null ? roleSet : new HashSet&lt;&gt;());</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        Set&lt;String&gt; safePermissions = new HashSet&lt;&gt;(permissions != null ? permissions : new HashSet&lt;&gt;());</span>
+<span class="nc" id="L65">        List&lt;Integer&gt; assignedGroups = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (assignedGroupSet != null) {</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            for (String id : assignedGroupSet) {</span>
+                try {
+<span class="nc" id="L70">                    assignedGroups.add(Integer.parseInt(id));</span>
+<span class="nc" id="L71">                } catch (NumberFormatException ignored) {</span>
+<span class="nc" id="L72">                }</span>
+<span class="nc" id="L73">            }</span>
+        }
+
+<span class="nc" id="L76">        return new ModeratorAccount(moderatorId, email, displayName, authProvider, providerUserId, roles, safePermissions, assignedGroups);</span>
+    }
+
+    public boolean isLoggedIn() {
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        return prefs.getInt(KEY_MODERATOR_ID, -1) &gt; 0;</span>
+    }
+
+    public int getModeratorId() {
+<span class="fc" id="L84">        return prefs.getInt(KEY_MODERATOR_ID, -1);</span>
+    }
+
+    public Set&lt;String&gt; getPermissions() {
+<span class="fc" id="L88">        Set&lt;String&gt; permissions = prefs.getStringSet(KEY_PERMISSIONS, new HashSet&lt;&gt;());</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        return new HashSet&lt;&gt;(permissions != null ? permissions : new HashSet&lt;&gt;());</span>
+    }
+
+    public void clear() {
+<span class="nc" id="L93">        prefs.edit().clear().apply();</span>
+<span class="nc" id="L94">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

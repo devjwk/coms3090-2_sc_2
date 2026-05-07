@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminAccountStatusActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">AdminAccountStatusActivity.java</span></div><h1>AdminAccountStatusActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Gravity;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L26">public class AdminAccountStatusActivity extends AppCompatActivity {</span>
+
+    private static final String TAG = &quot;AdminAccountStatus&quot;;
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+
+    private LinearLayout userStatusContainer;
+    private Button btnRefreshAccountStatus;
+    private Button btnBackAccountStatus;
+
+    private int adminUserId;
+<span class="fc" id="L36">    private final List&lt;AdminUserStatusItem&gt; users = new ArrayList&lt;&gt;();</span>
+
+    private static class AdminUserStatusItem {
+        long userId;
+        String email;
+        String displayName;
+        String status;
+        boolean active;
+
+<span class="fc" id="L45">        AdminUserStatusItem(long userId, String email, String displayName, String status, boolean active) {</span>
+<span class="fc" id="L46">            this.userId = userId;</span>
+<span class="fc" id="L47">            this.email = email;</span>
+<span class="fc" id="L48">            this.displayName = displayName;</span>
+<span class="fc" id="L49">            this.status = status;</span>
+<span class="fc" id="L50">            this.active = active;</span>
+<span class="fc" id="L51">        }</span>
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L56">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L57">        setContentView(R.layout.activity_admin_account_status);</span>
+
+<span class="fc" id="L59">        adminUserId = getIntent().getIntExtra(&quot;ADMIN_USER_ID&quot;, -1);</span>
+
+<span class="fc" id="L61">        userStatusContainer = findViewById(R.id.userStatusContainer);</span>
+<span class="fc" id="L62">        btnRefreshAccountStatus = findViewById(R.id.btnRefreshAccountStatus);</span>
+<span class="fc" id="L63">        btnBackAccountStatus = findViewById(R.id.btnBackAccountStatus);</span>
+
+<span class="fc" id="L65">        btnRefreshAccountStatus.setOnClickListener(v -&gt; fetchUsers());</span>
+<span class="pc" id="L66">        btnBackAccountStatus.setOnClickListener(v -&gt; finish());</span>
+
+<span class="fc" id="L68">        fetchUsers();</span>
+<span class="fc" id="L69">    }</span>
+
+    private void fetchUsers() {
+<span class="fc" id="L72">        String url = BASE_URL + &quot;/users/all&quot;;</span>
+<span class="fc" id="L73">        Log.d(TAG, &quot;GET &quot; + url);</span>
+
+<span class="fc" id="L75">        StringRequest request = new StringRequest(</span>
+                Request.Method.GET,
+                url,
+                response -&gt; {
+<span class="fc" id="L79">                    Log.d(TAG, &quot;Users raw response: &quot; + response);</span>
+<span class="fc" id="L80">                    users.clear();</span>
+
+                    try {
+<span class="fc" id="L83">                        org.json.JSONArray userArray = extractUserArray(response);</span>
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">                        for (int i = 0; i &lt; userArray.length(); i++) {</span>
+<span class="fc" id="L86">                            JSONObject user = userArray.getJSONObject(i);</span>
+
+<span class="fc" id="L88">                            long id = getLongAny(user, &quot;userID&quot;, &quot;userId&quot;, &quot;user_id&quot;, &quot;id&quot;);</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">                            if (id &lt;= 0) {</span>
+<span class="nc" id="L90">                                Log.w(TAG, &quot;Skipping user with missing ID: &quot; + user.toString());</span>
+<span class="nc" id="L91">                                continue;</span>
+                            }
+
+<span class="fc" id="L94">                            String email = getStringAny(user,</span>
+                                    &quot;email&quot;, &quot;userEmail&quot;, &quot;user_email&quot;, &quot;mail&quot;);
+
+<span class="fc" id="L97">                            String displayName = getStringAny(user,</span>
+                                    &quot;displayName&quot;, &quot;displayname&quot;, &quot;name&quot;, &quot;userName&quot;, &quot;username&quot;);
+
+<span class="fc bfc" id="L100" title="All 2 branches covered.">                            if (displayName.isEmpty()) {</span>
+<span class="fc" id="L101">                                displayName = &quot;User &quot; + id;</span>
+                            }
+
+<span class="fc" id="L104">                            users.add(new AdminUserStatusItem(</span>
+                                    id,
+                                    email,
+                                    displayName,
+<span class="fc" id="L108">                                    user.optString(&quot;status&quot;, &quot;UNKNOWN&quot;),</span>
+<span class="fc" id="L109">                                    user.optBoolean(&quot;active&quot;, true)</span>
+                            ));
+                        }
+<span class="nc" id="L112">                    } catch (Exception e) {</span>
+<span class="nc" id="L113">                        Log.e(TAG, &quot;Failed to parse users response&quot;, e);</span>
+<span class="nc" id="L114">                        Toast.makeText(this, &quot;Failed to parse users&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L115">                    }</span>
+
+<span class="fc" id="L117">                    renderUsers();</span>
+
+<span class="fc bfc" id="L119" title="All 2 branches covered.">                    for (AdminUserStatusItem user : new ArrayList&lt;&gt;(users)) {</span>
+<span class="pc bpc" id="L120" title="3 of 6 branches missed.">                        if ((user.email == null || user.email.trim().isEmpty()) &amp;&amp; user.userId &gt; 0) {</span>
+<span class="fc" id="L121">                            fetchUserDetailsAndRefresh(user);</span>
+                        }
+<span class="fc" id="L123">                    }</span>
+<span class="fc" id="L124">                },</span>
+                error -&gt; {
+<span class="nc bnc" id="L126" title="All 2 branches missed.">                    int statusCode = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="nc" id="L127">                    String errorBody = &quot;&quot;;</span>
+<span class="nc bnc" id="L128" title="All 4 branches missed.">                    if (error.networkResponse != null &amp;&amp; error.networkResponse.data != null) {</span>
+<span class="nc" id="L129">                        errorBody = new String(error.networkResponse.data);</span>
+                    }
+<span class="nc" id="L131">                    Log.e(TAG, &quot;Failed to fetch users. HTTP &quot; + statusCode + &quot; body=&quot; + errorBody);</span>
+<span class="nc" id="L132">                    Toast.makeText(this, &quot;Failed to load users: &quot; + statusCode, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L133">                    renderUsers();</span>
+<span class="nc" id="L134">                }</span>
+        );
+
+<span class="fc" id="L137">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L138">    }</span>
+
+    private org.json.JSONArray extractUserArray(String response) throws JSONException {
+<span class="pc bpc" id="L141" title="2 of 4 branches missed.">        if (response == null || response.trim().isEmpty()) {</span>
+<span class="nc" id="L142">            return new org.json.JSONArray();</span>
+        }
+
+<span class="fc" id="L145">        String trimmed = response.trim();</span>
+
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (trimmed.startsWith(&quot;[&quot;)) {</span>
+<span class="fc" id="L148">            return new org.json.JSONArray(trimmed);</span>
+        }
+
+<span class="nc" id="L151">        JSONObject object = new JSONObject(trimmed);</span>
+
+<span class="nc" id="L153">        String[] possibleArrayKeys = new String[]{</span>
+                &quot;users&quot;, &quot;data&quot;, &quot;results&quot;, &quot;items&quot;, &quot;content&quot;
+        };
+
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        for (String key : possibleArrayKeys) {</span>
+<span class="nc" id="L158">            org.json.JSONArray array = object.optJSONArray(key);</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            if (array != null) {</span>
+<span class="nc" id="L160">                return array;</span>
+            }
+        }
+
+<span class="nc" id="L164">        org.json.JSONArray singleUserArray = new org.json.JSONArray();</span>
+<span class="nc" id="L165">        singleUserArray.put(object);</span>
+<span class="nc" id="L166">        return singleUserArray;</span>
+    }
+
+    private void renderUsers() {
+<span class="fc" id="L170">        userStatusContainer.removeAllViews();</span>
+
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (users.isEmpty()) {</span>
+<span class="nc" id="L173">            TextView emptyText = new TextView(this);</span>
+<span class="nc" id="L174">            emptyText.setText(&quot;No users found.&quot;);</span>
+<span class="nc" id="L175">            emptyText.setTextColor(Color.parseColor(&quot;#CCCCCC&quot;));</span>
+<span class="nc" id="L176">            emptyText.setTextSize(16);</span>
+<span class="nc" id="L177">            emptyText.setPadding(dp(8), dp(24), dp(8), dp(24));</span>
+<span class="nc" id="L178">            userStatusContainer.addView(emptyText);</span>
+<span class="nc" id="L179">            return;</span>
+        }
+
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        for (AdminUserStatusItem user : new ArrayList&lt;&gt;(users)) {</span>
+<span class="fc" id="L183">            userStatusContainer.addView(createUserCard(user));</span>
+<span class="fc" id="L184">        }</span>
+<span class="fc" id="L185">    }</span>
+
+    private LinearLayout createUserCard(AdminUserStatusItem user) {
+<span class="fc" id="L188">        LinearLayout card = new LinearLayout(this);</span>
+<span class="fc" id="L189">        card.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="fc" id="L190">        card.setBackgroundColor(Color.parseColor(&quot;#1E1E30&quot;));</span>
+<span class="fc" id="L191">        card.setPadding(dp(16), dp(14), dp(16), dp(14));</span>
+
+<span class="fc" id="L193">        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(</span>
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+<span class="fc" id="L197">        cardParams.setMargins(0, 0, 0, dp(12));</span>
+<span class="fc" id="L198">        card.setLayoutParams(cardParams);</span>
+
+<span class="fc" id="L200">        TextView nameText = new TextView(this);</span>
+<span class="pc bpc" id="L201" title="2 of 4 branches missed.">        String displayName = user.displayName == null || user.displayName.trim().isEmpty()</span>
+<span class="nc" id="L202">                ? &quot;User &quot; + user.userId</span>
+<span class="fc" id="L203">                : user.displayName;</span>
+<span class="fc" id="L204">        nameText.setText(displayName + &quot;  (#&quot; + user.userId + &quot;)&quot;);</span>
+<span class="fc" id="L205">        nameText.setTextColor(Color.WHITE);</span>
+<span class="fc" id="L206">        nameText.setTextSize(17);</span>
+<span class="fc" id="L207">        nameText.setTypeface(null, Typeface.BOLD);</span>
+<span class="fc" id="L208">        card.addView(nameText);</span>
+
+<span class="fc" id="L210">        TextView emailText = new TextView(this);</span>
+<span class="pc bpc" id="L211" title="1 of 4 branches missed.">        String emailDisplay = user.email == null || user.email.trim().isEmpty()</span>
+<span class="fc" id="L212">                ? &quot;Loading email...&quot;</span>
+<span class="fc" id="L213">                : user.email;</span>
+<span class="fc" id="L214">        emailText.setText(&quot;Email: &quot; + emailDisplay);</span>
+<span class="fc" id="L215">        emailText.setTextColor(Color.parseColor(&quot;#CCCCCC&quot;));</span>
+<span class="fc" id="L216">        emailText.setTextSize(14);</span>
+<span class="fc" id="L217">        emailText.setPadding(0, dp(6), 0, 0);</span>
+<span class="fc" id="L218">        card.addView(emailText);</span>
+
+<span class="fc" id="L220">        TextView statusText = new TextView(this);</span>
+<span class="fc" id="L221">        statusText.setText(&quot;Status: &quot; + user.status + &quot; | Active: &quot; + user.active);</span>
+<span class="fc" id="L222">        statusText.setTextColor(getStatusColor(user.status));</span>
+<span class="fc" id="L223">        statusText.setTextSize(14);</span>
+<span class="fc" id="L224">        statusText.setPadding(0, dp(6), 0, dp(10));</span>
+<span class="fc" id="L225">        card.addView(statusText);</span>
+
+<span class="fc" id="L227">        LinearLayout buttonRow = new LinearLayout(this);</span>
+<span class="fc" id="L228">        buttonRow.setOrientation(LinearLayout.HORIZONTAL);</span>
+<span class="fc" id="L229">        buttonRow.setGravity(Gravity.CENTER_VERTICAL);</span>
+
+<span class="fc" id="L231">        Button suspendButton = makeActionButton(&quot;Suspend&quot;, &quot;#8A3A4A&quot;);</span>
+<span class="fc" id="L232">        Button disableButton = makeActionButton(&quot;Disable&quot;, &quot;#D9534F&quot;);</span>
+<span class="fc" id="L233">        Button restoreButton = makeActionButton(&quot;Restore&quot;, &quot;#7B6FFF&quot;);</span>
+
+<span class="fc" id="L235">        buttonRow.addView(suspendButton, makeButtonParams(true));</span>
+<span class="fc" id="L236">        buttonRow.addView(disableButton, makeButtonParams(true));</span>
+<span class="fc" id="L237">        buttonRow.addView(restoreButton, makeButtonParams(false));</span>
+
+<span class="fc" id="L239">        card.addView(buttonRow);</span>
+
+<span class="pc" id="L241">        suspendButton.setOnClickListener(v -&gt; updateUserStatus(user, &quot;SUSPENDED&quot;));</span>
+<span class="pc" id="L242">        disableButton.setOnClickListener(v -&gt; updateUserStatus(user, &quot;DISABLED&quot;));</span>
+<span class="pc" id="L243">        restoreButton.setOnClickListener(v -&gt; updateUserStatus(user, &quot;APPROVED&quot;));</span>
+
+<span class="fc" id="L245">        return card;</span>
+    }
+
+    private Button makeActionButton(String text, String colorHex) {
+<span class="fc" id="L249">        Button button = new Button(this);</span>
+<span class="fc" id="L250">        button.setText(text);</span>
+<span class="fc" id="L251">        button.setAllCaps(false);</span>
+<span class="fc" id="L252">        button.setTextColor(Color.WHITE);</span>
+<span class="fc" id="L253">        button.setTextSize(13);</span>
+<span class="fc" id="L254">        button.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(colorHex)));</span>
+<span class="fc" id="L255">        return button;</span>
+    }
+
+    private LinearLayout.LayoutParams makeButtonParams(boolean hasRightMargin) {
+<span class="fc" id="L259">        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(</span>
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1
+        );
+<span class="fc bfc" id="L264" title="All 2 branches covered.">        if (hasRightMargin) {</span>
+<span class="fc" id="L265">            params.setMargins(0, 0, dp(8), 0);</span>
+        }
+<span class="fc" id="L267">        return params;</span>
+    }
+
+    private void updateUserStatus(AdminUserStatusItem user, String newStatus) {
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        if (adminUserId &lt;= 0) {</span>
+<span class="nc" id="L272">            Toast.makeText(this, &quot;Admin ID missing&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L273">            return;</span>
+        }
+
+<span class="nc" id="L276">        String url = BASE_URL + &quot;/users/status_edit/&quot; + user.userId + &quot;?requesterID=&quot; + adminUserId;</span>
+<span class="nc" id="L277">        Log.d(TAG, &quot;PUT &quot; + url + &quot; status=&quot; + newStatus);</span>
+
+<span class="nc" id="L279">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L281">            body.put(&quot;status&quot;, newStatus);</span>
+<span class="nc" id="L282">        } catch (JSONException e) {</span>
+<span class="nc" id="L283">            Toast.makeText(this, &quot;Failed to build request&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L284">            return;</span>
+<span class="nc" id="L285">        }</span>
+
+<span class="nc" id="L287">        StringRequest request = new StringRequest(</span>
+                Request.Method.PUT,
+                url,
+<span class="nc" id="L290">                response -&gt; handleStatusUpdateSuccess(user, newStatus),</span>
+                error -&gt; {
+<span class="nc bnc" id="L292" title="All 2 branches missed.">                    int statusCode = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="nc" id="L293">                    String errorBody = &quot;&quot;;</span>
+<span class="nc bnc" id="L294" title="All 4 branches missed.">                    if (error.networkResponse != null &amp;&amp; error.networkResponse.data != null) {</span>
+<span class="nc" id="L295">                        errorBody = new String(error.networkResponse.data);</span>
+                    }
+<span class="nc" id="L297">                    Log.e(TAG, &quot;Update failed. HTTP &quot; + statusCode + &quot; body=&quot; + errorBody);</span>
+<span class="nc" id="L298">                    Toast.makeText(this, &quot;Status update failed: &quot; + statusCode, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L299">                }</span>
+<span class="nc" id="L300">        ) {</span>
+            @Override
+            public byte[] getBody() {
+<span class="nc" id="L303">                return body.toString().getBytes();</span>
+            }
+
+            @Override
+            public String getBodyContentType() {
+<span class="nc" id="L308">                return &quot;application/json; charset=utf-8&quot;;</span>
+            }
+        };
+
+<span class="nc" id="L312">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L313">    }</span>
+
+    private void handleStatusUpdateSuccess(AdminUserStatusItem user, String newStatus) {
+<span class="nc" id="L316">        user.status = newStatus;</span>
+<span class="nc" id="L317">        renderUsers();</span>
+<span class="nc" id="L318">        Toast.makeText(this, &quot;User set to &quot; + newStatus, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L319">    }</span>
+
+    private String getStringAny(JSONObject object, String... keys) {
+<span class="pc bpc" id="L322" title="2 of 4 branches missed.">        if (object == null || keys == null) {</span>
+<span class="nc" id="L323">            return &quot;&quot;;</span>
+        }
+
+<span class="fc bfc" id="L326" title="All 2 branches covered.">        for (String key : keys) {</span>
+<span class="fc" id="L327">            String value = object.optString(key, &quot;&quot;).trim();</span>
+<span class="pc bpc" id="L328" title="1 of 4 branches missed.">            if (!value.isEmpty() &amp;&amp; !&quot;null&quot;.equalsIgnoreCase(value)) {</span>
+<span class="fc" id="L329">                return value;</span>
+            }
+        }
+
+<span class="fc" id="L333">        return &quot;&quot;;</span>
+    }
+
+    private long getLongAny(JSONObject object, String... keys) {
+<span class="pc bpc" id="L337" title="2 of 4 branches missed.">        if (object == null || keys == null) {</span>
+<span class="nc" id="L338">            return 0;</span>
+        }
+
+<span class="pc bpc" id="L341" title="1 of 2 branches missed.">        for (String key : keys) {</span>
+<span class="pc bpc" id="L342" title="2 of 4 branches missed.">            if (!object.has(key) || object.isNull(key)) {</span>
+<span class="nc" id="L343">                continue;</span>
+            }
+
+<span class="fc" id="L346">            Object raw = object.opt(key);</span>
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">            if (raw instanceof Number) {</span>
+<span class="fc" id="L348">                long value = ((Number) raw).longValue();</span>
+<span class="pc bpc" id="L349" title="1 of 2 branches missed.">                if (value &gt; 0) {</span>
+<span class="fc" id="L350">                    return value;</span>
+                }
+            }
+
+<span class="nc" id="L354">            String valueText = String.valueOf(raw).trim();</span>
+<span class="nc bnc" id="L355" title="All 4 branches missed.">            if (!valueText.isEmpty() &amp;&amp; !&quot;null&quot;.equalsIgnoreCase(valueText)) {</span>
+                try {
+<span class="nc" id="L357">                    long value = Long.parseLong(valueText);</span>
+<span class="nc bnc" id="L358" title="All 2 branches missed.">                    if (value &gt; 0) {</span>
+<span class="nc" id="L359">                        return value;</span>
+                    }
+<span class="nc" id="L361">                } catch (NumberFormatException ignored) {</span>
+<span class="nc" id="L362">                }</span>
+            }
+        }
+
+<span class="nc" id="L366">        return 0;</span>
+    }
+
+    private void fetchUserDetailsAndRefresh(AdminUserStatusItem targetUser) {
+<span class="fc" id="L370">        String url = BASE_URL + &quot;/users/&quot; + targetUser.userId;</span>
+<span class="fc" id="L371">        Log.d(TAG, &quot;GET detail for missing email: &quot; + url);</span>
+
+<span class="fc" id="L373">        JsonObjectRequest request = new JsonObjectRequest(</span>
+                Request.Method.GET,
+                url,
+                null,
+                response -&gt; {
+<span class="fc" id="L378">                    String email = getStringAny(response,</span>
+                            &quot;email&quot;, &quot;userEmail&quot;, &quot;user_email&quot;, &quot;mail&quot;);
+
+<span class="fc" id="L381">                    String displayName = getStringAny(response,</span>
+                            &quot;displayName&quot;, &quot;displayname&quot;, &quot;name&quot;, &quot;userName&quot;, &quot;username&quot;);
+
+<span class="fc" id="L384">                    String status = response.optString(&quot;status&quot;, targetUser.status);</span>
+<span class="fc" id="L385">                    boolean active = response.optBoolean(&quot;active&quot;, targetUser.active);</span>
+
+<span class="pc bpc" id="L387" title="1 of 2 branches missed.">                    if (!email.isEmpty()) {</span>
+<span class="fc" id="L388">                        targetUser.email = email;</span>
+                    }
+<span class="fc bfc" id="L390" title="All 2 branches covered.">                    if (!displayName.isEmpty()) {</span>
+<span class="fc" id="L391">                        targetUser.displayName = displayName;</span>
+                    }
+<span class="pc bpc" id="L393" title="2 of 4 branches missed.">                    if (status != null &amp;&amp; !status.trim().isEmpty()) {</span>
+<span class="fc" id="L394">                        targetUser.status = status;</span>
+                    }
+<span class="fc" id="L396">                    targetUser.active = active;</span>
+
+<span class="fc" id="L398">                    renderUsers();</span>
+<span class="fc" id="L399">                },</span>
+                error -&gt; {
+<span class="nc bnc" id="L401" title="All 2 branches missed.">                    int statusCode = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="nc" id="L402">                    Log.e(TAG, &quot;Failed to fetch user detail for &quot; + targetUser.userId + &quot;. HTTP &quot; + statusCode);</span>
+<span class="nc" id="L403">                }</span>
+        );
+
+<span class="fc" id="L406">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L407">    }</span>
+
+    private int getStatusColor(String status) {
+<span class="pc bpc" id="L410" title="1 of 2 branches missed.">        if (status == null) {</span>
+<span class="nc" id="L411">            return Color.parseColor(&quot;#AAAAAA&quot;);</span>
+        }
+<span class="pc bpc" id="L413" title="1 of 4 branches missed.">        switch (status.toUpperCase()) {</span>
+            case &quot;APPROVED&quot;:
+<span class="fc" id="L415">                return Color.parseColor(&quot;#7BFFB2&quot;);</span>
+            case &quot;SUSPENDED&quot;:
+            case &quot;DISABLED&quot;:
+            case &quot;DECLINED&quot;:
+<span class="fc" id="L419">                return Color.parseColor(&quot;#FFB86B&quot;);</span>
+            case &quot;NEED_APPROVAL&quot;:
+<span class="fc" id="L421">                return Color.parseColor(&quot;#9E97FF&quot;);</span>
+            default:
+<span class="nc" id="L423">                return Color.parseColor(&quot;#AAAAAA&quot;);</span>
+        }
+    }
+
+    private int dp(int value) {
+<span class="fc" id="L428">        return (int) (value * getResources().getDisplayMetrics().density);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

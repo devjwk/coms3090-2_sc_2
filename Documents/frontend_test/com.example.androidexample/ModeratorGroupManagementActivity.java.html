@@ -1,0 +1,604 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ModeratorGroupManagementActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">ModeratorGroupManagementActivity.java</span></div><h1>ModeratorGroupManagementActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.Set;
+
+<span class="fc" id="L18">public class ModeratorGroupManagementActivity extends AppCompatActivity {</span>
+    private ModeratorRepository repository;
+    private ModeratorSessionManager sessionManager;
+
+    private int moderatorId;
+    private int groupId;
+
+    private TextView tvGroupHeader;
+    private TextView tvPendingMembers;
+    private TextView tvEvents;
+    private TextView tvAnnouncements;
+    private TextView tvMessages;
+    private LinearLayout layoutPendingActions;
+
+    private EditText etApproveMemberId;
+    private EditText etRemoveMemberId;
+    private EditText etModerationMessageId;
+    private EditText etEventTitle;
+    private EditText etEventDescription;
+    private EditText etEventLocation;
+    private EditText etEventTime;
+    private EditText etAnnouncementTitle;
+    private EditText etAnnouncementContent;
+    private EditText etAnnouncementId;
+    private EditText etEventId;
+
+    private Button btnApproveMember;
+    private Button btnRemoveMember;
+    private Button btnRemoveMessage;
+    private Button btnRestoreMessage;
+    private Button btnScheduleEvent;
+    private Button btnCreateAnnouncement;
+    private Button btnPinAnnouncement;
+    private Button btnUnpinAnnouncement;
+    private Button btnDeleteAnnouncement;
+    private Button btnEditEvent;
+    private Button btnDeleteEvent;
+
+<span class="fc" id="L56">    private int conversationId = -1;</span>
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L60">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L61">        setContentView(R.layout.activity_moderator_group_management);</span>
+
+<span class="fc" id="L63">        repository = new ModeratorRepository();</span>
+<span class="fc" id="L64">        sessionManager = new ModeratorSessionManager(this);</span>
+
+<span class="fc" id="L66">        moderatorId = getIntent().getIntExtra(&quot;MODERATOR_ID&quot;, sessionManager.getModeratorId());</span>
+<span class="fc" id="L67">        groupId = getIntent().getIntExtra(&quot;GROUP_ID&quot;, -1);</span>
+<span class="fc" id="L68">        String groupName = getIntent().getStringExtra(&quot;GROUP_NAME&quot;);</span>
+
+<span class="pc bpc" id="L70" title="2 of 4 branches missed.">        if (moderatorId &lt;= 0 || groupId &lt;= 0) {</span>
+<span class="nc" id="L71">            Toast.makeText(this, &quot;Invalid moderator/group context&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L72">            finish();</span>
+<span class="nc" id="L73">            return;</span>
+        }
+
+<span class="fc" id="L76">        tvGroupHeader = findViewById(R.id.tvModGroupHeader);</span>
+<span class="fc" id="L77">        tvPendingMembers = findViewById(R.id.tvModPendingMembers);</span>
+<span class="fc" id="L78">        tvEvents = findViewById(R.id.tvModEvents);</span>
+<span class="fc" id="L79">        tvAnnouncements = findViewById(R.id.tvModAnnouncements);</span>
+<span class="fc" id="L80">        tvMessages = findViewById(R.id.tvModMessages);</span>
+<span class="fc" id="L81">        layoutPendingActions = findViewById(R.id.layoutPendingActions);</span>
+
+        // Dashboard-only summaries for messages/events are intentionally hidden.
+<span class="fc" id="L84">        tvEvents.setVisibility(android.view.View.GONE);</span>
+<span class="fc" id="L85">        tvMessages.setVisibility(android.view.View.GONE);</span>
+
+<span class="fc" id="L87">        etApproveMemberId = findViewById(R.id.etApproveMemberId);</span>
+<span class="fc" id="L88">        etRemoveMemberId = findViewById(R.id.etRemoveMemberId);</span>
+<span class="fc" id="L89">        etModerationMessageId = findViewById(R.id.etModerationMessageId);</span>
+<span class="fc" id="L90">        etEventTitle = findViewById(R.id.etEventTitle);</span>
+<span class="fc" id="L91">        etEventDescription = findViewById(R.id.etEventDescription);</span>
+<span class="fc" id="L92">        etEventLocation = findViewById(R.id.etEventLocation);</span>
+<span class="fc" id="L93">        etEventTime = findViewById(R.id.etEventTime);</span>
+<span class="fc" id="L94">        etAnnouncementTitle = findViewById(R.id.etAnnouncementTitle);</span>
+<span class="fc" id="L95">        etAnnouncementContent = findViewById(R.id.etAnnouncementContent);</span>
+<span class="fc" id="L96">        etAnnouncementId = findViewById(R.id.etAnnouncementId);</span>
+<span class="fc" id="L97">        etEventId = findViewById(R.id.etEventId);</span>
+
+<span class="fc" id="L99">        btnApproveMember = findViewById(R.id.btnApproveMember);</span>
+<span class="fc" id="L100">        btnRemoveMember = findViewById(R.id.btnRemoveMember);</span>
+<span class="fc" id="L101">        btnRemoveMessage = findViewById(R.id.btnRemoveMessage);</span>
+<span class="fc" id="L102">        btnRestoreMessage = findViewById(R.id.btnRestoreMessage);</span>
+<span class="fc" id="L103">        btnScheduleEvent = findViewById(R.id.btnScheduleEvent);</span>
+<span class="fc" id="L104">        btnCreateAnnouncement = findViewById(R.id.btnCreateAnnouncement);</span>
+<span class="fc" id="L105">        btnPinAnnouncement = findViewById(R.id.btnPinAnnouncement);</span>
+<span class="fc" id="L106">        btnUnpinAnnouncement = findViewById(R.id.btnUnpinAnnouncement);</span>
+<span class="fc" id="L107">        btnDeleteAnnouncement = findViewById(R.id.btnDeleteAnnouncement);</span>
+<span class="fc" id="L108">        btnEditEvent = findViewById(R.id.btnEditEvent);</span>
+<span class="fc" id="L109">        btnDeleteEvent = findViewById(R.id.btnDeleteEvent);</span>
+<span class="fc" id="L110">        Button btnRefresh = findViewById(R.id.btnRefreshGroupManagement);</span>
+<span class="fc" id="L111">        Button btnBack = findViewById(R.id.btnBackGroupManagement);</span>
+
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        tvGroupHeader.setText(&quot;Manage: &quot; + (groupName == null ? (&quot;Group #&quot; + groupId) : groupName));</span>
+
+<span class="pc" id="L115">        btnApproveMember.setOnClickListener(v -&gt; approveMember());</span>
+<span class="pc" id="L116">        btnRemoveMember.setOnClickListener(v -&gt; removeMember());</span>
+<span class="fc" id="L117">        btnRemoveMessage.setOnClickListener(v -&gt; removeMessage());</span>
+<span class="fc" id="L118">        btnRestoreMessage.setOnClickListener(v -&gt; restoreMessage());</span>
+<span class="fc" id="L119">        btnScheduleEvent.setOnClickListener(v -&gt; scheduleEvent());</span>
+<span class="fc" id="L120">        btnCreateAnnouncement.setOnClickListener(v -&gt; createAnnouncement());</span>
+<span class="fc" id="L121">        btnPinAnnouncement.setOnClickListener(v -&gt; pinAnnouncement());</span>
+<span class="fc" id="L122">        btnUnpinAnnouncement.setOnClickListener(v -&gt; unpinAnnouncement());</span>
+<span class="fc" id="L123">        btnDeleteAnnouncement.setOnClickListener(v -&gt; deleteAnnouncement());</span>
+<span class="fc" id="L124">        btnEditEvent.setOnClickListener(v -&gt; editEvent());</span>
+<span class="fc" id="L125">        btnDeleteEvent.setOnClickListener(v -&gt; deleteEvent());</span>
+
+<span class="fc" id="L127">        btnRefresh.setOnClickListener(v -&gt; loadAllData());</span>
+<span class="fc" id="L128">        btnBack.setOnClickListener(v -&gt; finish());</span>
+
+<span class="fc" id="L130">        applyPermissionGates();</span>
+<span class="fc" id="L131">        loadAllData();</span>
+<span class="fc" id="L132">    }</span>
+
+    private void applyPermissionGates() {
+<span class="fc" id="L135">        Set&lt;String&gt; permissions = sessionManager.getPermissions();</span>
+
+        // Fallback for backends that do not send permissions yet.
+<span class="pc bpc" id="L138" title="2 of 4 branches missed.">        boolean hasPermissionPayload = permissions != null &amp;&amp; !permissions.isEmpty();</span>
+
+<span class="pc bpc" id="L140" title="3 of 4 branches missed.">        boolean canManageMembers = !hasPermissionPayload || permissions.contains(ModeratorPermissions.APPROVE_REMOVE_MEMBERS);</span>
+<span class="pc bpc" id="L141" title="3 of 4 branches missed.">        boolean canModerate = !hasPermissionPayload || permissions.contains(ModeratorPermissions.MODERATE_CONVERSATIONS);</span>
+<span class="pc bpc" id="L142" title="3 of 4 branches missed.">        boolean canSchedule = !hasPermissionPayload || permissions.contains(ModeratorPermissions.SCHEDULE_EVENTS);</span>
+<span class="pc bpc" id="L143" title="3 of 4 branches missed.">        boolean canPin = !hasPermissionPayload || permissions.contains(ModeratorPermissions.PIN_ANNOUNCEMENTS);</span>
+
+<span class="fc" id="L145">        setButtonState(btnApproveMember, canManageMembers);</span>
+<span class="fc" id="L146">        setButtonState(btnRemoveMember, canManageMembers);</span>
+<span class="fc" id="L147">        setButtonState(btnRemoveMessage, canModerate);</span>
+<span class="fc" id="L148">        setButtonState(btnRestoreMessage, canModerate);</span>
+<span class="fc" id="L149">        setButtonState(btnScheduleEvent, canSchedule);</span>
+<span class="fc" id="L150">        setButtonState(btnEditEvent, canSchedule);</span>
+<span class="fc" id="L151">        setButtonState(btnDeleteEvent, canSchedule);</span>
+<span class="fc" id="L152">        setButtonState(btnCreateAnnouncement, canPin);</span>
+<span class="fc" id="L153">        setButtonState(btnPinAnnouncement, canPin);</span>
+<span class="fc" id="L154">        setButtonState(btnUnpinAnnouncement, canPin);</span>
+<span class="fc" id="L155">        setButtonState(btnDeleteAnnouncement, canPin);</span>
+<span class="fc" id="L156">    }</span>
+
+    private void setButtonState(Button button, boolean enabled) {
+<span class="fc" id="L159">        button.setEnabled(enabled);</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">        button.setAlpha(enabled ? 1f : 0.5f);</span>
+<span class="fc" id="L161">    }</span>
+
+    private void loadAllData() {
+<span class="fc" id="L164">        repository.getPendingMembers(this, moderatorId, groupId, new ModeratorRepository.JsonArrayCallback() {</span>
+            @Override
+            public void onSuccess(JSONArray array) {
+<span class="fc" id="L167">                tvPendingMembers.setText(prettyArray(&quot;Pending Members&quot;, array));</span>
+<span class="fc" id="L168">                renderPendingActions(array);</span>
+<span class="fc" id="L169">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L173">                tvPendingMembers.setText(error);</span>
+<span class="nc" id="L174">                renderPendingActions(null);</span>
+<span class="nc" id="L175">            }</span>
+        });
+
+<span class="fc" id="L178">        repository.getGroupAnnouncements(this, moderatorId, groupId, new ModeratorRepository.JsonArrayCallback() {</span>
+            @Override
+            public void onSuccess(JSONArray array) {
+<span class="fc" id="L181">                tvAnnouncements.setText(prettyArray(&quot;Announcements&quot;, array));</span>
+<span class="fc" id="L182">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="fc" id="L186">                tvAnnouncements.setText(error);</span>
+<span class="fc" id="L187">            }</span>
+        });
+<span class="fc" id="L189">    }</span>
+
+    private String prettyArray(String title, JSONArray array) {
+<span class="pc bpc" id="L192" title="1 of 4 branches missed.">        if (array == null || array.length() == 0) {</span>
+<span class="fc" id="L193">            return title + &quot;: none&quot;;</span>
+        }
+<span class="fc" id="L195">        StringBuilder sb = new StringBuilder(title).append(&quot;:\n&quot;);</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        for (int i = 0; i &lt; array.length(); i++) {</span>
+<span class="fc" id="L197">            sb.append(&quot;- &quot;).append(array.opt(i)).append(&quot;\n&quot;);</span>
+        }
+<span class="fc" id="L199">        return sb.toString();</span>
+    }
+
+    private String formatMemberNames(JSONArray array) {
+<span class="nc bnc" id="L203" title="All 4 branches missed.">        if (array == null || array.length() == 0) {</span>
+<span class="nc" id="L204">            return &quot;Members: none&quot;;</span>
+        }
+
+<span class="nc" id="L207">        StringBuilder sb = new StringBuilder(&quot;Members:\n&quot;);</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length(); i++) {</span>
+<span class="nc" id="L209">            Object raw = array.opt(i);</span>
+<span class="nc" id="L210">            String name = extractMemberName(raw);</span>
+<span class="nc bnc" id="L211" title="All 4 branches missed.">            if (name == null || name.trim().isEmpty()) {</span>
+<span class="nc" id="L212">                Integer userId = extractMemberId(raw);</span>
+<span class="nc bnc" id="L213" title="All 4 branches missed.">                name = userId != null &amp;&amp; userId &gt; 0 ? &quot;User #&quot; + userId : String.valueOf(raw);</span>
+            }
+<span class="nc" id="L215">            sb.append(&quot;- &quot;).append(name).append(&quot;\n&quot;);</span>
+        }
+<span class="nc" id="L217">        return sb.toString();</span>
+    }
+
+    private String extractMemberName(Object raw) {
+<span class="nc bnc" id="L221" title="All 2 branches missed.">        if (!(raw instanceof JSONObject)) {</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">            return raw == null ? &quot;&quot; : String.valueOf(raw);</span>
+        }
+
+<span class="nc" id="L225">        JSONObject obj = (JSONObject) raw;</span>
+<span class="nc" id="L226">        String[] keys = new String[]{&quot;displayName&quot;, &quot;displayname&quot;, &quot;name&quot;, &quot;userName&quot;, &quot;username&quot;};</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        for (String key : keys) {</span>
+<span class="nc" id="L228">            String value = obj.optString(key, &quot;&quot;).trim();</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">            if (!value.isEmpty()) {</span>
+<span class="nc" id="L230">                return value;</span>
+            }
+        }
+
+<span class="nc" id="L234">        JSONObject user = obj.optJSONObject(&quot;user&quot;);</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        if (user != null) {</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">            for (String key : keys) {</span>
+<span class="nc" id="L237">                String value = user.optString(key, &quot;&quot;).trim();</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                if (!value.isEmpty()) {</span>
+<span class="nc" id="L239">                    return value;</span>
+                }
+            }
+        }
+
+<span class="nc" id="L244">        Integer id = extractMemberId(raw);</span>
+<span class="nc bnc" id="L245" title="All 4 branches missed.">        return id != null &amp;&amp; id &gt; 0 ? &quot;User #&quot; + id : &quot;&quot;;</span>
+    }
+
+    private Integer extractMemberId(Object raw) {
+<span class="nc bnc" id="L249" title="All 2 branches missed.">        if (!(raw instanceof JSONObject)) {</span>
+<span class="nc" id="L250">            return null;</span>
+        }
+
+<span class="nc" id="L253">        JSONObject obj = (JSONObject) raw;</span>
+<span class="nc" id="L254">        int id = obj.optInt(&quot;userId&quot;, obj.optInt(&quot;userid&quot;, obj.optInt(&quot;id&quot;, obj.optInt(&quot;memberId&quot;, -1))));</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        if (id &gt; 0) {</span>
+<span class="nc" id="L256">            return id;</span>
+        }
+
+<span class="nc" id="L259">        JSONObject user = obj.optJSONObject(&quot;user&quot;);</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">        if (user != null) {</span>
+<span class="nc" id="L261">            int nestedId = user.optInt(&quot;userId&quot;, user.optInt(&quot;id&quot;, -1));</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">            if (nestedId &gt; 0) {</span>
+<span class="nc" id="L263">                return nestedId;</span>
+            }
+        }
+
+<span class="nc" id="L267">        return null;</span>
+    }
+
+    private void renderPendingActions(JSONArray array) {
+<span class="fc" id="L271">        layoutPendingActions.removeAllViews();</span>
+<span class="pc bpc" id="L272" title="1 of 4 branches missed.">        if (array == null || array.length() == 0) {</span>
+<span class="fc" id="L273">            return;</span>
+        }
+
+<span class="fc bfc" id="L276" title="All 2 branches covered.">        for (int i = 0; i &lt; array.length(); i++) {</span>
+<span class="fc" id="L277">            Object raw = array.opt(i);</span>
+<span class="fc" id="L278">            Integer pendingUserId = extractPendingUserId(raw);</span>
+<span class="pc bpc" id="L279" title="3 of 4 branches missed.">            if (pendingUserId == null || pendingUserId &lt;= 0) {</span>
+<span class="nc" id="L280">                continue;</span>
+            }
+
+<span class="nc" id="L283">            Button approveButton = new Button(this);</span>
+<span class="nc" id="L284">            approveButton.setText(&quot;Approve User #&quot; + pendingUserId);</span>
+<span class="nc" id="L285">            approveButton.setAllCaps(false);</span>
+<span class="nc" id="L286">            approveButton.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L287">                etApproveMemberId.setText(String.valueOf(pendingUserId));</span>
+<span class="nc" id="L288">                approveMember();</span>
+<span class="nc" id="L289">            });</span>
+
+<span class="nc" id="L291">            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(</span>
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+<span class="nc" id="L295">            params.bottomMargin = dp(8);</span>
+<span class="nc" id="L296">            approveButton.setLayoutParams(params);</span>
+
+<span class="nc" id="L298">            layoutPendingActions.addView(approveButton);</span>
+        }
+<span class="fc" id="L300">    }</span>
+
+    private Integer extractPendingUserId(Object raw) {
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">        if (raw == null) {</span>
+<span class="nc" id="L304">            return null;</span>
+        }
+<span class="pc bpc" id="L306" title="1 of 2 branches missed.">        if (raw instanceof Number) {</span>
+<span class="nc" id="L307">            return ((Number) raw).intValue();</span>
+        }
+<span class="pc bpc" id="L309" title="1 of 2 branches missed.">        if (!(raw instanceof JSONObject)) {</span>
+<span class="nc" id="L310">            return null;</span>
+        }
+
+<span class="fc" id="L313">        JSONObject obj = (JSONObject) raw;</span>
+<span class="fc" id="L314">        int id = obj.optInt(&quot;userId&quot;,</span>
+<span class="fc" id="L315">                obj.optInt(&quot;userid&quot;,</span>
+<span class="fc" id="L316">                        obj.optInt(&quot;id&quot;,</span>
+<span class="fc" id="L317">                                obj.optInt(&quot;memberId&quot;, -1))));</span>
+<span class="pc bpc" id="L318" title="1 of 2 branches missed.">        if (id &gt; 0) {</span>
+<span class="nc" id="L319">            return id;</span>
+        }
+
+<span class="fc" id="L322">        JSONObject userObj = obj.optJSONObject(&quot;user&quot;);</span>
+<span class="pc bpc" id="L323" title="1 of 2 branches missed.">        if (userObj != null) {</span>
+<span class="nc" id="L324">            int nested = userObj.optInt(&quot;userId&quot;, userObj.optInt(&quot;id&quot;, -1));</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">            if (nested &gt; 0) {</span>
+<span class="nc" id="L326">                return nested;</span>
+            }
+        }
+<span class="fc" id="L329">        return null;</span>
+    }
+
+    private void approveMember() {
+<span class="nc" id="L333">        Integer userId = safeParseInt(etApproveMemberId.getText().toString().trim());</span>
+<span class="nc bnc" id="L334" title="All 2 branches missed.">        if (userId == null) {</span>
+<span class="nc" id="L335">            Toast.makeText(this, &quot;Enter a valid member ID&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L336">            return;</span>
+        }
+<span class="nc" id="L338">        repository.approveMember(this, moderatorId, groupId, userId, new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="nc" id="L341">                Toast.makeText(ModeratorGroupManagementActivity.this, &quot;Member approved&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L342">                etApproveMemberId.setText(&quot;&quot;);</span>
+<span class="nc" id="L343">                loadAllData();</span>
+<span class="nc" id="L344">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L348">                Toast.makeText(ModeratorGroupManagementActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L349">            }</span>
+        });
+<span class="nc" id="L351">    }</span>
+
+    private void removeMember() {
+<span class="nc" id="L354">        Integer userId = safeParseInt(etRemoveMemberId.getText().toString().trim());</span>
+<span class="nc bnc" id="L355" title="All 2 branches missed.">        if (userId == null) {</span>
+<span class="nc" id="L356">            Toast.makeText(this, &quot;Enter a valid member ID&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L357">            return;</span>
+        }
+<span class="nc" id="L359">        repository.removeMember(this, moderatorId, groupId, userId, new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="nc" id="L362">                Toast.makeText(ModeratorGroupManagementActivity.this, &quot;Member removed&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L363">                etRemoveMemberId.setText(&quot;&quot;);</span>
+<span class="nc" id="L364">                loadAllData();</span>
+<span class="nc" id="L365">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L369">                Toast.makeText(ModeratorGroupManagementActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L370">            }</span>
+        });
+<span class="nc" id="L372">    }</span>
+
+    private void removeMessage() {
+<span class="fc" id="L375">        Integer messageId = safeParseInt(etModerationMessageId.getText().toString().trim());</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">        if (messageId == null) {</span>
+<span class="fc" id="L377">            Toast.makeText(this, &quot;Enter a valid message ID&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L378">            return;</span>
+        }
+
+<span class="fc" id="L381">        repository.removeMessage(this, moderatorId, messageId, new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="fc" id="L384">                Toast.makeText(ModeratorGroupManagementActivity.this, &quot;Message removed&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L385">                etModerationMessageId.setText(&quot;&quot;);</span>
+<span class="fc" id="L386">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L390">                Toast.makeText(ModeratorGroupManagementActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L391">            }</span>
+        });
+<span class="fc" id="L393">    }</span>
+
+    private void restoreMessage() {
+<span class="fc" id="L396">        Integer messageId = safeParseInt(etModerationMessageId.getText().toString().trim());</span>
+<span class="fc bfc" id="L397" title="All 2 branches covered.">        if (messageId == null) {</span>
+<span class="fc" id="L398">            Toast.makeText(this, &quot;Enter a valid message ID&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L399">            return;</span>
+        }
+
+<span class="fc" id="L402">        repository.restoreMessage(this, moderatorId, messageId, new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="fc" id="L405">                Toast.makeText(ModeratorGroupManagementActivity.this, &quot;Message restored&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L406">                etModerationMessageId.setText(&quot;&quot;);</span>
+<span class="fc" id="L407">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L411">                Toast.makeText(ModeratorGroupManagementActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L412">            }</span>
+        });
+<span class="fc" id="L414">    }</span>
+
+    private void scheduleEvent() {
+<span class="fc" id="L417">        String title = etEventTitle.getText().toString().trim();</span>
+<span class="fc" id="L418">        String description = etEventDescription.getText().toString().trim();</span>
+<span class="fc" id="L419">        String location = etEventLocation.getText().toString().trim();</span>
+<span class="fc" id="L420">        String eventTime = etEventTime.getText().toString().trim();</span>
+
+<span class="pc bpc" id="L422" title="1 of 4 branches missed.">        if (TextUtils.isEmpty(title) || TextUtils.isEmpty(description)</span>
+<span class="pc bpc" id="L423" title="1 of 4 branches missed.">                || TextUtils.isEmpty(location) || TextUtils.isEmpty(eventTime)) {</span>
+<span class="fc" id="L424">            Toast.makeText(this, &quot;Enter title, description, location, and event time&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L425">            return;</span>
+        }
+
+<span class="fc" id="L428">        repository.scheduleEvent(this, moderatorId, groupId, title, description, location, eventTime, new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="fc" id="L431">                Toast.makeText(ModeratorGroupManagementActivity.this, &quot;Event scheduled&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L432">                etEventTitle.setText(&quot;&quot;);</span>
+<span class="fc" id="L433">                etEventDescription.setText(&quot;&quot;);</span>
+<span class="fc" id="L434">                etEventLocation.setText(&quot;&quot;);</span>
+<span class="fc" id="L435">                etEventTime.setText(&quot;&quot;);</span>
+<span class="fc" id="L436">                loadAllData();</span>
+<span class="fc" id="L437">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L441">                Toast.makeText(ModeratorGroupManagementActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L442">            }</span>
+        });
+<span class="fc" id="L444">    }</span>
+
+    private void editEvent() {
+<span class="fc" id="L447">        Integer eventId = safeParseInt(etEventId.getText().toString().trim());</span>
+<span class="fc" id="L448">        String title = etEventTitle.getText().toString().trim();</span>
+<span class="fc" id="L449">        String description = etEventDescription.getText().toString().trim();</span>
+<span class="fc" id="L450">        String location = etEventLocation.getText().toString().trim();</span>
+<span class="fc" id="L451">        String eventTime = etEventTime.getText().toString().trim();</span>
+
+<span class="fc bfc" id="L453" title="All 2 branches covered.">        if (eventId == null) {</span>
+<span class="fc" id="L454">            Toast.makeText(this, &quot;Enter a valid event ID&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L455">            return;</span>
+        }
+<span class="pc bpc" id="L457" title="1 of 4 branches missed.">        if (TextUtils.isEmpty(title) || TextUtils.isEmpty(description)</span>
+<span class="pc bpc" id="L458" title="2 of 4 branches missed.">                || TextUtils.isEmpty(location) || TextUtils.isEmpty(eventTime)) {</span>
+<span class="fc" id="L459">            Toast.makeText(this, &quot;Enter title, description, location, and event time&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L460">            return;</span>
+        }
+
+<span class="fc" id="L463">        repository.editEvent(this, moderatorId, groupId, eventId, title, description, location, eventTime, new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="nc" id="L466">                Toast.makeText(ModeratorGroupManagementActivity.this, &quot;Event edited&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L467">                etEventId.setText(&quot;&quot;);</span>
+<span class="nc" id="L468">                etEventTitle.setText(&quot;&quot;);</span>
+<span class="nc" id="L469">                etEventDescription.setText(&quot;&quot;);</span>
+<span class="nc" id="L470">                etEventLocation.setText(&quot;&quot;);</span>
+<span class="nc" id="L471">                etEventTime.setText(&quot;&quot;);</span>
+<span class="nc" id="L472">                loadAllData();</span>
+<span class="nc" id="L473">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="fc" id="L477">                Toast.makeText(ModeratorGroupManagementActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L478">            }</span>
+        });
+<span class="fc" id="L480">    }</span>
+
+    private void deleteEvent() {
+<span class="fc" id="L483">        Integer eventId = safeParseInt(etEventId.getText().toString().trim());</span>
+<span class="fc bfc" id="L484" title="All 2 branches covered.">        if (eventId == null) {</span>
+<span class="fc" id="L485">            Toast.makeText(this, &quot;Enter a valid event ID&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L486">            return;</span>
+        }
+
+<span class="fc" id="L489">        repository.deleteEvent(this, moderatorId, groupId, eventId, new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="nc" id="L492">                Toast.makeText(ModeratorGroupManagementActivity.this, &quot;Event deleted&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L493">                etEventId.setText(&quot;&quot;);</span>
+<span class="nc" id="L494">                loadAllData();</span>
+<span class="nc" id="L495">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="fc" id="L499">                Toast.makeText(ModeratorGroupManagementActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L500">            }</span>
+        });
+<span class="fc" id="L502">    }</span>
+
+    private void createAnnouncement() {
+<span class="fc" id="L505">        String title = etAnnouncementTitle.getText().toString().trim();</span>
+<span class="fc" id="L506">        String content = etAnnouncementContent.getText().toString().trim();</span>
+<span class="fc bfc" id="L507" title="All 4 branches covered.">        if (title.isEmpty() || content.isEmpty()) {</span>
+<span class="fc" id="L508">            Toast.makeText(this, &quot;Enter announcement title and content&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L509">            return;</span>
+        }
+
+<span class="fc" id="L512">        repository.createAnnouncement(this, moderatorId, groupId, title, content, new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="fc" id="L515">                Toast.makeText(ModeratorGroupManagementActivity.this, &quot;Announcement created&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L516">                etAnnouncementTitle.setText(&quot;&quot;);</span>
+<span class="fc" id="L517">                etAnnouncementContent.setText(&quot;&quot;);</span>
+<span class="fc" id="L518">                loadAllData();</span>
+<span class="fc" id="L519">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L523">                Toast.makeText(ModeratorGroupManagementActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L524">            }</span>
+        });
+<span class="fc" id="L526">    }</span>
+
+    private void pinAnnouncement() {
+<span class="fc" id="L529">        Integer announcementId = safeParseInt(etAnnouncementId.getText().toString().trim());</span>
+<span class="fc bfc" id="L530" title="All 2 branches covered.">        if (announcementId == null) {</span>
+<span class="fc" id="L531">            Toast.makeText(this, &quot;Enter a valid announcement ID&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L532">            return;</span>
+        }
+
+<span class="fc" id="L535">        repository.pinAnnouncement(this, moderatorId, groupId, announcementId, new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="nc" id="L538">                Toast.makeText(ModeratorGroupManagementActivity.this, &quot;Announcement pinned&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L539">                loadAllData();</span>
+<span class="nc" id="L540">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="fc" id="L544">                Toast.makeText(ModeratorGroupManagementActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L545">            }</span>
+        });
+<span class="fc" id="L547">    }</span>
+
+    private void unpinAnnouncement() {
+<span class="fc" id="L550">        Integer announcementId = safeParseInt(etAnnouncementId.getText().toString().trim());</span>
+<span class="fc bfc" id="L551" title="All 2 branches covered.">        if (announcementId == null) {</span>
+<span class="fc" id="L552">            Toast.makeText(this, &quot;Enter a valid announcement ID&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L553">            return;</span>
+        }
+
+<span class="fc" id="L556">        repository.unpinAnnouncement(this, moderatorId, groupId, announcementId, new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="nc" id="L559">                Toast.makeText(ModeratorGroupManagementActivity.this, &quot;Announcement unpinned&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L560">                loadAllData();</span>
+<span class="nc" id="L561">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="fc" id="L565">                Toast.makeText(ModeratorGroupManagementActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L566">            }</span>
+        });
+<span class="fc" id="L568">    }</span>
+
+    private void deleteAnnouncement() {
+<span class="fc" id="L571">        Integer announcementId = safeParseInt(etAnnouncementId.getText().toString().trim());</span>
+<span class="fc bfc" id="L572" title="All 2 branches covered.">        if (announcementId == null) {</span>
+<span class="fc" id="L573">            Toast.makeText(this, &quot;Enter a valid announcement ID&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L574">            return;</span>
+        }
+
+<span class="fc" id="L577">        repository.deleteAnnouncement(this, moderatorId, groupId, announcementId, new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="nc" id="L580">                Toast.makeText(ModeratorGroupManagementActivity.this, &quot;Announcement deleted&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L581">                etAnnouncementId.setText(&quot;&quot;);</span>
+<span class="nc" id="L582">                loadAllData();</span>
+<span class="nc" id="L583">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="fc" id="L587">                Toast.makeText(ModeratorGroupManagementActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L588">            }</span>
+        });
+<span class="fc" id="L590">    }</span>
+
+    private Integer safeParseInt(String value) {
+        try {
+<span class="fc" id="L594">            return Integer.parseInt(value);</span>
+<span class="fc" id="L595">        } catch (Exception e) {</span>
+<span class="fc" id="L596">            return null;</span>
+        }
+    }
+
+    private int dp(int value) {
+<span class="nc" id="L601">        return (int) (value * getResources().getDisplayMetrics().density);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

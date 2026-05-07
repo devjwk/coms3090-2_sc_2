@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">ChatAdapter.java</span></div><h1>ChatAdapter.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.List;
+
+public class ChatAdapter extends RecyclerView.Adapter&lt;ChatAdapter.ChatViewHolder&gt; {
+
+    private static final int VIEW_TYPE_SENT = 1;
+    private static final int VIEW_TYPE_RECEIVED = 2;
+
+    public interface OnMessageContextActionListener {
+        void onMessageContextAction(View anchorView, ChatMessage message, int position);
+    }
+
+    private final List&lt;ChatMessage&gt; messages;
+    private final OnMessageContextActionListener contextActionListener;
+    private final boolean showMessageMetadata;
+
+    public ChatAdapter(List&lt;ChatMessage&gt; messages) {
+<span class="fc" id="L29">        this(messages, null, false);</span>
+<span class="fc" id="L30">    }</span>
+
+    public ChatAdapter(List&lt;ChatMessage&gt; messages, OnMessageContextActionListener contextActionListener) {
+<span class="nc" id="L33">        this(messages, contextActionListener, false);</span>
+<span class="nc" id="L34">    }</span>
+
+    public ChatAdapter(List&lt;ChatMessage&gt; messages,
+                       OnMessageContextActionListener contextActionListener,
+<span class="fc" id="L38">                       boolean showMessageMetadata) {</span>
+<span class="fc" id="L39">        this.messages = messages;</span>
+<span class="fc" id="L40">        this.contextActionListener = contextActionListener;</span>
+<span class="fc" id="L41">        this.showMessageMetadata = showMessageMetadata;</span>
+<span class="fc" id="L42">    }</span>
+
+    @Override
+    public int getItemViewType(int position) {
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        return messages.get(position).isSent() ? VIEW_TYPE_SENT : VIEW_TYPE_RECEIVED;</span>
+    }
+
+    @NonNull
+    @Override
+    public ChatViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+<span class="fc" id="L52">        View view = LayoutInflater.from(parent.getContext())</span>
+<span class="fc" id="L53">                .inflate(R.layout.item_chat_message, parent, false);</span>
+<span class="fc" id="L54">        return new ChatViewHolder(view);</span>
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
+<span class="fc" id="L59">        ChatMessage msg = messages.get(position);</span>
+<span class="fc" id="L60">        holder.tvMessage.setText(msg.getContent());</span>
+
+        // --- From Document 1: Bind context actions ---
+<span class="fc" id="L63">        bindContextActions(holder, msg);</span>
+
+        // Sender name display (both versions agree)
+<span class="pc bpc" id="L66" title="3 of 6 branches missed.">        if (!msg.isSent() &amp;&amp; msg.getSenderName() != null &amp;&amp; !msg.getSenderName().isEmpty()) {</span>
+<span class="nc" id="L67">            holder.tvSenderName.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L68">            holder.tvSenderName.setText(msg.getSenderName());</span>
+        } else {
+<span class="fc" id="L70">            holder.tvSenderName.setVisibility(View.GONE);</span>
+        }
+
+        // Bubble alignment and styling (both versions agree)
+<span class="fc" id="L74">        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(</span>
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (msg.isSent()) {</span>
+<span class="fc" id="L80">            params.gravity = Gravity.END;</span>
+<span class="fc" id="L81">            holder.tvMessage.setBackgroundResource(R.drawable.bubble_sent);</span>
+<span class="fc" id="L82">            holder.tvMessage.setTextColor(0xFFFFFFFF);</span>
+        } else {
+<span class="fc" id="L84">            params.gravity = Gravity.START;</span>
+<span class="fc" id="L85">            holder.tvMessage.setBackgroundResource(R.drawable.bubble_received);</span>
+<span class="fc" id="L86">            holder.tvMessage.setTextColor(0xFFFFFFFF);</span>
+        }
+
+<span class="fc" id="L89">        holder.tvMessage.setLayoutParams(params);</span>
+
+        // --- From Document 1: Moderation styling ---
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (msg.isModeratedRemoved()) {</span>
+<span class="nc" id="L93">            holder.tvMessage.setAlpha(0.7f);</span>
+<span class="nc" id="L94">            holder.tvMessage.setTextColor(0xFFC8C8D4);</span>
+<span class="nc" id="L95">            holder.tvMessage.setTypeface(null, android.graphics.Typeface.ITALIC);</span>
+        } else {
+<span class="fc" id="L97">            holder.tvMessage.setAlpha(1f);</span>
+<span class="fc" id="L98">            holder.tvMessage.setTypeface(null, android.graphics.Typeface.NORMAL);</span>
+        }
+
+        // --- From Document 1: Metadata/timestamp logic (supports both modes) ---
+<span class="fc" id="L102">        String metadataText = buildMetadataText(msg);</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">        if (!metadataText.isEmpty()) {</span>
+<span class="nc" id="L104">            holder.tvTimestamp.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L105">            holder.tvTimestamp.setText(metadataText);</span>
+<span class="nc" id="L106">            LinearLayout.LayoutParams tsParams = new LinearLayout.LayoutParams(</span>
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+<span class="nc bnc" id="L110" title="All 2 branches missed.">            tsParams.gravity = msg.isSent() ? Gravity.END : Gravity.START;</span>
+<span class="nc" id="L111">            holder.tvTimestamp.setLayoutParams(tsParams);</span>
+<span class="nc" id="L112">        } else {</span>
+<span class="fc" id="L113">            holder.tvTimestamp.setVisibility(View.GONE);</span>
+        }
+<span class="fc" id="L115">    }</span>
+
+    // --- From Document 1: Builds timestamp or full metadata string ---
+    private String buildMetadataText(ChatMessage msg) {
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">        String timestamp = msg.getTimestamp() == null ? &quot;&quot; : msg.getTimestamp().trim();</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (!showMessageMetadata) {</span>
+<span class="fc" id="L121">            return timestamp;</span>
+        }
+
+<span class="nc" id="L124">        StringBuilder builder = new StringBuilder();</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (msg.getId() &gt; 0) {</span>
+<span class="nc" id="L126">            builder.append(&quot;ID #&quot;).append(msg.getId());</span>
+        }
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        if (!timestamp.isEmpty()) {</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (builder.length() &gt; 0) {</span>
+<span class="nc" id="L130">                builder.append(&quot; • &quot;);</span>
+            }
+<span class="nc" id="L132">            builder.append(timestamp);</span>
+        }
+<span class="nc" id="L134">        return builder.toString();</span>
+    }
+
+    // --- From Document 1: Long-press / context-click handling ---
+    private void bindContextActions(@NonNull ChatViewHolder holder, ChatMessage msg) {
+<span class="pc bpc" id="L139" title="3 of 4 branches missed.">        if (contextActionListener == null || msg.isModeratedRemoved()) {</span>
+<span class="fc" id="L140">            holder.tvMessage.setOnLongClickListener(null);</span>
+<span class="fc" id="L141">            holder.tvMessage.setOnContextClickListener(null);</span>
+<span class="fc" id="L142">            return;</span>
+        }
+
+<span class="nc" id="L145">        holder.tvMessage.setOnLongClickListener(v -&gt; {</span>
+<span class="nc" id="L146">            int adapterPos = holder.getAdapterPosition();</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            if (adapterPos == RecyclerView.NO_POSITION) {</span>
+<span class="nc" id="L148">                return false;</span>
+            }
+<span class="nc" id="L150">            contextActionListener.onMessageContextAction(v, msg, adapterPos);</span>
+<span class="nc" id="L151">            return true;</span>
+        });
+
+<span class="nc" id="L154">        holder.tvMessage.setOnContextClickListener(v -&gt; {</span>
+<span class="nc" id="L155">            int adapterPos = holder.getAdapterPosition();</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">            if (adapterPos == RecyclerView.NO_POSITION) {</span>
+<span class="nc" id="L157">                return false;</span>
+            }
+<span class="nc" id="L159">            contextActionListener.onMessageContextAction(v, msg, adapterPos);</span>
+<span class="nc" id="L160">            return true;</span>
+        });
+<span class="nc" id="L162">    }</span>
+
+    @Override
+    public int getItemCount() {
+<span class="fc" id="L166">        return messages.size();</span>
+    }
+
+    // ViewHolder uses public visibility (from Document 1) for broader access
+    public static class ChatViewHolder extends RecyclerView.ViewHolder {
+        TextView tvSenderName;
+        TextView tvMessage;
+        TextView tvTimestamp;
+
+        ChatViewHolder(@NonNull View itemView) {
+<span class="fc" id="L176">            super(itemView);</span>
+<span class="fc" id="L177">            tvSenderName = itemView.findViewById(R.id.tvSenderName);</span>
+<span class="fc" id="L178">            tvMessage = itemView.findViewById(R.id.tvMessage);</span>
+<span class="fc" id="L179">            tvTimestamp = itemView.findViewById(R.id.tvTimestamp);</span>
+<span class="fc" id="L180">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

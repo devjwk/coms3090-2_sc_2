@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupChatListActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">GroupChatListActivity.java</span></div><h1>GroupChatListActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Gravity;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L27">public class GroupChatListActivity extends AppCompatActivity {</span>
+
+    private static final String TAG = &quot;GroupChatList&quot;;
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+
+    private LinearLayout groupListContainer;
+    private TextView tvEmptyState;
+    private EditText etGroupChatName, etUserIds;
+    private Button btnCreateGroupChat;
+    private int currentUserId;
+
+    private static class GroupInfo {
+        int groupId;
+        String groupName;
+        String description;
+<span class="nc" id="L42">        GroupInfo(int id, String name, String desc) {</span>
+<span class="nc" id="L43">            this.groupId = id;</span>
+<span class="nc" id="L44">            this.groupName = name;</span>
+<span class="nc" id="L45">            this.description = desc;</span>
+<span class="nc" id="L46">        }</span>
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L51">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L52">        setContentView(R.layout.activity_group_chat_list);</span>
+
+<span class="fc" id="L54">        currentUserId     = getIntent().getIntExtra(&quot;USER_ID&quot;, 1);</span>
+<span class="fc" id="L55">        groupListContainer = findViewById(R.id.groupListContainer);</span>
+<span class="fc" id="L56">        tvEmptyState       = findViewById(R.id.tvEmptyState);</span>
+<span class="fc" id="L57">        Button btnBack     = findViewById(R.id.btnBack);</span>
+
+<span class="fc" id="L59">        etGroupChatName    = findViewById(R.id.etGroupChatName);</span>
+<span class="fc" id="L60">        etUserIds          = findViewById(R.id.etUserIds);</span>
+<span class="fc" id="L61">        btnCreateGroupChat = findViewById(R.id.btnCreateGroupChat);</span>
+
+<span class="fc" id="L63">        btnBack.setOnClickListener(v -&gt; finish());</span>
+<span class="fc" id="L64">        btnCreateGroupChat.setOnClickListener(v -&gt; createGroupChat());</span>
+
+<span class="fc" id="L66">        fetchMyGroups();</span>
+<span class="fc" id="L67">    }</span>
+
+    private void createGroupChat() {
+<span class="fc" id="L70">        String name = etGroupChatName.getText().toString().trim();</span>
+<span class="fc" id="L71">        String userIdsStr = etUserIds.getText().toString().trim();</span>
+
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (name.isEmpty()) {</span>
+<span class="fc" id="L74">            Toast.makeText(this, &quot;Enter a group chat name.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L75">            return;</span>
+        }
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (userIdsStr.isEmpty()) {</span>
+<span class="fc" id="L78">            Toast.makeText(this, &quot;Enter at least one user ID.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L79">            return;</span>
+        }
+
+<span class="fc" id="L82">        JSONArray userIdsArray = new JSONArray();</span>
+        try {
+<span class="fc" id="L84">            String[] parts = userIdsStr.split(&quot;,&quot;);</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">            for (String part : parts) {</span>
+<span class="nc" id="L86">                int uid = Integer.parseInt(part.trim());</span>
+<span class="nc" id="L87">                userIdsArray.put(uid);</span>
+            }
+<span class="fc" id="L89">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L90">            Toast.makeText(this, &quot;Invalid user IDs. Use comma-separated numbers.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L91">            return;</span>
+<span class="nc" id="L92">        }</span>
+
+<span class="nc" id="L94">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L96">            body.put(&quot;name&quot;, name);</span>
+<span class="nc" id="L97">            body.put(&quot;userIds&quot;, userIdsArray);</span>
+<span class="nc" id="L98">        } catch (JSONException e) {</span>
+<span class="nc" id="L99">            Log.e(TAG, &quot;Error building JSON body&quot;, e);</span>
+<span class="nc" id="L100">            return;</span>
+<span class="nc" id="L101">        }</span>
+
+<span class="nc" id="L103">        String url = BASE_URL + &quot;/conversations/group&quot;;</span>
+<span class="nc" id="L104">        Log.d(TAG, &quot;POST &quot; + url + &quot; body=&quot; + body);</span>
+
+<span class="nc" id="L106">        StringRequest request = new StringRequest(Request.Method.POST, url,</span>
+                response -&gt; {
+<span class="nc" id="L108">                    Log.d(TAG, &quot;Create group chat response: &quot; + response);</span>
+<span class="nc" id="L109">                    Toast.makeText(this, &quot;Group chat created!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L110">                    etGroupChatName.setText(&quot;&quot;);</span>
+<span class="nc" id="L111">                    etUserIds.setText(&quot;&quot;);</span>
+<span class="nc" id="L112">                    fetchMyGroups();</span>
+<span class="nc" id="L113">                },</span>
+                error -&gt; {
+<span class="nc" id="L115">                    Log.e(TAG, &quot;Create group chat error: &quot; + error);</span>
+<span class="nc" id="L116">                    String msg = &quot;Failed to create group chat.&quot;;</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                    if (error.networkResponse != null) {</span>
+<span class="nc" id="L118">                        msg += &quot; Status: &quot; + error.networkResponse.statusCode;</span>
+                    }
+<span class="nc" id="L120">                    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L121">                }) {</span>
+            @Override
+            public byte[] getBody() {
+<span class="nc" id="L124">                return body.toString().getBytes();</span>
+            }
+            @Override
+            public String getBodyContentType() {
+<span class="nc" id="L128">                return &quot;application/json&quot;;</span>
+            }
+        };
+
+<span class="nc" id="L132">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L133">    }</span>
+
+    private void fetchMyGroups() {
+<span class="fc" id="L136">        String url = BASE_URL + &quot;/groups/&quot; + currentUserId;</span>
+<span class="fc" id="L137">        Log.d(TAG, &quot;GET &quot; + url);</span>
+
+<span class="fc" id="L139">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+<span class="nc" id="L141">                    Log.d(TAG, &quot;Groups response: &quot; + response);</span>
+                    try {
+<span class="nc" id="L143">                        JSONArray arr = new JSONArray(response);</span>
+<span class="nc" id="L144">                        List&lt;GroupInfo&gt; groups = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L146" title="All 2 branches missed.">                        for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L147">                            JSONObject obj = arr.getJSONObject(i);</span>
+<span class="nc" id="L148">                            int gid = obj.optInt(&quot;groupId&quot;, obj.optInt(&quot;groupid&quot;,</span>
+<span class="nc" id="L149">                                    obj.optInt(&quot;group_id&quot;, -1)));</span>
+<span class="nc" id="L150">                            String name = obj.optString(&quot;groupName&quot;,</span>
+<span class="nc" id="L151">                                    obj.optString(&quot;groupname&quot;,</span>
+<span class="nc" id="L152">                                            obj.optString(&quot;group_name&quot;, &quot;Group &quot; + gid)));</span>
+<span class="nc" id="L153">                            String desc = obj.optString(&quot;description&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                            if (gid &gt; 0) groups.add(new GroupInfo(gid, name, desc));</span>
+                        }
+
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                        if (groups.isEmpty()) {</span>
+<span class="nc" id="L158">                            showEmpty(&quot;No groups available yet.\nCreate one above!&quot;);</span>
+                        } else {
+<span class="nc" id="L160">                            tvEmptyState.setVisibility(TextView.GONE);</span>
+<span class="nc" id="L161">                            buildGroupCards(groups);</span>
+                        }
+<span class="nc" id="L163">                    } catch (Exception e) {</span>
+<span class="nc" id="L164">                        Log.e(TAG, &quot;Parse error: &quot; + e.getMessage());</span>
+<span class="nc" id="L165">                        showEmpty(&quot;Could not load groups.&quot;);</span>
+<span class="nc" id="L166">                    }</span>
+<span class="nc" id="L167">                },</span>
+                error -&gt; {
+<span class="fc" id="L169">                    Log.e(TAG, &quot;Fetch error: &quot; + error);</span>
+<span class="fc" id="L170">                    showEmpty(&quot;Could not load groups from server.&quot;);</span>
+<span class="fc" id="L171">                });</span>
+
+<span class="fc" id="L173">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L174">    }</span>
+
+    private void buildGroupCards(List&lt;GroupInfo&gt; groups) {
+<span class="nc" id="L177">        groupListContainer.removeAllViews();</span>
+
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        for (GroupInfo g : groups) {</span>
+<span class="nc" id="L180">            LinearLayout card = new LinearLayout(this);</span>
+<span class="nc" id="L181">            card.setOrientation(LinearLayout.HORIZONTAL);</span>
+<span class="nc" id="L182">            card.setGravity(Gravity.CENTER_VERTICAL);</span>
+<span class="nc" id="L183">            card.setPadding(dp(16), dp(14), dp(16), dp(14));</span>
+<span class="nc" id="L184">            card.setBackgroundColor(Color.parseColor(&quot;#1E1E30&quot;));</span>
+
+<span class="nc" id="L186">            LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(</span>
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+<span class="nc" id="L189">            cardParams.setMargins(dp(12), dp(4), dp(12), dp(4));</span>
+<span class="nc" id="L190">            card.setLayoutParams(cardParams);</span>
+
+            // Group avatar
+<span class="nc" id="L193">            FrameLayout avatar = new FrameLayout(this);</span>
+<span class="nc" id="L194">            LinearLayout.LayoutParams avatarParams = new LinearLayout.LayoutParams(dp(48), dp(48));</span>
+<span class="nc" id="L195">            avatarParams.setMargins(0, 0, dp(14), 0);</span>
+<span class="nc" id="L196">            avatar.setLayoutParams(avatarParams);</span>
+<span class="nc" id="L197">            avatar.setBackgroundColor(Color.parseColor(&quot;#7B6FFF&quot;));</span>
+
+<span class="nc" id="L199">            TextView avatarText = new TextView(this);</span>
+<span class="nc" id="L200">            avatarText.setText(&quot;👥&quot;);</span>
+<span class="nc" id="L201">            avatarText.setTextSize(20);</span>
+<span class="nc" id="L202">            avatarText.setGravity(Gravity.CENTER);</span>
+<span class="nc" id="L203">            avatarText.setLayoutParams(new FrameLayout.LayoutParams(</span>
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT));
+<span class="nc" id="L206">            avatar.addView(avatarText);</span>
+<span class="nc" id="L207">            card.addView(avatar);</span>
+
+            // Text column
+<span class="nc" id="L210">            LinearLayout textCol = new LinearLayout(this);</span>
+<span class="nc" id="L211">            textCol.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="nc" id="L212">            LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(</span>
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+<span class="nc" id="L214">            textCol.setLayoutParams(textParams);</span>
+
+<span class="nc" id="L216">            TextView tvName = new TextView(this);</span>
+<span class="nc" id="L217">            tvName.setText(g.groupName);</span>
+<span class="nc" id="L218">            tvName.setTextColor(Color.WHITE);</span>
+<span class="nc" id="L219">            tvName.setTextSize(16);</span>
+<span class="nc" id="L220">            tvName.setTypeface(null, android.graphics.Typeface.BOLD);</span>
+<span class="nc" id="L221">            textCol.addView(tvName);</span>
+
+
+<span class="nc" id="L224">            card.addView(textCol);</span>
+
+<span class="nc" id="L226">            TextView arrow = new TextView(this);</span>
+<span class="nc" id="L227">            arrow.setText(&quot;›&quot;);</span>
+<span class="nc" id="L228">            arrow.setTextColor(Color.parseColor(&quot;#7B6FFF&quot;));</span>
+<span class="nc" id="L229">            arrow.setTextSize(22);</span>
+<span class="nc" id="L230">            card.addView(arrow);</span>
+
+<span class="nc" id="L232">            final int gId = g.groupId;</span>
+<span class="nc" id="L233">            final String gName = g.groupName;</span>
+<span class="nc" id="L234">            card.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L235">                Intent intent = new Intent(GroupChatListActivity.this, GroupChatActivity.class);</span>
+<span class="nc" id="L236">                intent.putExtra(&quot;USER_ID&quot;, currentUserId);</span>
+<span class="nc" id="L237">                intent.putExtra(&quot;GROUP_ID&quot;, gId);</span>
+<span class="nc" id="L238">                intent.putExtra(&quot;GROUP_NAME&quot;, gName);</span>
+<span class="nc" id="L239">                startActivity(intent);</span>
+<span class="nc" id="L240">            });</span>
+
+<span class="nc" id="L242">            groupListContainer.addView(card);</span>
+<span class="nc" id="L243">        }</span>
+<span class="nc" id="L244">    }</span>
+
+    private void showEmpty(String msg) {
+<span class="fc" id="L247">        runOnUiThread(() -&gt; {</span>
+<span class="fc" id="L248">            tvEmptyState.setText(msg);</span>
+<span class="fc" id="L249">            tvEmptyState.setVisibility(TextView.VISIBLE);</span>
+<span class="fc" id="L250">            groupListContainer.removeAllViews();</span>
+<span class="fc" id="L251">        });</span>
+<span class="fc" id="L252">    }</span>
+
+    private int dp(int value) {
+<span class="nc" id="L255">        return (int) (value * getResources().getDisplayMetrics().density);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

@@ -1,0 +1,752 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ModeratorRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">ModeratorRepository.java</span></div><h1>ModeratorRepository.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="nc" id="L15">public class ModeratorRepository {</span>
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080/moderators&quot;;
+    private static final String ROOT_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+
+    public interface ModeratorAccountCallback {
+        void onSuccess(ModeratorAccount account);
+
+        void onError(String error);
+    }
+
+    public interface GroupsCallback {
+        void onSuccess(List&lt;ModeratorManagedGroup&gt; groups);
+
+        void onError(String error);
+    }
+
+    public interface JsonObjectCallback {
+        void onSuccess(JSONObject object);
+
+        void onError(String error);
+    }
+
+    public interface JsonArrayCallback {
+        void onSuccess(JSONArray array);
+
+        void onError(String error);
+    }
+
+    public interface ActionCallback {
+        void onSuccess(String response);
+
+        void onError(String error);
+    }
+
+    public void loginModerator(android.content.Context context,
+                               String email,
+                               String passwordHash,
+                               ModeratorAccountCallback callback) {
+<span class="nc" id="L53">        String url = BASE_URL + &quot;/login&quot;;</span>
+<span class="nc" id="L54">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L56">            body.put(&quot;email&quot;, email);</span>
+<span class="nc" id="L57">            body.put(&quot;passwordHash&quot;, passwordHash);</span>
+<span class="nc" id="L58">        } catch (JSONException e) {</span>
+<span class="nc" id="L59">            callback.onError(&quot;Failed to build request body&quot;);</span>
+<span class="nc" id="L60">            return;</span>
+<span class="nc" id="L61">        }</span>
+
+<span class="nc" id="L63">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L66">                        JSONObject accountJson = response.optJSONObject(&quot;moderator&quot;);</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                        if (accountJson == null) {</span>
+<span class="nc" id="L68">                            accountJson = response;</span>
+                        }
+<span class="nc" id="L70">                        ModeratorAccount account = ModeratorAccount.fromJson(accountJson);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">                        if (account.getModeratorId() &lt;= 0) {</span>
+<span class="nc" id="L72">                            callback.onError(&quot;Invalid moderator ID in response&quot;);</span>
+<span class="nc" id="L73">                            return;</span>
+                        }
+<span class="nc" id="L75">                        callback.onSuccess(account);</span>
+<span class="nc" id="L76">                    } catch (Exception e) {</span>
+<span class="nc" id="L77">                        callback.onError(&quot;Error parsing login response: &quot; + e.getMessage());</span>
+<span class="nc" id="L78">                    }</span>
+<span class="nc" id="L79">                },</span>
+                error -&gt; {
+<span class="nc" id="L81">                    String errorMsg = &quot;Login failed&quot;;</span>
+<span class="nc bnc" id="L82" title="All 4 branches missed.">                    if (error != null &amp;&amp; error.networkResponse != null) {</span>
+<span class="nc" id="L83">                        errorMsg += &quot; (HTTP &quot; + error.networkResponse.statusCode + &quot;)&quot;;</span>
+                    }
+<span class="nc" id="L85">                    callback.onError(errorMsg);</span>
+<span class="nc" id="L86">                });</span>
+
+<span class="nc" id="L88">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L89">    }</span>
+
+    public void getModeratorProfile(android.content.Context context,
+                                    int moderatorId,
+                                    ModeratorAccountCallback callback) {
+<span class="nc" id="L94">        String url = BASE_URL + &quot;/&quot; + moderatorId;</span>
+<span class="nc" id="L95">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,</span>
+<span class="nc" id="L96">                response -&gt; callback.onSuccess(ModeratorAccount.fromJson(response)),</span>
+<span class="nc" id="L97">                error -&gt; callback.onError(&quot;Failed to load moderator profile&quot;));</span>
+<span class="nc" id="L98">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L99">    }</span>
+
+    public void getManagedGroups(android.content.Context context,
+                                 int moderatorId,
+                                 GroupsCallback callback) {
+<span class="nc" id="L104">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups&quot;;</span>
+<span class="nc" id="L105">        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,</span>
+                response -&gt; {
+<span class="nc" id="L107">                    List&lt;ModeratorManagedGroup&gt; groups = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                    for (int i = 0; i &lt; response.length(); i++) {</span>
+<span class="nc" id="L109">                        JSONObject groupObj = response.optJSONObject(i);</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                        if (groupObj != null) {</span>
+<span class="nc" id="L111">                            groups.add(ModeratorManagedGroup.fromJson(groupObj));</span>
+                        }
+                    }
+<span class="nc" id="L114">                    callback.onSuccess(groups);</span>
+<span class="nc" id="L115">                },</span>
+<span class="nc" id="L116">                error -&gt; callback.onError(&quot;Failed to load groups&quot;));</span>
+<span class="nc" id="L117">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L118">    }</span>
+
+    public void createGroup(android.content.Context context,
+                            int moderatorId,
+                            String groupName,
+                            String description,
+                            List&lt;String&gt; interests,
+                            JsonObjectCallback callback) {
+<span class="nc" id="L126">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups&quot;;</span>
+<span class="nc" id="L127">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L129">            body.put(&quot;groupName&quot;, groupName);</span>
+<span class="nc" id="L130">            body.put(&quot;description&quot;, description);</span>
+<span class="nc" id="L131">            JSONArray interestArray = new JSONArray();</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">            if (interests != null) {</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">                for (String interest : interests) {</span>
+<span class="nc bnc" id="L134" title="All 4 branches missed.">                    if (interest != null &amp;&amp; !interest.trim().isEmpty()) {</span>
+<span class="nc" id="L135">                        interestArray.put(interest.trim());</span>
+                    }
+<span class="nc" id="L137">                }</span>
+            }
+<span class="nc" id="L139">            body.put(&quot;interests&quot;, interestArray);</span>
+<span class="nc" id="L140">        } catch (JSONException e) {</span>
+<span class="nc" id="L141">            callback.onError(&quot;Failed to build group payload&quot;);</span>
+<span class="nc" id="L142">            return;</span>
+<span class="nc" id="L143">        }</span>
+
+<span class="nc" id="L145">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,</span>
+<span class="nc" id="L146">                callback::onSuccess,</span>
+<span class="nc" id="L147">                error -&gt; callback.onError(&quot;Failed to create group&quot;));</span>
+<span class="nc" id="L148">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L149">    }</span>
+
+    public void editGroup(android.content.Context context,
+                          int moderatorId,
+                          int groupId,
+                          String groupName,
+                          String description,
+                          List&lt;String&gt; interests,
+                          JsonObjectCallback callback) {
+<span class="nc" id="L158">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId;</span>
+<span class="nc" id="L159">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L161">            body.put(&quot;groupName&quot;, groupName);</span>
+<span class="nc" id="L162">            body.put(&quot;description&quot;, description);</span>
+<span class="nc" id="L163">            JSONArray interestArray = new JSONArray();</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            if (interests != null) {</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">                for (String interest : interests) {</span>
+<span class="nc bnc" id="L166" title="All 4 branches missed.">                    if (interest != null &amp;&amp; !interest.trim().isEmpty()) {</span>
+<span class="nc" id="L167">                        interestArray.put(interest.trim());</span>
+                    }
+<span class="nc" id="L169">                }</span>
+            }
+<span class="nc" id="L171">            body.put(&quot;interests&quot;, interestArray);</span>
+<span class="nc" id="L172">        } catch (JSONException e) {</span>
+<span class="nc" id="L173">            callback.onError(&quot;Failed to build group payload&quot;);</span>
+<span class="nc" id="L174">            return;</span>
+<span class="nc" id="L175">        }</span>
+
+<span class="nc" id="L177">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, url, body,</span>
+<span class="nc" id="L178">                callback::onSuccess,</span>
+<span class="nc" id="L179">                error -&gt; callback.onError(&quot;Failed to update group&quot;));</span>
+<span class="nc" id="L180">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L181">    }</span>
+
+    public void deleteGroup(android.content.Context context,
+                            int moderatorId,
+                            int groupId,
+                            ActionCallback callback) {
+<span class="nc" id="L187">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId;</span>
+<span class="nc" id="L188">        sendAction(context, Request.Method.DELETE, url, null, callback, &quot;Failed to delete group&quot;);</span>
+<span class="nc" id="L189">    }</span>
+
+    public void getGroupDetails(android.content.Context context,
+                                int moderatorId,
+                                int groupId,
+                                JsonObjectCallback callback) {
+<span class="nc" id="L195">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId;</span>
+<span class="nc" id="L196">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,</span>
+<span class="nc" id="L197">                callback::onSuccess,</span>
+<span class="nc" id="L198">                error -&gt; callback.onError(&quot;Failed to load group details&quot;));</span>
+<span class="nc" id="L199">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L200">    }</span>
+
+    public void getGroupMembers(android.content.Context context,
+                                int moderatorId,
+                                int groupId,
+                                JsonArrayCallback callback) {
+<span class="nc" id="L206">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/members&quot;;</span>
+<span class="nc" id="L207">        getArray(context, url, &quot;Failed to load members&quot;, callback);</span>
+<span class="nc" id="L208">    }</span>
+
+    public void getPendingMembers(android.content.Context context,
+                                  int moderatorId,
+                                  int groupId,
+                                  JsonArrayCallback callback) {
+<span class="nc" id="L214">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/pending-members&quot;;</span>
+<span class="nc" id="L215">        getArray(context, url, &quot;Failed to load pending members&quot;, callback);</span>
+<span class="nc" id="L216">    }</span>
+
+    public void getGroupEvents(android.content.Context context,
+                               int moderatorId,
+                               int groupId,
+                               JsonArrayCallback callback) {
+<span class="nc" id="L222">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/events&quot;;</span>
+<span class="nc" id="L223">        getArray(context, url, &quot;Failed to load events&quot;, callback);</span>
+<span class="nc" id="L224">    }</span>
+
+    public void getGroupEventsForChat(android.content.Context context,
+                                      int groupId,
+                                      int moderatorId,
+                                      JsonArrayCallback callback) {
+<span class="nc" id="L230">        String publicUrl = ROOT_URL + &quot;/groups/&quot; + groupId + &quot;/events&quot;;</span>
+<span class="nc" id="L231">        getArray(context, publicUrl, &quot;Failed to load events&quot;, new JsonArrayCallback() {</span>
+            @Override
+            public void onSuccess(JSONArray array) {
+<span class="nc bnc" id="L234" title="All 2 branches missed.">                if (array.length() &gt; 0) {</span>
+<span class="nc" id="L235">                    callback.onSuccess(array);</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                } else if (moderatorId &gt; 0) {</span>
+                    // Public endpoint returned empty — fall through to moderator endpoint
+<span class="nc" id="L238">                    String moderatorUrl = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/events&quot;;</span>
+<span class="nc" id="L239">                    getArray(context, moderatorUrl, &quot;Failed to load events&quot;, callback);</span>
+<span class="nc" id="L240">                } else {</span>
+<span class="nc" id="L241">                    callback.onSuccess(array);</span>
+                }
+<span class="nc" id="L243">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc bnc" id="L247" title="All 2 branches missed.">                if (moderatorId &lt;= 0) {</span>
+<span class="nc" id="L248">                    callback.onError(error);</span>
+<span class="nc" id="L249">                    return;</span>
+                }
+<span class="nc" id="L251">                String moderatorUrl = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/events&quot;;</span>
+<span class="nc" id="L252">                getArray(context, moderatorUrl, &quot;Failed to load events&quot;, callback);</span>
+<span class="nc" id="L253">            }</span>
+        });
+<span class="nc" id="L255">    }</span>
+
+    public void getGroupAnnouncements(android.content.Context context,
+                                      int moderatorId,
+                                      int groupId,
+                                      JsonArrayCallback callback) {
+<span class="nc" id="L261">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/announcements&quot;;</span>
+<span class="nc" id="L262">        getArray(context, url, &quot;Failed to load announcements&quot;, callback);</span>
+<span class="nc" id="L263">    }</span>
+
+    public void getGroupAnnouncementsForChat(android.content.Context context,
+                                             int groupId,
+                                             int moderatorId,
+                                             JsonArrayCallback callback) {
+<span class="nc" id="L269">        String publicUrl = ROOT_URL + &quot;/groups/&quot; + groupId + &quot;/announcements&quot;;</span>
+<span class="nc" id="L270">        getArray(context, publicUrl, &quot;Failed to load announcements&quot;, new JsonArrayCallback() {</span>
+            @Override
+            public void onSuccess(JSONArray array) {
+<span class="nc" id="L273">                callback.onSuccess(array);</span>
+<span class="nc" id="L274">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc bnc" id="L278" title="All 2 branches missed.">                if (moderatorId &lt;= 0) {</span>
+<span class="nc" id="L279">                    callback.onError(error);</span>
+<span class="nc" id="L280">                    return;</span>
+                }
+
+<span class="nc" id="L283">                String moderatorUrl = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/announcements&quot;;</span>
+<span class="nc" id="L284">                getArray(context, moderatorUrl, &quot;Failed to load announcements&quot;, callback);</span>
+<span class="nc" id="L285">            }</span>
+        });
+<span class="nc" id="L287">    }</span>
+
+    public void getPinnedAnnouncementsForGroup(android.content.Context context,
+                                               int groupId,
+                                               JsonArrayCallback callback) {
+<span class="nc" id="L292">        String url = ROOT_URL + &quot;/groups/&quot; + groupId + &quot;/announcements/pinned&quot;;</span>
+<span class="nc" id="L293">        getArray(context, url, &quot;Failed to load pinned announcements&quot;, callback);</span>
+<span class="nc" id="L294">    }</span>
+
+    public void getUnpinnedAnnouncementsForGroup(android.content.Context context,
+                                                 int groupId,
+                                                 JsonArrayCallback callback) {
+<span class="nc" id="L299">        String url = ROOT_URL + &quot;/groups/&quot; + groupId + &quot;/announcements/unpinned&quot;;</span>
+<span class="nc" id="L300">        getArray(context, url, &quot;Failed to load unpinned announcements&quot;, callback);</span>
+<span class="nc" id="L301">    }</span>
+
+    public void getOrderedAnnouncementsForChat(android.content.Context context,
+                                               int groupId,
+                                               int moderatorId,
+                                               JsonArrayCallback callback) {
+<span class="nc" id="L307">        getPinnedAnnouncementsForGroup(context, groupId, new JsonArrayCallback() {</span>
+            @Override
+            public void onSuccess(JSONArray pinnedArray) {
+<span class="nc" id="L310">                getUnpinnedAnnouncementsForGroup(context, groupId, new JsonArrayCallback() {</span>
+                    @Override
+                    public void onSuccess(JSONArray unpinnedArray) {
+<span class="nc" id="L313">                        callback.onSuccess(mergeAnnouncements(pinnedArray, unpinnedArray));</span>
+<span class="nc" id="L314">                    }</span>
+
+                    @Override
+                    public void onError(String error) {
+                        // If unpinned endpoint fails, still return pinned items.
+<span class="nc" id="L319">                        callback.onSuccess(mergeAnnouncements(pinnedArray, null));</span>
+<span class="nc" id="L320">                    }</span>
+                });
+<span class="nc" id="L322">            }</span>
+
+            @Override
+            public void onError(String error) {
+                // Fallback to existing all-announcements endpoint path for resilience.
+<span class="nc" id="L327">                getGroupAnnouncementsForChat(context, groupId, moderatorId, new JsonArrayCallback() {</span>
+                    @Override
+                    public void onSuccess(JSONArray array) {
+<span class="nc" id="L330">                        callback.onSuccess(sortAnnouncementsPinnedFirst(array));</span>
+<span class="nc" id="L331">                    }</span>
+
+                    @Override
+                    public void onError(String fallbackError) {
+<span class="nc" id="L335">                        callback.onError(fallbackError);</span>
+<span class="nc" id="L336">                    }</span>
+                });
+<span class="nc" id="L338">            }</span>
+        });
+<span class="nc" id="L340">    }</span>
+
+    public void approveMember(android.content.Context context,
+                              int moderatorId,
+                              int groupId,
+                              int userId,
+                              ActionCallback callback) {
+<span class="nc" id="L347">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/members/&quot; + userId + &quot;/approve&quot;;</span>
+<span class="nc" id="L348">        sendAction(context, Request.Method.PUT, url, null, callback, &quot;Failed to approve member&quot;);</span>
+<span class="nc" id="L349">    }</span>
+
+    public void removeMember(android.content.Context context,
+                             int moderatorId,
+                             int groupId,
+                             int userId,
+                             ActionCallback callback) {
+<span class="nc" id="L356">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/members/&quot; + userId;</span>
+<span class="nc" id="L357">        sendAction(context, Request.Method.DELETE, url, null, callback, &quot;Failed to remove member&quot;);</span>
+<span class="nc" id="L358">    }</span>
+
+    public void getConversationMessages(android.content.Context context,
+                                        int conversationId,
+                                        JsonArrayCallback callback) {
+<span class="nc" id="L363">        String url = ROOT_URL + &quot;/messages/conversation/&quot; + conversationId;</span>
+<span class="nc" id="L364">        getArray(context, url, &quot;Failed to load messages&quot;, callback);</span>
+<span class="nc" id="L365">    }</span>
+
+    public void getModeratorGroupMessages(android.content.Context context,
+                                         int moderatorId,
+                                         int groupId,
+                                         JsonArrayCallback callback) {
+<span class="nc" id="L371">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/messages&quot;;</span>
+<span class="nc" id="L372">        getArray(context, url, &quot;Failed to load group messages&quot;, callback);</span>
+<span class="nc" id="L373">    }</span>
+
+   public void removeMessage(android.content.Context context,
+                              int moderatorId,
+                              int messageId,
+                              ActionCallback callback) {
+<span class="nc" id="L379">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/messages/&quot; + messageId + &quot;/remove&quot;;</span>
+<span class="nc" id="L380">        sendAction(context, Request.Method.PUT, url, null, callback, &quot;Failed to remove message&quot;);</span>
+<span class="nc" id="L381">    }</span>
+
+    public void restoreMessage(android.content.Context context,
+                               int moderatorId,
+                               int messageId,
+                               ActionCallback callback) {
+<span class="nc" id="L387">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/messages/&quot; + messageId + &quot;/restore&quot;;</span>
+<span class="nc" id="L388">        sendAction(context, Request.Method.PUT, url, null, callback, &quot;Failed to restore message&quot;);</span>
+<span class="nc" id="L389">    }</span>
+
+    public void scheduleEvent(android.content.Context context,
+                              int moderatorId,
+                              int groupId,
+                              String title,
+                              String description,
+                              String location,
+                              String eventTime,
+                              ActionCallback callback) {
+<span class="nc" id="L399">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/events&quot;;</span>
+<span class="nc" id="L400">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc bnc" id="L402" title="All 2 branches missed.">            body.put(&quot;title&quot;, title == null ? &quot;&quot; : title.trim());</span>
+<span class="nc bnc" id="L403" title="All 2 branches missed.">            body.put(&quot;description&quot;, description == null ? &quot;&quot; : description.trim());</span>
+<span class="nc bnc" id="L404" title="All 2 branches missed.">            body.put(&quot;location&quot;, location == null ? &quot;&quot; : location.trim());</span>
+<span class="nc bnc" id="L405" title="All 2 branches missed.">            body.put(&quot;eventTime&quot;, eventTime == null ? &quot;&quot; : eventTime.trim());</span>
+<span class="nc" id="L406">        } catch (JSONException e) {</span>
+<span class="nc" id="L407">            callback.onError(&quot;Failed to build event payload&quot;);</span>
+<span class="nc" id="L408">            return;</span>
+<span class="nc" id="L409">        }</span>
+
+<span class="nc" id="L411">        android.util.Log.d(&quot;ScheduleEvent&quot;, &quot;URL: &quot; + url);</span>
+<span class="nc" id="L412">        android.util.Log.d(&quot;ScheduleEvent&quot;, &quot;Body: &quot; + body.toString());</span>
+
+<span class="nc" id="L414">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,</span>
+<span class="nc" id="L415">                response -&gt; callback.onSuccess(response.toString()),</span>
+                error -&gt; {
+<span class="nc" id="L417">                    String msg = &quot;Failed to schedule event&quot;;</span>
+<span class="nc bnc" id="L418" title="All 2 branches missed.">                    if (error.networkResponse != null) {</span>
+<span class="nc" id="L419">                        msg += &quot; (HTTP &quot; + error.networkResponse.statusCode + &quot;)&quot;;</span>
+                        try {
+                            // This shows exactly what the backend rejected
+<span class="nc" id="L422">                            String responseBody = new String(error.networkResponse.data,</span>
+                                    java.nio.charset.StandardCharsets.UTF_8);
+<span class="nc" id="L424">                            android.util.Log.e(&quot;ScheduleEvent&quot;, &quot;Error body: &quot; + responseBody);</span>
+<span class="nc" id="L425">                            msg += &quot;: &quot; + responseBody;</span>
+<span class="nc" id="L426">                        } catch (Exception e) {</span>
+<span class="nc" id="L427">                            android.util.Log.e(&quot;ScheduleEvent&quot;, &quot;Could not parse error body&quot;);</span>
+<span class="nc" id="L428">                        }</span>
+                    }
+<span class="nc" id="L430">                    callback.onError(msg);</span>
+<span class="nc" id="L431">                });</span>
+
+<span class="nc" id="L433">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L434">    }</span>
+
+    public void createAnnouncement(android.content.Context context,
+                                   int moderatorId,
+                                   int groupId,
+                                   String title,
+                                   String content,
+                                   ActionCallback callback) {
+<span class="nc" id="L442">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/announcements&quot;;</span>
+<span class="nc" id="L443">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc bnc" id="L445" title="All 2 branches missed.">            body.put(&quot;title&quot;, title == null ? &quot;&quot; : title.trim());</span>
+<span class="nc bnc" id="L446" title="All 2 branches missed.">            body.put(&quot;content&quot;, content == null ? &quot;&quot; : content.trim());</span>
+<span class="nc" id="L447">        } catch (JSONException e) {</span>
+<span class="nc" id="L448">            callback.onError(&quot;Failed to build announcement payload&quot;);</span>
+<span class="nc" id="L449">            return;</span>
+<span class="nc" id="L450">        }</span>
+<span class="nc" id="L451">        sendAction(context, Request.Method.POST, url, body, callback, &quot;Failed to create announcement&quot;);</span>
+<span class="nc" id="L452">    }</span>
+
+    public void pinAnnouncement(android.content.Context context,
+                                int moderatorId,
+                                int groupId,
+                                int announcementId,
+                                ActionCallback callback) {
+<span class="nc" id="L459">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/announcements/&quot; + announcementId + &quot;/pin&quot;;</span>
+<span class="nc" id="L460">        sendAction(context, Request.Method.PUT, url, null, callback, &quot;Failed to pin announcement&quot;);</span>
+<span class="nc" id="L461">    }</span>
+
+    public void getEventDetails(android.content.Context context,
+                                int moderatorId,
+                                int groupId,
+                                int eventId,
+                                JsonObjectCallback callback) {
+<span class="nc" id="L468">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/events/&quot; + eventId;</span>
+<span class="nc" id="L469">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,</span>
+<span class="nc" id="L470">                callback::onSuccess,</span>
+<span class="nc" id="L471">                error -&gt; callback.onError(&quot;Failed to load event details&quot;));</span>
+<span class="nc" id="L472">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L473">    }</span>
+
+    public void editEvent(android.content.Context context,
+                          int moderatorId,
+                          int groupId,
+                          int eventId,
+                          String title,
+                          String description,
+                          String location,
+                          String eventTime,
+                          ActionCallback callback) {
+<span class="nc" id="L484">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/events/&quot; + eventId;</span>
+<span class="nc" id="L485">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc bnc" id="L487" title="All 2 branches missed.">            body.put(&quot;title&quot;, title == null ? &quot;&quot; : title.trim());</span>
+<span class="nc bnc" id="L488" title="All 2 branches missed.">            body.put(&quot;description&quot;, description == null ? &quot;&quot; : description.trim());</span>
+<span class="nc bnc" id="L489" title="All 2 branches missed.">            body.put(&quot;location&quot;, location == null ? &quot;&quot; : location.trim());</span>
+<span class="nc bnc" id="L490" title="All 2 branches missed.">            body.put(&quot;eventTime&quot;, eventTime == null ? &quot;&quot; : eventTime.trim());</span>
+<span class="nc" id="L491">        } catch (JSONException e) {</span>
+<span class="nc" id="L492">            callback.onError(&quot;Failed to build event payload&quot;);</span>
+<span class="nc" id="L493">            return;</span>
+<span class="nc" id="L494">        }</span>
+<span class="nc" id="L495">        sendAction(context, Request.Method.PUT, url, body, callback, &quot;Failed to edit event&quot;);</span>
+<span class="nc" id="L496">    }</span>
+
+    public void deleteEvent(android.content.Context context,
+                            int moderatorId,
+                            int groupId,
+                            int eventId,
+                            ActionCallback callback) {
+<span class="nc" id="L503">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/events/&quot; + eventId;</span>
+<span class="nc" id="L504">        sendAction(context, Request.Method.DELETE, url, null, callback, &quot;Failed to delete event&quot;);</span>
+<span class="nc" id="L505">    }</span>
+
+    public void unpinAnnouncement(android.content.Context context,
+                                  int moderatorId,
+                                  int groupId,
+                                  int announcementId,
+                                  ActionCallback callback) {
+<span class="nc" id="L512">        String primaryUrl = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/announcements/&quot; + announcementId + &quot;/unpin&quot;;</span>
+<span class="nc" id="L513">        String typoFallbackUrl = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/announcements/&quot; + announcementId + &quot;/unppin&quot;;</span>
+
+<span class="nc" id="L515">        StringRequest request = new StringRequest(Request.Method.PUT, primaryUrl,</span>
+<span class="nc" id="L516">                callback::onSuccess,</span>
+                error -&gt; {
+<span class="nc bnc" id="L518" title="All 4 branches missed.">                    int status = error != null &amp;&amp; error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="nc bnc" id="L519" title="All 2 branches missed.">                    if (status == 404) {</span>
+                        // Backend typo compatibility: try /unppin when /unpin is unavailable.
+<span class="nc" id="L521">                        sendAction(context, Request.Method.PUT, typoFallbackUrl, null, callback, &quot;Failed to unpin announcement&quot;);</span>
+<span class="nc" id="L522">                        return;</span>
+                    }
+<span class="nc" id="L524">                    callback.onError(&quot;Failed to unpin announcement&quot;);</span>
+<span class="nc" id="L525">                });</span>
+<span class="nc" id="L526">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L527">    }</span>
+
+    public void deleteAnnouncement(android.content.Context context,
+                                   int moderatorId,
+                                   int groupId,
+                                   int announcementId,
+                                   ActionCallback callback) {
+<span class="nc" id="L534">        String url = BASE_URL + &quot;/&quot; + moderatorId + &quot;/groups/&quot; + groupId + &quot;/announcements/&quot; + announcementId;</span>
+<span class="nc" id="L535">        sendAction(context, Request.Method.DELETE, url, null, callback, &quot;Failed to delete announcement&quot;);</span>
+<span class="nc" id="L536">    }</span>
+
+    public void joinGroupRequest(android.content.Context context,
+                                 int userId,
+                                 int groupId,
+                                 ActionCallback callback) {
+<span class="nc" id="L542">        String url = ROOT_URL + &quot;/gm/join&quot;;</span>
+<span class="nc" id="L543">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L545">            body.put(&quot;user_id&quot;, userId);</span>
+<span class="nc" id="L546">            body.put(&quot;group_id&quot;, groupId);</span>
+<span class="nc" id="L547">        } catch (JSONException e) {</span>
+<span class="nc" id="L548">            callback.onError(&quot;Failed to build join request body&quot;);</span>
+<span class="nc" id="L549">            return;</span>
+<span class="nc" id="L550">        }</span>
+<span class="nc" id="L551">        sendAction(context, Request.Method.POST, url, body, callback, &quot;Failed to join group&quot;);</span>
+<span class="nc" id="L552">    }</span>
+
+
+
+    public void getAllGroups(android.content.Context context,
+                             JsonArrayCallback callback) {
+<span class="nc" id="L558">        String url = ROOT_URL + &quot;/groups&quot;;</span>
+<span class="nc" id="L559">        getArray(context, url, &quot;Failed to load all groups&quot;, callback);</span>
+<span class="nc" id="L560">    }</span>
+
+    public void getGroupById(android.content.Context context,
+                             int groupId,
+                             JsonObjectCallback callback) {
+<span class="nc" id="L565">        String url = ROOT_URL + &quot;/groups/&quot; + groupId;</span>
+<span class="nc" id="L566">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,</span>
+<span class="nc" id="L567">                callback::onSuccess,</span>
+<span class="nc" id="L568">                error -&gt; callback.onError(&quot;Failed to load group&quot;));</span>
+<span class="nc" id="L569">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L570">    }</span>
+
+    public void signupModerator(android.content.Context context,
+                                String email,
+                                String passwordHash,
+                                String displayName,
+                                ModeratorAccountCallback callback) {
+<span class="nc" id="L577">        String url = BASE_URL;</span>
+<span class="nc" id="L578">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L580">            body.put(&quot;displayName&quot;, displayName);</span>
+<span class="nc" id="L581">            body.put(&quot;email&quot;, email);</span>
+<span class="nc" id="L582">            body.put(&quot;passwordHash&quot;, passwordHash);</span>
+<span class="nc" id="L583">            body.put(&quot;active&quot;, true);</span>
+<span class="nc" id="L584">        } catch (JSONException e) {</span>
+<span class="nc" id="L585">            callback.onError(&quot;Failed to build request body&quot;);</span>
+<span class="nc" id="L586">            return;</span>
+<span class="nc" id="L587">        }</span>
+
+<span class="nc" id="L589">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L592">                        JSONObject accountJson = response.optJSONObject(&quot;moderator&quot;);</span>
+<span class="nc bnc" id="L593" title="All 2 branches missed.">                        if (accountJson == null) {</span>
+<span class="nc" id="L594">                            accountJson = response;</span>
+                        }
+<span class="nc" id="L596">                        ModeratorAccount account = ModeratorAccount.fromJson(accountJson);</span>
+<span class="nc bnc" id="L597" title="All 2 branches missed.">                        if (account.getModeratorId() &lt;= 0) {</span>
+<span class="nc" id="L598">                            callback.onError(&quot;Invalid moderator ID in response&quot;);</span>
+<span class="nc" id="L599">                            return;</span>
+                        }
+<span class="nc" id="L601">                        callback.onSuccess(account);</span>
+<span class="nc" id="L602">                    } catch (Exception e) {</span>
+<span class="nc" id="L603">                        callback.onError(&quot;Error parsing signup response: &quot; + e.getMessage());</span>
+<span class="nc" id="L604">                    }</span>
+<span class="nc" id="L605">                },</span>
+                error -&gt; {
+<span class="nc" id="L607">                    String errorMsg = &quot;Signup failed&quot;;</span>
+<span class="nc bnc" id="L608" title="All 4 branches missed.">                    if (error != null &amp;&amp; error.networkResponse != null) {</span>
+<span class="nc" id="L609">                        errorMsg += &quot; (HTTP &quot; + error.networkResponse.statusCode + &quot;)&quot;;</span>
+                    }
+<span class="nc" id="L611">                    callback.onError(errorMsg);</span>
+<span class="nc" id="L612">                });</span>
+
+<span class="nc" id="L614">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L615">    }</span>
+
+    private void getArray(android.content.Context context,
+                          String url,
+                          String errorMessage,
+                          JsonArrayCallback callback) {
+<span class="nc" id="L621">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L624">                        JSONArray parsed = extractArrayFromResponse(response);</span>
+<span class="nc" id="L625">                        callback.onSuccess(parsed);</span>
+<span class="nc" id="L626">                    } catch (Exception e) {</span>
+<span class="nc" id="L627">                        callback.onError(errorMessage + &quot;: invalid response format&quot;);</span>
+<span class="nc" id="L628">                    }</span>
+<span class="nc" id="L629">                },</span>
+<span class="nc" id="L630">                error -&gt; callback.onError(errorMessage));</span>
+<span class="nc" id="L631">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L632">    }</span>
+
+    private JSONArray extractArrayFromResponse(String response) throws JSONException {
+<span class="nc bnc" id="L635" title="All 2 branches missed.">        if (response == null) {</span>
+<span class="nc" id="L636">            return new JSONArray();</span>
+        }
+
+<span class="nc" id="L639">        String trimmed = response.trim();</span>
+<span class="nc bnc" id="L640" title="All 2 branches missed.">        if (trimmed.startsWith(&quot;[&quot;)) {</span>
+<span class="nc" id="L641">            return new JSONArray(trimmed);</span>
+        }
+<span class="nc bnc" id="L643" title="All 2 branches missed.">        if (!trimmed.startsWith(&quot;{&quot;)) {</span>
+<span class="nc" id="L644">            return new JSONArray();</span>
+        }
+
+<span class="nc" id="L647">        JSONObject object = new JSONObject(trimmed);</span>
+<span class="nc" id="L648">        String[] preferredKeys = new String[]{</span>
+                &quot;members&quot;, &quot;pendingMembers&quot;, &quot;pending_members&quot;, &quot;messages&quot;,
+                &quot;events&quot;, &quot;announcements&quot;, &quot;data&quot;, &quot;results&quot;, &quot;items&quot;, &quot;content&quot;
+        };
+<span class="nc bnc" id="L652" title="All 2 branches missed.">        for (String key : preferredKeys) {</span>
+<span class="nc" id="L653">            JSONArray arr = object.optJSONArray(key);</span>
+<span class="nc bnc" id="L654" title="All 2 branches missed.">            if (arr != null) {</span>
+<span class="nc" id="L655">                return arr;</span>
+            }
+        }
+
+<span class="nc" id="L659">        JSONArray names = object.names();</span>
+<span class="nc bnc" id="L660" title="All 2 branches missed.">        if (names != null) {</span>
+<span class="nc bnc" id="L661" title="All 2 branches missed.">            for (int i = 0; i &lt; names.length(); i++) {</span>
+<span class="nc" id="L662">                String key = names.optString(i, &quot;&quot;);</span>
+<span class="nc bnc" id="L663" title="All 2 branches missed.">                if (key.isEmpty()) {</span>
+<span class="nc" id="L664">                    continue;</span>
+                }
+<span class="nc" id="L666">                JSONArray arr = object.optJSONArray(key);</span>
+<span class="nc bnc" id="L667" title="All 2 branches missed.">                if (arr != null) {</span>
+<span class="nc" id="L668">                    return arr;</span>
+                }
+            }
+        }
+
+<span class="nc" id="L673">        return new JSONArray();</span>
+    }
+
+    private void sendAction(android.content.Context context,
+                            int method,
+                            String url,
+                            JSONObject body,
+                            ActionCallback callback,
+                            String errorMessage) {
+<span class="nc" id="L682">        StringRequest request = new StringRequest(method, url,</span>
+<span class="nc" id="L683">                callback::onSuccess,</span>
+<span class="nc" id="L684">                error -&gt; callback.onError(errorMessage)) {</span>
+            @Override
+            public byte[] getBody() {
+<span class="nc bnc" id="L687" title="All 2 branches missed.">                if (body == null) {</span>
+<span class="nc" id="L688">                    return null;</span>
+                }
+<span class="nc" id="L690">                return body.toString().getBytes();</span>
+            }
+
+            @Override
+            public String getBodyContentType() {
+<span class="nc" id="L695">                return &quot;application/json; charset=utf-8&quot;;</span>
+            }
+        };
+<span class="nc" id="L698">        VolleySingleton.getInstance(context).addToRequestQueue(request);</span>
+<span class="nc" id="L699">    }</span>
+
+    private JSONArray mergeAnnouncements(JSONArray pinned, JSONArray unpinned) {
+<span class="nc" id="L702">        JSONArray merged = new JSONArray();</span>
+<span class="nc" id="L703">        java.util.HashSet&lt;Integer&gt; seenIds = new java.util.HashSet&lt;&gt;();</span>
+<span class="nc" id="L704">        appendUniqueAnnouncements(merged, pinned, seenIds);</span>
+<span class="nc" id="L705">        appendUniqueAnnouncements(merged, unpinned, seenIds);</span>
+<span class="nc" id="L706">        return merged;</span>
+    }
+
+    private JSONArray sortAnnouncementsPinnedFirst(JSONArray source) {
+<span class="nc" id="L710">        JSONArray pinned = new JSONArray();</span>
+<span class="nc" id="L711">        JSONArray unpinned = new JSONArray();</span>
+<span class="nc bnc" id="L712" title="All 2 branches missed.">        if (source == null) {</span>
+<span class="nc" id="L713">            return new JSONArray();</span>
+        }
+<span class="nc bnc" id="L715" title="All 2 branches missed.">        for (int i = 0; i &lt; source.length(); i++) {</span>
+<span class="nc" id="L716">            Object raw = source.opt(i);</span>
+<span class="nc bnc" id="L717" title="All 2 branches missed.">            JSONObject obj = raw instanceof JSONObject ? (JSONObject) raw : null;</span>
+<span class="nc bnc" id="L718" title="All 6 branches missed.">            if (obj != null &amp;&amp; (obj.optBoolean(&quot;pinned&quot;, false) || obj.optBoolean(&quot;isPinned&quot;, false))) {</span>
+<span class="nc" id="L719">                pinned.put(obj);</span>
+            } else {
+<span class="nc" id="L721">                unpinned.put(raw);</span>
+            }
+        }
+<span class="nc" id="L724">        return mergeAnnouncements(pinned, unpinned);</span>
+    }
+
+    private void appendUniqueAnnouncements(JSONArray target,
+                                           JSONArray source,
+                                           java.util.HashSet&lt;Integer&gt; seenIds) {
+<span class="nc bnc" id="L730" title="All 4 branches missed.">        if (target == null || source == null) {</span>
+<span class="nc" id="L731">            return;</span>
+        }
+<span class="nc bnc" id="L733" title="All 2 branches missed.">        for (int i = 0; i &lt; source.length(); i++) {</span>
+<span class="nc" id="L734">            Object raw = source.opt(i);</span>
+<span class="nc bnc" id="L735" title="All 2 branches missed.">            JSONObject obj = raw instanceof JSONObject ? (JSONObject) raw : null;</span>
+<span class="nc bnc" id="L736" title="All 2 branches missed.">            if (obj == null) {</span>
+<span class="nc" id="L737">                target.put(raw);</span>
+<span class="nc" id="L738">                continue;</span>
+            }
+<span class="nc" id="L740">            int id = obj.optInt(&quot;announcementId&quot;, obj.optInt(&quot;id&quot;, -1));</span>
+<span class="nc bnc" id="L741" title="All 2 branches missed.">            if (id &gt; 0) {</span>
+<span class="nc bnc" id="L742" title="All 2 branches missed.">                if (seenIds.contains(id)) {</span>
+<span class="nc" id="L743">                    continue;</span>
+                }
+<span class="nc" id="L745">                seenIds.add(id);</span>
+            }
+<span class="nc" id="L747">            target.put(obj);</span>
+        }
+<span class="nc" id="L749">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

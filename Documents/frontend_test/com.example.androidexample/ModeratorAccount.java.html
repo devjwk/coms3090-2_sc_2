@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ModeratorAccount.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">ModeratorAccount.java</span></div><h1>ModeratorAccount.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class ModeratorAccount {
+    private final int moderatorId;
+    private final String email;
+    private final String displayName;
+    private final String authProvider;
+    private final String providerUserId;
+    private final List&lt;String&gt; roles;
+    private final Set&lt;String&gt; permissions;
+    private final List&lt;Integer&gt; assignedGroups;
+
+    public ModeratorAccount(int moderatorId,
+                            String email,
+                            String displayName,
+                            String authProvider,
+                            String providerUserId,
+                            List&lt;String&gt; roles,
+                            Set&lt;String&gt; permissions,
+<span class="fc" id="L28">                            List&lt;Integer&gt; assignedGroups) {</span>
+<span class="fc" id="L29">        this.moderatorId = moderatorId;</span>
+<span class="fc" id="L30">        this.email = email;</span>
+<span class="fc" id="L31">        this.displayName = displayName;</span>
+<span class="fc" id="L32">        this.authProvider = authProvider;</span>
+<span class="fc" id="L33">        this.providerUserId = providerUserId;</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        this.roles = roles != null ? roles : new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        this.permissions = permissions != null ? permissions : new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        this.assignedGroups = assignedGroups != null ? assignedGroups : new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L37">    }</span>
+
+    public int getModeratorId() {
+<span class="fc" id="L40">        return moderatorId;</span>
+    }
+
+    public String getEmail() {
+<span class="fc" id="L44">        return email;</span>
+    }
+
+    public String getDisplayName() {
+<span class="fc" id="L48">        return displayName;</span>
+    }
+
+    public String getAuthProvider() {
+<span class="fc" id="L52">        return authProvider;</span>
+    }
+
+    public String getProviderUserId() {
+<span class="fc" id="L56">        return providerUserId;</span>
+    }
+
+    public List&lt;String&gt; getRoles() {
+<span class="fc" id="L60">        return roles;</span>
+    }
+
+    public Set&lt;String&gt; getPermissions() {
+<span class="fc" id="L64">        return permissions;</span>
+    }
+
+    public List&lt;Integer&gt; getAssignedGroups() {
+<span class="fc" id="L68">        return assignedGroups;</span>
+    }
+
+    public boolean hasPermission(String permission) {
+<span class="nc" id="L72">        return permissions.contains(permission);</span>
+    }
+
+    public static ModeratorAccount fromJson(JSONObject json) {
+<span class="nc" id="L76">        int id = json.optInt(&quot;moderatorId&quot;, json.optInt(&quot;id&quot;, -1));</span>
+<span class="nc" id="L77">        String email = json.optString(&quot;email&quot;, &quot;&quot;);</span>
+<span class="nc" id="L78">        String displayName = json.optString(&quot;displayName&quot;, &quot;&quot;);</span>
+<span class="nc" id="L79">        String authProvider = json.optString(&quot;authProvider&quot;, &quot;&quot;);</span>
+<span class="nc" id="L80">        String providerUserId = json.optString(&quot;providerUserId&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L82">        List&lt;String&gt; roles = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L83">        JSONArray rolesArray = json.optJSONArray(&quot;roles&quot;);</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (rolesArray != null) {</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            for (int i = 0; i &lt; rolesArray.length(); i++) {</span>
+<span class="nc" id="L86">                String role = rolesArray.optString(i, &quot;&quot;);</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                if (!role.isEmpty()) {</span>
+<span class="nc" id="L88">                    roles.add(role);</span>
+                }
+            }
+        }
+
+<span class="nc" id="L93">        Set&lt;String&gt; permissions = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L94">        JSONArray permissionsArray = json.optJSONArray(&quot;permissions&quot;);</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (permissionsArray != null) {</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            for (int i = 0; i &lt; permissionsArray.length(); i++) {</span>
+<span class="nc" id="L97">                String permission = permissionsArray.optString(i, &quot;&quot;);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                if (!permission.isEmpty()) {</span>
+<span class="nc" id="L99">                    permissions.add(permission);</span>
+                }
+            }
+        }
+
+<span class="nc" id="L104">        List&lt;Integer&gt; assignedGroups = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L105">        JSONArray groupsArray = json.optJSONArray(&quot;assignedGroups&quot;);</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (groupsArray == null) {</span>
+<span class="nc" id="L107">            groupsArray = json.optJSONArray(&quot;groupIds&quot;);</span>
+        }
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (groupsArray != null) {</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">            for (int i = 0; i &lt; groupsArray.length(); i++) {</span>
+<span class="nc" id="L111">                int groupId = groupsArray.optInt(i, -1);</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                if (groupId &gt; 0) {</span>
+<span class="nc" id="L113">                    assignedGroups.add(groupId);</span>
+                }
+            }
+        }
+
+<span class="nc" id="L118">        return new ModeratorAccount(id, email, displayName, authProvider, providerUserId, roles, permissions, assignedGroups);</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

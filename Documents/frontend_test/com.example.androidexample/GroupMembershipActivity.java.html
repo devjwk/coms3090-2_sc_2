@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupMembershipActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">GroupMembershipActivity.java</span></div><h1>GroupMembershipActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
+
+/**
+ * Activity for managing group memberships.
+ * This screen allows a user to join a group, check membership information,
+ * update membership status, toggle moderator privileges, and leave a group.
+ * It communicates with backend group membership endpoints using Volley requests.
+ */
+
+<span class="fc" id="L31">public class GroupMembershipActivity extends AppCompatActivity {</span>
+
+    /** Input field for entering the group ID */
+    private EditText etGroupId;
+
+    /** Input field for entering the target user or membership ID */
+    private EditText etTargetUserId;
+
+    /** Button used to join a group */
+    private Button btnJoinGroup;
+
+    /** Button used to check membership information */
+    private Button btnCheckMembership;
+
+    /** Button used to approve a membership request */
+    private Button btnApprove;
+
+    /** Button used to ban a member */
+    private Button btnBan;
+
+    /** Button used to toggle moderator status */
+    private Button btnToggleMod;
+
+    /** Button used to leave a group */
+    private Button btnLeaveGroup;
+
+    /** Button used to return to the previous screen */
+    private Button btnBack;
+
+    /** TextView used to display membership details and status messages */
+    private TextView tvMembershipInfo;
+
+    /** Base URL for all group membership related backend requests */
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080/gm&quot;;
+    // Prefer authoritative groups endpoint when available
+    private static final String GROUPS_BASE = &quot;http://coms-3090-015.class.las.iastate.edu:8080/groups&quot;;
+
+    /** Logged-in user's ID passed through the activity intent */
+    private int myUserId;
+
+    /** Tracks whether the currently selected member is a moderator */
+<span class="fc" id="L72">    private boolean isCurrentMod = false;</span>
+
+    /**
+     * Initializes the activity, connects UI components, retrieves the logged-in user ID,
+     * and sets button click listeners for all membership actions.
+     *
+     * @param savedInstanceState saved instance state bundle provided by Android
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L82">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L83">        setContentView(R.layout.activity_group_membership);</span>
+
+<span class="fc" id="L85">        etGroupId = findViewById(R.id.etGroupId);</span>
+<span class="fc" id="L86">        etTargetUserId = findViewById(R.id.etTargetUserId);</span>
+<span class="fc" id="L87">        btnJoinGroup = findViewById(R.id.btnJoinGroup);</span>
+<span class="fc" id="L88">        btnCheckMembership = findViewById(R.id.btnCheckMembership);</span>
+<span class="fc" id="L89">        btnApprove = findViewById(R.id.btnApprove);</span>
+<span class="fc" id="L90">        btnBan = findViewById(R.id.btnBan);</span>
+<span class="fc" id="L91">        btnToggleMod = findViewById(R.id.btnToggleMod);</span>
+<span class="fc" id="L92">        btnLeaveGroup = findViewById(R.id.btnLeaveGroup);</span>
+<span class="fc" id="L93">        btnBack = findViewById(R.id.btnBack);</span>
+<span class="fc" id="L94">        tvMembershipInfo = findViewById(R.id.tvMembershipInfo);</span>
+
+<span class="fc" id="L96">        myUserId = getIntent().getIntExtra(&quot;USER_ID&quot;, 1);</span>
+
+<span class="pc" id="L98">        btnJoinGroup.setOnClickListener(v -&gt; joinGroup());</span>
+
+<span class="fc" id="L100">        btnCheckMembership.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L101">            String targetIdStr = etTargetUserId.getText().toString().trim();</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            int idToQuery = targetIdStr.isEmpty() ? myUserId : Integer.parseInt(targetIdStr);</span>
+<span class="nc" id="L103">            checkMembership(idToQuery);</span>
+<span class="nc" id="L104">        });</span>
+
+<span class="pc" id="L106">        btnApprove.setOnClickListener(v -&gt; updateStatus(&quot;active&quot;));</span>
+<span class="pc" id="L107">        btnBan.setOnClickListener(v -&gt; updateStatus(&quot;banned&quot;));</span>
+<span class="pc" id="L108">        btnToggleMod.setOnClickListener(v -&gt; toggleModerator());</span>
+<span class="pc" id="L109">        btnLeaveGroup.setOnClickListener(v -&gt; leaveGroup());</span>
+<span class="pc" id="L110">        btnBack.setOnClickListener(v -&gt; finish());</span>
+<span class="fc" id="L111">    }</span>
+
+    /**
+     * Sends a request to the backend for the current user to join the specified group.
+     * If the group ID field is empty, a warning message is shown instead.
+     */
+    private void joinGroup() {
+<span class="nc" id="L118">        String gidStr = etGroupId.getText().toString().trim();</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        if (gidStr.isEmpty()) {</span>
+<span class="nc" id="L120">            Toast.makeText(this, &quot;Enter Group ID&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L121">            return;</span>
+        }
+
+<span class="nc" id="L124">        Map&lt;String, Object&gt; params = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L125">        params.put(&quot;user_id&quot;, (long) myUserId);</span>
+<span class="nc" id="L126">        params.put(&quot;group_id&quot;, Long.parseLong(gidStr));</span>
+<span class="nc" id="L127">        params.put(&quot;is_moderator&quot;, false);</span>
+
+<span class="nc" id="L129">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, BASE_URL + &quot;/join&quot;, new JSONObject(params),</span>
+<span class="nc" id="L130">                response -&gt; Toast.makeText(this, &quot;Join success!&quot;, Toast.LENGTH_SHORT).show(),</span>
+<span class="nc" id="L131">                error -&gt; Toast.makeText(this, &quot;Join failed&quot;, Toast.LENGTH_SHORT).show());</span>
+
+<span class="nc" id="L133">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L134">    }</span>
+
+    /**
+     * Checks whether a specific user belongs to the selected group by requesting
+     * the backend membership list for that group. If a matching user is found,
+     * membership information is displayed on the screen.
+     *
+     * @param userIdToFind the user ID to search for within the selected group
+     */
+    private void checkMembership(int userIdToFind) {
+<span class="nc" id="L144">        String gidStr = etGroupId.getText().toString().trim();</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        if (gidStr.isEmpty()) {</span>
+<span class="nc" id="L146">            Toast.makeText(this, &quot;Enter Group ID to check&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L147">            return;</span>
+        }
+<span class="nc" id="L149">        long targetGid = Long.parseLong(gidStr);</span>
+        // First try the authoritative /groups/{id} endpoint which typically returns
+        // a JSON object with members array or userIds list. If that fails, fall back
+        // to the legacy gm/glist endpoint.
+<span class="nc" id="L153">        String groupsUrl = GROUPS_BASE + &quot;/&quot; + targetGid;</span>
+
+<span class="nc" id="L155">        StringRequest groupReq = new StringRequest(Request.Method.GET, groupsUrl,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L158">                        JSONObject groupObj = new JSONObject(response);</span>
+
+                        // Try members array first
+<span class="nc bnc" id="L161" title="All 4 branches missed.">                        if (groupObj.has(&quot;members&quot;) &amp;&amp; !groupObj.isNull(&quot;members&quot;)) {</span>
+<span class="nc" id="L162">                            org.json.JSONArray members = groupObj.optJSONArray(&quot;members&quot;);</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                            if (members != null) {</span>
+<span class="nc" id="L164">                                boolean found = false;</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">                                for (int i = 0; i &lt; members.length(); i++) {</span>
+<span class="nc" id="L166">                                    JSONObject m = members.getJSONObject(i);</span>
+<span class="nc" id="L167">                                    long uid = m.optLong(&quot;userId&quot;, m.optLong(&quot;id&quot;, m.optLong(&quot;userid&quot;, -1)));</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                                    if (uid == userIdToFind) {</span>
+<span class="nc" id="L169">                                        String dName = m.optString(&quot;displayName&quot;, m.optString(&quot;name&quot;, &quot;N/A&quot;));</span>
+<span class="nc" id="L170">                                        tvMembershipInfo.setText(&quot;RECORD FOUND!\nUser ID: &quot; + uid + &quot;\nDisplay Name: &quot; + dName);</span>
+<span class="nc" id="L171">                                        tvMembershipInfo.setTextColor(0xFF7B6FFF);</span>
+<span class="nc" id="L172">                                        found = true;</span>
+<span class="nc" id="L173">                                        break;</span>
+                                    }
+                                }
+<span class="nc bnc" id="L176" title="All 2 branches missed.">                                if (!found) {</span>
+<span class="nc" id="L177">                                    tvMembershipInfo.setText(&quot;User &quot; + userIdToFind + &quot; is not in Group &quot; + targetGid);</span>
+<span class="nc" id="L178">                                    tvMembershipInfo.setTextColor(0xFFFF4B4B);</span>
+                                }
+<span class="nc" id="L180">                                return;</span>
+                            }
+                        }
+
+                        // Next try userIds array
+<span class="nc bnc" id="L185" title="All 4 branches missed.">                        if (groupObj.has(&quot;userIds&quot;) &amp;&amp; !groupObj.isNull(&quot;userIds&quot;)) {</span>
+<span class="nc" id="L186">                            org.json.JSONArray uids = groupObj.optJSONArray(&quot;userIds&quot;);</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                            if (uids != null) {</span>
+<span class="nc" id="L188">                                boolean found = false;</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                                for (int i = 0; i &lt; uids.length(); i++) {</span>
+<span class="nc" id="L190">                                    long uid = uids.optLong(i, -1);</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">                                    if (uid == userIdToFind) {</span>
+<span class="nc" id="L192">                                        tvMembershipInfo.setText(&quot;RECORD FOUND!\nUser ID: &quot; + uid);</span>
+<span class="nc" id="L193">                                        tvMembershipInfo.setTextColor(0xFF7B6FFF);</span>
+<span class="nc" id="L194">                                        found = true;</span>
+<span class="nc" id="L195">                                        break;</span>
+                                    }
+                                }
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                                if (!found) {</span>
+<span class="nc" id="L199">                                    tvMembershipInfo.setText(&quot;User &quot; + userIdToFind + &quot; is not in Group &quot; + targetGid);</span>
+<span class="nc" id="L200">                                    tvMembershipInfo.setTextColor(0xFFFF4B4B);</span>
+                                }
+<span class="nc" id="L202">                                return;</span>
+                            }
+                        }
+
+                        // If we couldn't find members inside the returned object, fall back
+<span class="nc" id="L207">                        fetchMembershipFromGmList(targetGid, userIdToFind);</span>
+<span class="nc" id="L208">                    } catch (JSONException e) {</span>
+                        // Parse error - fallback
+<span class="nc" id="L210">                        fetchMembershipFromGmList(targetGid, userIdToFind);</span>
+<span class="nc" id="L211">                    }</span>
+<span class="nc" id="L212">                },</span>
+                error -&gt; {
+                    // If /groups failed, fallback to legacy endpoint
+<span class="nc" id="L215">                    fetchMembershipFromGmList(targetGid, userIdToFind);</span>
+<span class="nc" id="L216">                });</span>
+
+<span class="nc" id="L218">        VolleySingleton.getInstance(this).addToRequestQueue(groupReq);</span>
+<span class="nc" id="L219">    }</span>
+
+    private void fetchMembershipFromGmList(long targetGid, int userIdToFind) {
+<span class="nc" id="L222">        String url = BASE_URL + &quot;/glist/&quot; + targetGid;</span>
+
+<span class="nc" id="L224">        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L227">                        boolean found = false;</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">                        for (int i = 0; i &lt; response.length(); i++) {</span>
+<span class="nc" id="L229">                            JSONObject obj = response.getJSONObject(i);</span>
+<span class="nc" id="L230">                            long uid = obj.optLong(&quot;userId&quot;, obj.optLong(&quot;userid&quot;, -1));</span>
+
+<span class="nc bnc" id="L232" title="All 2 branches missed.">                            if (uid == userIdToFind) {</span>
+<span class="nc" id="L233">                                String dName = obj.optString(&quot;displayName&quot;, obj.optString(&quot;displayname&quot;, &quot;N/A&quot;));</span>
+<span class="nc" id="L234">                                String gName = obj.optString(&quot;groupName&quot;, obj.optString(&quot;groupname&quot;, &quot;N/A&quot;));</span>
+<span class="nc" id="L235">                                long gid = obj.optLong(&quot;groupId&quot;, obj.optLong(&quot;groupid&quot;, targetGid));</span>
+
+<span class="nc" id="L237">                                tvMembershipInfo.setText(&quot;RECORD FOUND!\n&quot; +</span>
+                                        &quot;User ID: &quot; + uid + &quot;\n&quot; +
+                                        &quot;Display Name: &quot; + dName + &quot;\n&quot; +
+                                        &quot;Group Name: &quot; + gName + &quot;\n&quot; +
+                                        &quot;Group ID: &quot; + gid);
+                                
+<span class="nc" id="L243">                                tvMembershipInfo.setTextColor(0xFF7B6FFF);</span>
+<span class="nc" id="L244">                                found = true;</span>
+<span class="nc" id="L245">                                break;</span>
+                            }
+                        }
+<span class="nc bnc" id="L248" title="All 2 branches missed.">                        if (!found) {</span>
+<span class="nc" id="L249">                            tvMembershipInfo.setText(&quot;User &quot; + userIdToFind + &quot; is not in Group &quot; + targetGid);</span>
+<span class="nc" id="L250">                            tvMembershipInfo.setTextColor(0xFFFF4B4B);</span>
+                        }
+<span class="nc" id="L252">                    } catch (JSONException e) {</span>
+<span class="nc" id="L253">                        tvMembershipInfo.setText(&quot;Error parsing server data.&quot;);</span>
+<span class="nc" id="L254">                    }</span>
+<span class="nc" id="L255">                },</span>
+<span class="nc" id="L256">                error -&gt; tvMembershipInfo.setText(&quot;Group not found or No members.&quot;));</span>
+
+<span class="nc" id="L258">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L259">    }</span>
+
+    /**
+     * Updates the membership status of the selected membership record.
+     * The membership ID is read from the target ID input field and sent
+     * to the backend with the requested status value.
+     *
+     * @param newStatus the new status to assign, such as &quot;active&quot; or &quot;banned&quot;
+     */
+    private void updateStatus(String newStatus) {
+<span class="nc" id="L269">        String membershipId = etTargetUserId.getText().toString().trim();</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">        if (membershipId.isEmpty()) {</span>
+<span class="nc" id="L271">            Toast.makeText(this, &quot;Enter Membership ID in 'Target ID' field&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L272">            return;</span>
+        }
+
+<span class="nc" id="L275">        String url = BASE_URL + &quot;/memstat/&quot; + membershipId;</span>
+<span class="nc" id="L276">        Map&lt;String, String&gt; params = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L277">        params.put(&quot;status&quot;, newStatus);</span>
+
+<span class="nc" id="L279">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, url, new JSONObject(params),</span>
+<span class="nc" id="L280">                response -&gt; Toast.makeText(this, &quot;Status updated to &quot; + newStatus, Toast.LENGTH_SHORT).show(),</span>
+<span class="nc" id="L281">                error -&gt; Toast.makeText(this, &quot;Update failed. Check ID.&quot;, Toast.LENGTH_SHORT).show());</span>
+
+<span class="nc" id="L283">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L284">    }</span>
+
+    /**
+     * Toggles the moderator status of the selected membership record.
+     * The current moderator flag is flipped locally after a successful backend update.
+     */
+    private void toggleModerator() {
+<span class="nc" id="L291">        String membershipId = etTargetUserId.getText().toString().trim();</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">        if (membershipId.isEmpty()) {</span>
+<span class="nc" id="L293">            Toast.makeText(this, &quot;Enter Membership ID in 'Target ID' field&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L294">            return;</span>
+        }
+
+<span class="nc" id="L297">        String url = BASE_URL + &quot;/modstat/&quot; + membershipId;</span>
+<span class="nc" id="L298">        Map&lt;String, Boolean&gt; params = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">        params.put(&quot;is_moderator&quot;, !isCurrentMod); </span>
+
+<span class="nc" id="L301">        JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, url, new JSONObject(params),</span>
+                response -&gt; {
+<span class="nc bnc" id="L303" title="All 2 branches missed.">                    isCurrentMod = !isCurrentMod;</span>
+<span class="nc" id="L304">                    Toast.makeText(this, &quot;Moderator status toggled!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L305">                },</span>
+<span class="nc" id="L306">                error -&gt; Toast.makeText(this, &quot;Toggle failed&quot;, Toast.LENGTH_SHORT).show());</span>
+
+<span class="nc" id="L308">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L309">    }</span>
+
+    /**
+     * Sends a request for the current user to leave the specified group.
+     * If successful, a confirmation message is displayed and the membership
+     * information area is updated.
+     */
+    private void leaveGroup() {
+<span class="nc" id="L317">        String gidStr = etGroupId.getText().toString().trim();</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">        if (gidStr.isEmpty()) {</span>
+<span class="nc" id="L319">            Toast.makeText(this, &quot;Enter Group ID to leave&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L320">            return;</span>
+        }
+
+<span class="nc" id="L323">        String url = BASE_URL + &quot;/leave/&quot; + gidStr;</span>
+
+<span class="nc" id="L325">        StringRequest request = new StringRequest(Request.Method.DELETE, url,</span>
+                response -&gt; {
+<span class="nc" id="L327">                    Toast.makeText(this, &quot;Successfully left group&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L328">                    tvMembershipInfo.setText(&quot;Group left successfully.&quot;);</span>
+<span class="nc" id="L329">                },</span>
+<span class="nc" id="L330">                error -&gt; Toast.makeText(this, &quot;Failed to leave group&quot;, Toast.LENGTH_SHORT).show());</span>
+
+<span class="nc" id="L332">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L333">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

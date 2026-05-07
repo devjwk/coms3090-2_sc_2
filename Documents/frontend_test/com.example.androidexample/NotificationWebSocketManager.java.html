@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationWebSocketManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">NotificationWebSocketManager.java</span></div><h1>NotificationWebSocketManager.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import android.util.Log;
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+
+public class NotificationWebSocketManager {
+
+    private static NotificationWebSocketManager instance;
+    private NotificationSocketClient webSocketClient;
+    private NotificationWebSocketListener listener;
+<span class="fc" id="L15">    private static List&lt;NotificationItem&gt; notificationHistory = new ArrayList&lt;&gt;();</span>
+
+    private NotificationWebSocketManager() {}
+
+    public static synchronized NotificationWebSocketManager getInstance() {
+<span class="fc bfc" id="L20" title="All 2 branches covered.">        if (instance == null) {</span>
+<span class="fc" id="L21">            instance = new NotificationWebSocketManager();</span>
+        }
+<span class="fc" id="L23">        return instance;</span>
+    }
+
+    public static void addNotificationToHistory(String message) {
+<span class="fc" id="L27">        NotificationItem newItem = new NotificationItem(message);</span>
+<span class="fc" id="L28">        notificationHistory.add(0, newItem);</span>
+
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (notificationHistory.size() &gt; 20) {</span>
+<span class="nc" id="L31">            notificationHistory.remove(notificationHistory.size() - 1);</span>
+        }
+<span class="fc" id="L33">        Log.d(&quot;NotifyWS&quot;, &quot;History updated. Size: &quot; + notificationHistory.size());</span>
+<span class="fc" id="L34">    }</span>
+
+    public static List&lt;NotificationItem&gt; getNotificationHistory() {
+<span class="fc" id="L37">        return notificationHistory;</span>
+    }
+
+    public static void clearNotificationHistory() {
+<span class="fc" id="L41">        notificationHistory.clear();</span>
+<span class="fc" id="L42">    }</span>
+
+    public void setNotificationWebSocketListener(NotificationWebSocketListener listener) {
+<span class="fc" id="L45">        this.listener = listener;</span>
+<span class="fc" id="L46">    }</span>
+
+    public void removeNotificationWebSocketListener() {
+<span class="fc" id="L49">        this.listener = null;</span>
+<span class="fc" id="L50">    }</span>
+
+    public void connectWebSocket(String serverUrl) {
+<span class="fc" id="L53">        Log.d(&quot;NotifyWS&quot;, &quot;connectWebSocket called: &quot; + serverUrl);</span>
+
+<span class="pc bpc" id="L55" title="1 of 4 branches missed.">        if (webSocketClient != null &amp;&amp; webSocketClient.isOpen()) {</span>
+<span class="fc" id="L56">            Log.d(&quot;NotifyWS&quot;, &quot;Already connected, skipping new connection&quot;);</span>
+<span class="fc" id="L57">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L61">            URI serverUri = URI.create(serverUrl);</span>
+<span class="fc" id="L62">            webSocketClient = new NotificationSocketClient(serverUri);</span>
+<span class="fc" id="L63">            webSocketClient.connect();</span>
+<span class="nc" id="L64">        } catch (Exception e) {</span>
+<span class="nc" id="L65">            Log.e(&quot;NotifyWS&quot;, &quot;Connect error: &quot; + e.getMessage(), e);</span>
+<span class="fc" id="L66">        }</span>
+<span class="fc" id="L67">    }</span>
+
+    private class NotificationSocketClient extends WebSocketClient {
+<span class="fc" id="L70">        public NotificationSocketClient(URI serverUri) {</span>
+<span class="fc" id="L71">            super(serverUri);</span>
+<span class="fc" id="L72">        }</span>
+
+        @Override
+
+        public void onOpen(ServerHandshake handshakedata) {
+
+<span class="fc" id="L78">            Log.d(&quot;NotifyWS&quot;, &quot;Connected&quot;);</span>
+
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">            if (listener != null) {</span>
+
+<span class="fc" id="L82">                listener.onNotificationOpen(handshakedata);</span>
+
+            }
+
+<span class="fc" id="L86">        }</span>
+
+        @Override
+        public void onMessage(String message) {
+<span class="nc" id="L90">            Log.d(&quot;NotifyWS&quot;, &quot;Received: &quot; + message);</span>
+<span class="nc" id="L91">            addNotificationToHistory(message);</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            if (listener != null) {</span>
+<span class="nc" id="L93">                listener.onNotificationMessage(message);</span>
+            }
+<span class="nc" id="L95">        }</span>
+
+        @Override
+
+        public void onClose(int code, String reason, boolean remote) {
+
+<span class="nc" id="L101">            Log.d(&quot;NotifyWS&quot;, &quot;Closed: code=&quot; + code + &quot;, reason=&quot; + reason + &quot;, remote=&quot; + remote);</span>
+
+<span class="nc bnc" id="L103" title="All 2 branches missed.">            if (listener != null) {</span>
+
+<span class="nc" id="L105">                listener.onNotificationClose(code, reason, remote);</span>
+
+            }
+
+<span class="nc" id="L109">        }</span>
+
+        @Override
+
+        public void onError(Exception ex) {
+
+<span class="nc" id="L115">            Log.e(&quot;NotifyWS&quot;, &quot;Error: &quot; + ex.getMessage(), ex);</span>
+
+<span class="nc bnc" id="L117" title="All 2 branches missed.">            if (listener != null) {</span>
+
+<span class="nc" id="L119">                listener.onNotificationError(ex);</span>
+
+            }
+<span class="nc" id="L122">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

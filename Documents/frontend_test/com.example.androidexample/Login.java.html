@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Login.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">Login.java</span></div><h1>Login.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonObjectRequest;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L23">public class Login extends AppCompatActivity {</span>
+
+    private Button btnUpdateProfile, btnBack;
+    private TextView msgResponse;
+    private EditText etName, etBio;
+
+    private User user;
+    private int userId;
+
+    //private static final String EDIT_URL = &quot;http://10.0.2.2:3002/users/&quot;;
+    private static final String EDIT_URL   = &quot;http://coms-3090-015.class.las.iastate.edu:8080/users/edit/&quot;;
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L39">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L40">        setContentView(R.layout.activity_json_obj_req);</span>
+
+<span class="fc" id="L42">        userId = getIntent().getIntExtra(&quot;USER_ID&quot;, 1);</span>
+
+<span class="fc" id="L44">        btnUpdateProfile = findViewById(R.id.btnUpdateProfile);</span>
+<span class="fc" id="L45">        btnBack          = findViewById(R.id.btnBack);</span>
+<span class="fc" id="L46">        msgResponse      = findViewById(R.id.msgResponse);</span>
+<span class="fc" id="L47">        etName           = findViewById(R.id.etName);</span>
+<span class="fc" id="L48">        etBio            = findViewById(R.id.etBio);</span>
+
+<span class="fc" id="L50">        btnUpdateProfile.setEnabled(false);</span>
+<span class="fc" id="L51">        etName.setEnabled(false);</span>
+<span class="fc" id="L52">        etBio.setEnabled(false);</span>
+
+<span class="fc" id="L54">        String userJson = getIntent().getStringExtra(&quot;USER_JSON&quot;);</span>
+<span class="pc bpc" id="L55" title="1 of 4 branches missed.">        if (userJson != null &amp;&amp; !userJson.isEmpty()) {</span>
+            try {
+<span class="fc" id="L57">                JSONObject jo = new JSONObject(userJson);</span>
+<span class="fc" id="L58">                user = parseUserFromJson(jo);</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">                if (user != null) {</span>
+<span class="fc" id="L60">                    refreshUI();</span>
+<span class="fc" id="L61">                    etName.setText(user.getName());</span>
+<span class="fc" id="L62">                    etBio.setText(user.getBio());</span>
+<span class="fc" id="L63">                    etName.setEnabled(true);</span>
+<span class="fc" id="L64">                    etBio.setEnabled(true);</span>
+<span class="fc" id="L65">                    btnUpdateProfile.setEnabled(true);</span>
+                }
+<span class="pc" id="L67">            } catch (JSONException ignored) { }</span>
+        }
+
+<span class="fc" id="L70">        btnUpdateProfile.setOnClickListener(v -&gt; {</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            if (user != null) {</span>
+<span class="nc" id="L72">                updateUserProfile();</span>
+            } else {
+<span class="nc" id="L74">                Toast.makeText(this, &quot;Profile not loaded yet.&quot;, Toast.LENGTH_SHORT).show();</span>
+            }
+<span class="nc" id="L76">        });</span>
+
+<span class="fc" id="L78">        btnBack.setOnClickListener(v -&gt; finish());</span>
+<span class="fc" id="L79">    }</span>
+
+    private User parseUserFromJson(JSONObject response) throws JSONException {
+<span class="fc" id="L82">        int id = response.optInt(&quot;userId&quot;, response.optInt(&quot;user_id&quot;, 1));</span>
+<span class="pc bpc" id="L83" title="3 of 4 branches missed.">        if (id == 0 &amp;&amp; response.has(&quot;user_id&quot;)) {</span>
+            try {
+<span class="nc" id="L85">                id = Integer.parseInt(response.optString(&quot;user_id&quot;, &quot;1&quot;));</span>
+<span class="nc" id="L86">            } catch (NumberFormatException ignored) {</span>
+<span class="nc" id="L87">                id = 1;</span>
+<span class="nc" id="L88">            }</span>
+        }
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">        if (id == 0) id = 1;</span>
+<span class="fc" id="L91">        String name = response.optString(&quot;displayName&quot;, response.optString(&quot;name&quot;, &quot;&quot;));</span>
+<span class="pc bpc" id="L92" title="2 of 4 branches missed.">        if (name == null || &quot;null&quot;.equals(name)) name = &quot;&quot;;</span>
+<span class="fc" id="L93">        String createdAt = response.optString(&quot;createdTs&quot;, response.optString(&quot;createdAt&quot;, &quot;&quot;));</span>
+<span class="fc" id="L94">        boolean isActive = true;</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (response.has(&quot;isActive&quot;)) {</span>
+<span class="fc" id="L96">            Object a = response.opt(&quot;isActive&quot;);</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">            isActive = a instanceof Boolean ? (Boolean) a : &quot;true&quot;.equalsIgnoreCase(String.valueOf(a));</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">        } else if (response.has(&quot;active&quot;)) {</span>
+<span class="nc" id="L99">            Object a = response.opt(&quot;active&quot;);</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            isActive = a instanceof Boolean ? (Boolean) a : &quot;true&quot;.equalsIgnoreCase(String.valueOf(a));</span>
+        }
+<span class="fc" id="L102">        String major = response.optString(&quot;major&quot;, &quot;&quot;);</span>
+<span class="fc" id="L103">        int age = response.optInt(&quot;age&quot;, 0);</span>
+
+<span class="fc" id="L105">        List&lt;String&gt; hobbies = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L106" title="1 of 4 branches missed.">        if (response.has(&quot;hobbies&quot;) &amp;&amp; !response.isNull(&quot;hobbies&quot;)) {</span>
+<span class="fc" id="L107">            JSONArray arr = response.getJSONArray(&quot;hobbies&quot;);</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            for (int i = 0; i &lt; arr.length(); i++) hobbies.add(arr.optString(i, &quot;&quot;));</span>
+        }
+
+<span class="fc" id="L111">        return new User(</span>
+                id,
+                name,
+<span class="fc" id="L114">                response.optString(&quot;email&quot;, &quot;&quot;),</span>
+<span class="fc" id="L115">                response.optString(&quot;passwordHash&quot;, &quot;&quot;),</span>
+<span class="fc" id="L116">                response.optString(&quot;bio&quot;, &quot;&quot;),</span>
+                hobbies,
+<span class="fc" id="L118">                response.optString(&quot;role&quot;, &quot;&quot;),</span>
+<span class="fc" id="L119">                response.optDouble(&quot;latitude&quot;, 0.0),</span>
+<span class="fc" id="L120">                response.optDouble(&quot;longitude&quot;, 0.0),</span>
+                createdAt,
+                isActive,
+                major,
+<span class="fc" id="L124">                age</span>
+        );
+    }
+
+    private void updateUserProfile() {
+<span class="nc" id="L129">        String url = EDIT_URL + user.getUserId();</span>
+
+<span class="nc" id="L131">        String updatedBio = etBio.getText().toString().trim();</span>
+
+<span class="nc" id="L133">        JSONObject jsonBody = new JSONObject();</span>
+        try {
+<span class="nc" id="L135">            jsonBody.put(&quot;bio&quot;, updatedBio);</span>
+<span class="nc bnc" id="L136" title="All 4 branches missed.">            if (user.getAge() != null &amp;&amp; user.getAge() &gt; 0) {</span>
+<span class="nc" id="L137">                jsonBody.put(&quot;age&quot;, user.getAge());</span>
+            }
+<span class="nc" id="L139">        } catch (JSONException e) {</span>
+<span class="nc" id="L140">            e.printStackTrace();</span>
+<span class="nc" id="L141">            return;</span>
+<span class="nc" id="L142">        }</span>
+
+<span class="nc" id="L144">        JsonObjectRequest putRequest = new JsonObjectRequest(</span>
+                Request.Method.PUT,
+                url,
+                jsonBody,
+                response -&gt; {
+<span class="nc" id="L149">                    Log.d(&quot;PUT Response&quot;, response.toString());</span>
+<span class="nc" id="L150">                    user.setBio(updatedBio);</span>
+<span class="nc" id="L151">                    refreshUI();</span>
+<span class="nc" id="L152">                    Toast.makeText(this, &quot;Profile updated successfully!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L153">                },</span>
+                error -&gt; {
+<span class="nc" id="L155">                    Log.e(&quot;PUT Error&quot;, error.toString());</span>
+<span class="nc" id="L156">                    Toast.makeText(this, &quot;Failed to update profile.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L157">                }</span>
+        );
+
+<span class="nc" id="L160">        VolleySingleton.getInstance(this).addToRequestQueue(putRequest);</span>
+<span class="nc" id="L161">    }</span>
+
+    private void refreshUI() {
+<span class="fc" id="L164">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L165">        sb.append(&quot;Name: &quot;).append(user.getName()).append(&quot;\n\n&quot;);</span>
+<span class="fc" id="L166">        sb.append(&quot;Email: &quot;).append(user.getEmail()).append(&quot;\n\n&quot;);</span>
+<span class="fc" id="L167">        sb.append(&quot;Bio: &quot;).append(user.getBio()).append(&quot;\n\n&quot;);</span>
+<span class="fc" id="L168">        sb.append(&quot;Major: &quot;).append(user.getMajor()).append(&quot;\n\n&quot;);</span>
+<span class="fc" id="L169">        sb.append(&quot;Age: &quot;).append(user.getAge()).append(&quot;\n\n&quot;);</span>
+<span class="fc" id="L170">        sb.append(&quot;Created: &quot;).append(user.getCreatedAt()).append(&quot;\n\n&quot;);</span>
+<span class="fc" id="L171">        sb.append(&quot;Active: &quot;).append(user.isActive());</span>
+<span class="pc bpc" id="L172" title="1 of 4 branches missed.">        if (user.getHobbies() != null &amp;&amp; !user.getHobbies().isEmpty()) {</span>
+<span class="fc" id="L173">            sb.append(&quot;\n\nHobbies: &quot;).append(user.getHobbies().toString());</span>
+        }
+<span class="pc bpc" id="L175" title="1 of 4 branches missed.">        if (user.getRole() != null &amp;&amp; !user.getRole().isEmpty()) {</span>
+<span class="fc" id="L176">            sb.append(&quot;\n\nRole: &quot;).append(user.getRole());</span>
+        }
+<span class="fc" id="L178">        msgResponse.setText(sb.toString());</span>
+<span class="fc" id="L179">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

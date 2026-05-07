@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminReportActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">AdminReportActivity.java</span></div><h1>AdminReportActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.res.ColorStateList;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+// import android.widget.ScrollView;   // Removed unused import
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.StringRequest;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="nc" id="L27">public class AdminReportActivity extends AppCompatActivity {</span>
+
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+    private static final String TAG = &quot;AdminReportActivity&quot;;
+
+    private LinearLayout reportsContainer;
+    private TextView tvSummary;
+    private Button btnRefreshReports;
+    private Button btnBackReports;
+
+<span class="nc" id="L37">    private final List&lt;AdminReportItem&gt; reports = new ArrayList&lt;&gt;();</span>
+
+    private static class AdminReportItem {
+        int reportId;
+        int reporterId;
+        int reportedId;
+        String reporterName;
+        String reportedName;
+        String description;
+        String status;
+        String createdAt;
+
+        AdminReportItem(int reportId,
+                        int reporterId,
+                        int reportedId,
+                        String reporterName,
+                        String reportedName,
+                        String description,
+                        String status,
+<span class="nc" id="L56">                        String createdAt) {</span>
+<span class="nc" id="L57">            this.reportId = reportId;</span>
+<span class="nc" id="L58">            this.reporterId = reporterId;</span>
+<span class="nc" id="L59">            this.reportedId = reportedId;</span>
+<span class="nc" id="L60">            this.reporterName = reporterName;</span>
+<span class="nc" id="L61">            this.reportedName = reportedName;</span>
+<span class="nc" id="L62">            this.description = description;</span>
+<span class="nc" id="L63">            this.status = status;</span>
+<span class="nc" id="L64">            this.createdAt = createdAt;</span>
+<span class="nc" id="L65">        }</span>
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L70">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L71">        buildLayout();</span>
+<span class="nc" id="L72">        fetchReports();</span>
+<span class="nc" id="L73">    }</span>
+
+    private void buildLayout() {
+<span class="nc" id="L76">        setContentView(R.layout.activity_admin_report);</span>
+
+<span class="nc" id="L78">        reportsContainer = findViewById(R.id.reportsContainer);</span>
+<span class="nc" id="L79">        tvSummary = findViewById(R.id.tvReportSummary);</span>
+<span class="nc" id="L80">        btnRefreshReports = findViewById(R.id.btnRefreshReports);</span>
+<span class="nc" id="L81">        btnBackReports = findViewById(R.id.btnBackReports);</span>
+
+<span class="nc" id="L83">        btnRefreshReports.setOnClickListener(v -&gt; fetchReports());</span>
+<span class="nc" id="L84">        btnBackReports.setOnClickListener(v -&gt; finish());</span>
+<span class="nc" id="L85">    }</span>
+
+    private void fetchReports() {
+<span class="nc" id="L88">        String url = BASE_URL + &quot;/reports/all&quot;;</span>
+<span class="nc" id="L89">        Log.d(TAG, &quot;FETCH_REPORTS_URL: &quot; + url);</span>
+<span class="nc" id="L90">        tvSummary.setText(&quot;Loading reports...&quot;);</span>
+
+<span class="nc" id="L92">        JsonArrayRequest request = new JsonArrayRequest(</span>
+                Request.Method.GET,
+                url,
+                null,
+                response -&gt; {
+<span class="nc" id="L97">                    reports.clear();</span>
+                    try {
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                        for (int i = 0; i &lt; response.length(); i++) {</span>
+<span class="nc" id="L100">                            JSONObject obj = response.getJSONObject(i);</span>
+<span class="nc" id="L101">                            reports.add(parseReport(obj));</span>
+                        }
+<span class="nc" id="L103">                    } catch (JSONException e) {</span>
+<span class="nc" id="L104">                        Log.e(TAG, &quot;Failed to parse reports&quot;, e);</span>
+<span class="nc" id="L105">                        Toast.makeText(this, &quot;Failed to parse reports&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L106">                    }</span>
+<span class="nc" id="L107">                    renderReports();</span>
+<span class="nc" id="L108">                },</span>
+                error -&gt; {
+<span class="nc" id="L110">                    Log.e(TAG, &quot;Failed to fetch reports: &quot; + error);</span>
+<span class="nc" id="L111">                    tvSummary.setText(&quot;Failed to load reports.&quot;);</span>
+<span class="nc" id="L112">                    reportsContainer.removeAllViews();</span>
+<span class="nc" id="L113">                    Toast.makeText(this, &quot;Failed to load reports&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L114">                }</span>
+        );
+
+<span class="nc" id="L117">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L118">    }</span>
+
+    private AdminReportItem parseReport(JSONObject obj) {
+<span class="nc" id="L121">        int reportId = obj.optInt(&quot;reportId&quot;, obj.optInt(&quot;id&quot;, -1));</span>
+
+<span class="nc" id="L123">        JSONObject reporterObj = obj.optJSONObject(&quot;reporterId&quot;);</span>
+<span class="nc" id="L124">        JSONObject reportedObj = obj.optJSONObject(&quot;reportedId&quot;);</span>
+
+<span class="nc" id="L126">        int reporterId = extractUserId(reporterObj, obj.optInt(&quot;reporterId&quot;, -1));</span>
+<span class="nc" id="L127">        int reportedId = extractUserId(reportedObj, obj.optInt(&quot;reportedId&quot;, -1));</span>
+
+<span class="nc" id="L129">        String reporterName = extractDisplayName(reporterObj, &quot;Reporter #&quot; + reporterId);</span>
+<span class="nc" id="L130">        String reportedName = extractDisplayName(reportedObj, &quot;Reported User #&quot; + reportedId);</span>
+
+<span class="nc" id="L132">        String description = obj.optString(&quot;description&quot;, &quot;&quot;);</span>
+<span class="nc" id="L133">        String status = obj.optString(&quot;status&quot;, &quot;IN_REVIEW&quot;);</span>
+<span class="nc" id="L134">        String createdAt = obj.optString(&quot;createdAt&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L136">        Log.d(TAG, &quot;REPORT id=&quot; + reportId + &quot;, reporter=&quot; + reporterId + &quot;, reported=&quot; + reportedId + &quot;, status=&quot; + status);</span>
+
+<span class="nc" id="L138">        return new AdminReportItem(reportId, reporterId, reportedId, reporterName, reportedName, description, status, createdAt);</span>
+    }
+
+    private int extractUserId(JSONObject userObj, int fallback) {
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (userObj == null) {</span>
+<span class="nc" id="L143">            return fallback;</span>
+        }
+<span class="nc" id="L145">        return userObj.optInt(&quot;userId&quot;, userObj.optInt(&quot;id&quot;, fallback));</span>
+    }
+
+    private String extractDisplayName(JSONObject userObj, String fallback) {
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        if (userObj == null) {</span>
+<span class="nc" id="L150">            return fallback;</span>
+        }
+<span class="nc" id="L152">        String name = userObj.optString(&quot;displayName&quot;, userObj.optString(&quot;name&quot;, &quot;&quot;));</span>
+<span class="nc bnc" id="L153" title="All 4 branches missed.">        return name == null || name.trim().isEmpty() ? fallback : name;</span>
+    }
+
+    private void renderReports() {
+<span class="nc" id="L157">        reportsContainer.removeAllViews();</span>
+
+<span class="nc" id="L159">        int inReviewCount = 0;</span>
+<span class="nc" id="L160">        int approvedCount = 0;</span>
+<span class="nc" id="L161">        int declinedCount = 0;</span>
+
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        for (AdminReportItem report : reports) {</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            if (&quot;APPROVED&quot;.equalsIgnoreCase(report.status)) {</span>
+<span class="nc" id="L165">                approvedCount++;</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">            } else if (&quot;DECLINED&quot;.equalsIgnoreCase(report.status)) {</span>
+<span class="nc" id="L167">                declinedCount++;</span>
+            } else {
+<span class="nc" id="L169">                inReviewCount++;</span>
+            }
+<span class="nc" id="L171">        }</span>
+
+<span class="nc" id="L173">        tvSummary.setText(</span>
+<span class="nc" id="L174">                &quot;Total: &quot; + reports.size()</span>
+                        + &quot;   |   In Review: &quot; + inReviewCount
+                        + &quot;   |   Approved: &quot; + approvedCount
+                        + &quot;   |   Declined: &quot; + declinedCount
+        );
+
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        if (reports.isEmpty()) {</span>
+<span class="nc" id="L181">            TextView empty = new TextView(this);</span>
+<span class="nc" id="L182">            empty.setText(&quot;No reports found.&quot;);</span>
+<span class="nc" id="L183">            empty.setTextColor(color(&quot;#CCCCCC&quot;));</span>
+<span class="nc" id="L184">            empty.setTextSize(16);</span>
+<span class="nc" id="L185">            empty.setPadding(dp(8), dp(24), dp(8), dp(24));</span>
+<span class="nc" id="L186">            reportsContainer.addView(empty);</span>
+<span class="nc" id="L187">            return;</span>
+        }
+
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        for (AdminReportItem report : new ArrayList&lt;&gt;(reports)) {</span>
+<span class="nc" id="L191">            reportsContainer.addView(createReportCard(report));</span>
+<span class="nc" id="L192">        }</span>
+<span class="nc" id="L193">    }</span>
+
+    private View createReportCard(AdminReportItem report) {
+<span class="nc" id="L196">        LinearLayout card = new LinearLayout(this);</span>
+        // Report cards are still created dynamically because the number of reports comes from the backend.
+<span class="nc" id="L198">        card.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="nc" id="L199">        card.setBackgroundColor(color(&quot;#1E1E30&quot;));</span>
+<span class="nc" id="L200">        card.setPadding(dp(14), dp(14), dp(14), dp(14));</span>
+
+<span class="nc" id="L202">        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(</span>
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+<span class="nc" id="L206">        cardParams.setMargins(0, 0, 0, dp(12));</span>
+<span class="nc" id="L207">        card.setLayoutParams(cardParams);</span>
+
+<span class="nc" id="L209">        TextView header = new TextView(this);</span>
+<span class="nc" id="L210">        header.setText(&quot;Report #&quot; + report.reportId + &quot;   •   &quot; + safeStatus(report.status));</span>
+<span class="nc" id="L211">        header.setTextColor(getStatusColor(report.status));</span>
+<span class="nc" id="L212">        header.setTextSize(17);</span>
+<span class="nc" id="L213">        header.setTypeface(null, android.graphics.Typeface.BOLD);</span>
+<span class="nc" id="L214">        card.addView(header);</span>
+
+<span class="nc" id="L216">        TextView users = new TextView(this);</span>
+<span class="nc" id="L217">        users.setText(&quot;Reported: &quot; + report.reportedName + &quot; (#&quot; + report.reportedId + &quot;)\n&quot;</span>
+                + &quot;Reporter: &quot; + report.reporterName + &quot; (#&quot; + report.reporterId + &quot;)&quot;);
+<span class="nc" id="L219">        users.setTextColor(color(&quot;#CCCCCC&quot;));</span>
+<span class="nc" id="L220">        users.setTextSize(14);</span>
+<span class="nc" id="L221">        users.setPadding(0, dp(8), 0, 0);</span>
+<span class="nc" id="L222">        card.addView(users);</span>
+
+<span class="nc" id="L224">        TextView description = new TextView(this);</span>
+<span class="nc bnc" id="L225" title="All 4 branches missed.">        description.setText(report.description == null || report.description.trim().isEmpty()</span>
+<span class="nc" id="L226">                ? &quot;Description: none&quot;</span>
+<span class="nc" id="L227">                : &quot;Description: &quot; + report.description);</span>
+<span class="nc" id="L228">        description.setTextColor(color(&quot;#FFFFFF&quot;));</span>
+<span class="nc" id="L229">        description.setTextSize(14);</span>
+<span class="nc" id="L230">        description.setPadding(0, dp(10), 0, 0);</span>
+<span class="nc" id="L231">        card.addView(description);</span>
+
+<span class="nc" id="L233">        TextView created = new TextView(this);</span>
+<span class="nc bnc" id="L234" title="All 4 branches missed.">        created.setText(report.createdAt == null || report.createdAt.trim().isEmpty()</span>
+<span class="nc" id="L235">                ? &quot;Created: unknown&quot;</span>
+<span class="nc" id="L236">                : &quot;Created: &quot; + report.createdAt);</span>
+<span class="nc" id="L237">        created.setTextColor(color(&quot;#AAAAAA&quot;));</span>
+<span class="nc" id="L238">        created.setTextSize(12);</span>
+<span class="nc" id="L239">        created.setPadding(0, dp(8), 0, dp(8));</span>
+<span class="nc" id="L240">        card.addView(created);</span>
+
+<span class="nc" id="L242">        LinearLayout buttonRow = new LinearLayout(this);</span>
+<span class="nc" id="L243">        buttonRow.setOrientation(LinearLayout.HORIZONTAL);</span>
+<span class="nc" id="L244">        buttonRow.setGravity(Gravity.CENTER);</span>
+<span class="nc" id="L245">        buttonRow.setPadding(0, dp(8), 0, 0);</span>
+
+<span class="nc" id="L247">        Button reviewButton = makeStatusButton(&quot;In Review&quot;, &quot;#3C3C50&quot;);</span>
+<span class="nc" id="L248">        Button approveButton = makeStatusButton(&quot;Approve&quot;, &quot;#4CAF50&quot;);</span>
+<span class="nc" id="L249">        Button declineButton = makeStatusButton(&quot;Decline&quot;, &quot;#D9534F&quot;);</span>
+
+<span class="nc" id="L251">        buttonRow.addView(reviewButton, weightedButtonParams(0, dp(6)));</span>
+<span class="nc" id="L252">        buttonRow.addView(approveButton, weightedButtonParams(dp(6), dp(6)));</span>
+<span class="nc" id="L253">        buttonRow.addView(declineButton, weightedButtonParams(dp(6), 0));</span>
+<span class="nc" id="L254">        card.addView(buttonRow);</span>
+
+<span class="nc" id="L256">        reviewButton.setOnClickListener(v -&gt; updateReportStatus(report, &quot;IN_REVIEW&quot;));</span>
+<span class="nc" id="L257">        approveButton.setOnClickListener(v -&gt; updateReportStatus(report, &quot;APPROVED&quot;));</span>
+<span class="nc" id="L258">        declineButton.setOnClickListener(v -&gt; updateReportStatus(report, &quot;DECLINED&quot;));</span>
+
+<span class="nc" id="L260">        return card;</span>
+    }
+
+    private Button makeStatusButton(String text, String bgColor) {
+<span class="nc" id="L264">        Button button = new Button(this);</span>
+<span class="nc" id="L265">        button.setText(text);</span>
+<span class="nc" id="L266">        button.setAllCaps(false);</span>
+<span class="nc" id="L267">        button.setTextColor(color(&quot;#FFFFFF&quot;));</span>
+<span class="nc" id="L268">        button.setTextSize(12);</span>
+<span class="nc" id="L269">        button.setBackgroundTintList(ColorStateList.valueOf(color(bgColor)));</span>
+<span class="nc" id="L270">        return button;</span>
+    }
+
+    private LinearLayout.LayoutParams weightedButtonParams(int leftMargin, int rightMargin) {
+<span class="nc" id="L274">        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(</span>
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1
+        );
+<span class="nc" id="L279">        params.setMargins(leftMargin, 0, rightMargin, 0);</span>
+<span class="nc" id="L280">        return params;</span>
+    }
+
+    private void updateReportStatus(AdminReportItem report, String newStatus) {
+<span class="nc bnc" id="L284" title="All 2 branches missed.">        if (report.reportId &lt;= 0) {</span>
+<span class="nc" id="L285">            Toast.makeText(this, &quot;Invalid report ID&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L286">            return;</span>
+        }
+
+<span class="nc" id="L289">        String url = BASE_URL + &quot;/reports/&quot; + report.reportId;</span>
+<span class="nc" id="L290">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="nc" id="L292">            body.put(&quot;status&quot;, newStatus);</span>
+<span class="nc" id="L293">        } catch (JSONException e) {</span>
+<span class="nc" id="L294">            Toast.makeText(this, &quot;Failed to build request&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L295">            return;</span>
+<span class="nc" id="L296">        }</span>
+
+<span class="nc" id="L298">        Log.d(TAG, &quot;REPORT_STATUS_URL: &quot; + url);</span>
+<span class="nc" id="L299">        Log.d(TAG, &quot;REPORT_STATUS_BODY: &quot; + body);</span>
+
+<span class="nc" id="L301">        StringRequest request = new StringRequest(</span>
+                Request.Method.PUT,
+                url,
+                response -&gt; {
+<span class="nc" id="L305">                    Log.d(TAG, &quot;REPORT_STATUS_OK: &quot; + response);</span>
+<span class="nc" id="L306">                    report.status = newStatus;</span>
+<span class="nc" id="L307">                    renderReports();</span>
+<span class="nc" id="L308">                    Toast.makeText(this, &quot;Report marked &quot; + newStatus, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L309">                },</span>
+                error -&gt; {
+<span class="nc" id="L311">                    Log.e(TAG, &quot;Failed to update report status: &quot; + error);</span>
+<span class="nc" id="L312">                    String message = &quot;Failed to update report&quot;;</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">                    if (error.networkResponse != null) {</span>
+<span class="nc" id="L314">                        int statusCode = error.networkResponse.statusCode;</span>
+<span class="nc" id="L315">                        message += &quot; (HTTP &quot; + statusCode + &quot;)&quot;;</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">                        if (error.networkResponse.data != null) {</span>
+<span class="nc" id="L317">                            String responseBody = new String(error.networkResponse.data, StandardCharsets.UTF_8);</span>
+<span class="nc" id="L318">                            Log.e(TAG, &quot;REPORT_STATUS_ERROR_BODY: &quot; + responseBody);</span>
+<span class="nc bnc" id="L319" title="All 2 branches missed.">                            if (!responseBody.trim().isEmpty()) {</span>
+<span class="nc" id="L320">                                message += &quot;: &quot; + responseBody;</span>
+                            }
+                        }
+                    }
+<span class="nc" id="L324">                    Toast.makeText(this, message, Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L325">                }</span>
+<span class="nc" id="L326">        ) {</span>
+            @Override
+            public byte[] getBody() {
+<span class="nc" id="L329">                return body.toString().getBytes(StandardCharsets.UTF_8);</span>
+            }
+
+            @Override
+            public String getBodyContentType() {
+<span class="nc" id="L334">                return &quot;application/json; charset=utf-8&quot;;</span>
+            }
+        };
+
+<span class="nc" id="L338">        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);</span>
+<span class="nc" id="L339">    }</span>
+
+    private String safeStatus(String status) {
+<span class="nc bnc" id="L342" title="All 4 branches missed.">        return status == null || status.trim().isEmpty() ? &quot;IN_REVIEW&quot; : status;</span>
+    }
+
+    private int getStatusColor(String status) {
+<span class="nc bnc" id="L346" title="All 2 branches missed.">        if (&quot;APPROVED&quot;.equalsIgnoreCase(status)) {</span>
+<span class="nc" id="L347">            return color(&quot;#7BFFB2&quot;);</span>
+        }
+<span class="nc bnc" id="L349" title="All 2 branches missed.">        if (&quot;DECLINED&quot;.equalsIgnoreCase(status)) {</span>
+<span class="nc" id="L350">            return color(&quot;#FF6B6B&quot;);</span>
+        }
+<span class="nc" id="L352">        return color(&quot;#FFB86B&quot;);</span>
+    }
+
+    private int color(String hex) {
+<span class="nc" id="L356">        return android.graphics.Color.parseColor(hex);</span>
+    }
+
+    private int dp(int value) {
+<span class="nc" id="L360">        return (int) (value * getResources().getDisplayMetrics().density);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

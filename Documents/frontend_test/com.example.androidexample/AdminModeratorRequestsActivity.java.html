@@ -1,0 +1,590 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminModeratorRequestsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">AdminModeratorRequestsActivity.java</span></div><h1>AdminModeratorRequestsActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.android.volley.Request;
+import com.android.volley.AuthFailureError;
+import com.android.volley.toolbox.StringRequest;
+
+import org.json.JSONArray;
+import com.android.volley.toolbox.JsonObjectRequest;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+<span class="nc" id="L24">public class AdminModeratorRequestsActivity extends AppCompatActivity {</span>
+
+    private LinearLayout pendingRequestsContainer;
+    private Button btnBackAdminRequests;
+    private Button btnRefreshModeratorRequests;
+    private int adminUserId;
+<span class="nc" id="L30">    private final List&lt;PendingModeratorRequest&gt; pendingRequests = new ArrayList&lt;&gt;();</span>
+    private static final String ROOT_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+    private static final String REQUESTER_PARAM = &quot;requesterID&quot;;
+
+    private static class PendingModeratorRequest {
+        Long userId;
+        String email;
+        String displayName;
+        String status;
+
+<span class="nc" id="L40">        PendingModeratorRequest(Long userId, String email, String displayName, String status) {</span>
+<span class="nc" id="L41">            this.userId = userId;</span>
+<span class="nc" id="L42">            this.email = email;</span>
+<span class="nc" id="L43">            this.displayName = displayName;</span>
+<span class="nc" id="L44">            this.status = status;</span>
+<span class="nc" id="L45">        }</span>
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+<span class="nc" id="L51">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L52">        setContentView(R.layout.activity_admin_moderator_requests);</span>
+
+<span class="nc" id="L54">        adminUserId = getIntent().getIntExtra(&quot;ADMIN_USER_ID&quot;, -1);</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (adminUserId &lt;= 0) {</span>
+<span class="nc" id="L56">            Toast.makeText(</span>
+                    AdminModeratorRequestsActivity.this,
+                    &quot;Admin login required&quot;,
+                    Toast.LENGTH_SHORT
+<span class="nc" id="L60">            ).show();</span>
+<span class="nc" id="L61">            finish();</span>
+<span class="nc" id="L62">            return;</span>
+        }
+
+<span class="nc" id="L65">        pendingRequestsContainer = findViewById(R.id.pendingRequestsContainer);</span>
+<span class="nc" id="L66">        btnBackAdminRequests = findViewById(R.id.btnBackAdminRequests);</span>
+<span class="nc" id="L67">        btnRefreshModeratorRequests = findViewById(R.id.btnRefreshModeratorRequests);</span>
+<span class="nc" id="L68">        fetchPendingRequests();// Fetch pending moderator requests</span>
+
+
+<span class="nc" id="L71">        btnRefreshModeratorRequests.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L72">            fetchPendingRequests();</span>
+<span class="nc" id="L73">            Toast.makeText(</span>
+                    AdminModeratorRequestsActivity.this,
+                    &quot;Moderator requests refreshed&quot;,
+                    Toast.LENGTH_SHORT
+<span class="nc" id="L77">            ).show();</span>
+<span class="nc" id="L78">        });</span>
+
+<span class="nc" id="L80">        btnBackAdminRequests.setOnClickListener(v -&gt; finish());</span>
+<span class="nc" id="L81">    }</span>
+
+    private void renderPendingRequests() {
+<span class="nc" id="L84">        pendingRequestsContainer.removeAllViews();</span>
+
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (pendingRequests.isEmpty()) {</span>
+<span class="nc" id="L87">            TextView emptyText = new TextView(this);</span>
+<span class="nc" id="L88">            emptyText.setText(&quot;No pending moderator requests.&quot;);</span>
+<span class="nc" id="L89">            emptyText.setTextColor(android.graphics.Color.parseColor(&quot;#CCCCCC&quot;));</span>
+<span class="nc" id="L90">            emptyText.setTextSize(16);</span>
+<span class="nc" id="L91">            emptyText.setPadding(8, 24, 8, 24);</span>
+
+<span class="nc" id="L93">            pendingRequestsContainer.addView(emptyText);</span>
+<span class="nc" id="L94">            return;</span>
+        }
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        for (PendingModeratorRequest request : new ArrayList&lt;&gt;(pendingRequests)) {</span>
+<span class="nc" id="L98">            pendingRequestsContainer.addView(createRequestCard(request));</span>
+<span class="nc" id="L99">        }</span>
+<span class="nc" id="L100">    }</span>
+
+    private LinearLayout createRequestCard(PendingModeratorRequest request) {
+<span class="nc" id="L103">        LinearLayout card = new LinearLayout(this);</span>
+<span class="nc" id="L104">        card.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="nc" id="L105">        card.setBackgroundColor(android.graphics.Color.parseColor(&quot;#1E1E30&quot;));</span>
+<span class="nc" id="L106">        card.setPadding(28, 24, 28, 24);</span>
+
+<span class="nc" id="L108">        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(</span>
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+<span class="nc" id="L112">        cardParams.setMargins(0, 0, 0, 24);</span>
+<span class="nc" id="L113">        card.setLayoutParams(cardParams);</span>
+
+<span class="nc" id="L115">        TextView displayName = new TextView(this);</span>
+<span class="nc" id="L116">        displayName.setText(request.displayName);</span>
+<span class="nc" id="L117">        displayName.setTextColor(android.graphics.Color.WHITE);</span>
+<span class="nc" id="L118">        displayName.setTextSize(18);</span>
+<span class="nc" id="L119">        displayName.setTypeface(null, android.graphics.Typeface.BOLD);</span>
+<span class="nc" id="L120">        card.addView(displayName);</span>
+
+<span class="nc" id="L122">        TextView email = new TextView(this);</span>
+<span class="nc bnc" id="L123" title="All 4 branches missed.">        String emailText = request.email == null || request.email.trim().isEmpty()</span>
+<span class="nc" id="L124">                ? &quot;Email: loading...&quot;</span>
+<span class="nc" id="L125">                : &quot;Email: &quot; + request.email;</span>
+<span class="nc" id="L126">        email.setText(emailText);</span>
+<span class="nc" id="L127">        email.setTextColor(android.graphics.Color.parseColor(&quot;#CCCCCC&quot;));</span>
+<span class="nc" id="L128">        email.setTextSize(14);</span>
+<span class="nc" id="L129">        email.setPadding(0, 8, 0, 0);</span>
+<span class="nc" id="L130">        card.addView(email);</span>
+
+<span class="nc" id="L132">        TextView status = new TextView(this);</span>
+<span class="nc" id="L133">        status.setText(&quot;Status: &quot; + request.status);</span>
+<span class="nc" id="L134">        status.setTextColor(android.graphics.Color.parseColor(&quot;#AAAAAA&quot;));</span>
+<span class="nc" id="L135">        status.setTextSize(14);</span>
+<span class="nc" id="L136">        status.setPadding(0, 8, 0, 0);</span>
+<span class="nc" id="L137">        card.addView(status);</span>
+
+<span class="nc" id="L139">        TextView isuCheck = new TextView(this);</span>
+<span class="nc" id="L140">        isuCheck.setText(getIsuEmailMessage(request.email));</span>
+<span class="nc" id="L141">        isuCheck.setTextColor(getIsuEmailColor(request.email));</span>
+<span class="nc" id="L142">        isuCheck.setTextSize(14);</span>
+<span class="nc" id="L143">        isuCheck.setPadding(0, 8, 0, 0);</span>
+<span class="nc" id="L144">        card.addView(isuCheck);</span>
+
+<span class="nc" id="L146">        LinearLayout buttonRow = new LinearLayout(this);</span>
+<span class="nc" id="L147">        buttonRow.setOrientation(LinearLayout.HORIZONTAL);</span>
+<span class="nc" id="L148">        buttonRow.setPadding(0, 18, 0, 0);</span>
+
+<span class="nc" id="L150">        Button approveButton = new Button(this);</span>
+<span class="nc" id="L151">        approveButton.setText(&quot;Approve&quot;);</span>
+<span class="nc" id="L152">        approveButton.setTextColor(android.graphics.Color.WHITE);</span>
+<span class="nc" id="L153">        approveButton.setBackgroundTintList(</span>
+<span class="nc" id="L154">                android.content.res.ColorStateList.valueOf(</span>
+<span class="nc" id="L155">                        android.graphics.Color.parseColor(&quot;#7B6FFF&quot;)</span>
+                )
+        );
+
+<span class="nc" id="L159">        Button rejectButton = new Button(this);</span>
+<span class="nc" id="L160">        rejectButton.setText(&quot;Reject&quot;);</span>
+
+<span class="nc" id="L162">        rejectButton.setTextColor(android.graphics.Color.WHITE);</span>
+<span class="nc" id="L163">        rejectButton.setBackgroundTintList(</span>
+<span class="nc" id="L164">                android.content.res.ColorStateList.valueOf(</span>
+<span class="nc" id="L165">                        android.graphics.Color.parseColor(&quot;#444444&quot;)</span>
+                )
+        );
+
+<span class="nc" id="L169">        LinearLayout.LayoutParams approveParams = new LinearLayout.LayoutParams(</span>
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1
+        );
+<span class="nc" id="L174">        approveParams.setMargins(0, 0, 12, 0);</span>
+
+<span class="nc" id="L176">        LinearLayout.LayoutParams rejectParams = new LinearLayout.LayoutParams(</span>
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1
+        );
+
+<span class="nc" id="L182">        buttonRow.addView(approveButton, approveParams);</span>
+<span class="nc" id="L183">        buttonRow.addView(rejectButton, rejectParams);</span>
+
+<span class="nc" id="L185">        card.addView(buttonRow);</span>
+
+<span class="nc" id="L187">        approveButton.setOnClickListener(v -&gt; approveRequest(request));</span>
+<span class="nc" id="L188">        rejectButton.setOnClickListener(v -&gt; rejectRequest(request));</span>
+
+<span class="nc" id="L190">        return card;</span>
+    }
+    private void approveRequest(PendingModeratorRequest request) {
+<span class="nc" id="L193">        updateUserStatus(request, &quot;APPROVED&quot;, true);</span>
+<span class="nc" id="L194">    }</span>
+
+    private void handleSuccess(PendingModeratorRequest request) {
+<span class="nc" id="L197">        pendingRequests.remove(request);</span>
+<span class="nc" id="L198">        renderPendingRequests();</span>
+<span class="nc" id="L199">        Toast.makeText(this, &quot;approve success!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L200">    }</span>
+
+    private void rejectRequest(PendingModeratorRequest request) {
+<span class="nc" id="L203">        updateUserStatus(request, &quot;DECLINED&quot;, false);</span>
+<span class="nc" id="L204">    }</span>
+
+    private void updateUserStatus(PendingModeratorRequest request, String newStatus, boolean approving) {
+<span class="nc bnc" id="L207" title="All 6 branches missed.">        if (request == null || request.userId == null || request.userId &lt;= 0) {</span>
+<span class="nc" id="L208">            Toast.makeText(this, &quot;Invalid user selected&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L209">            return;</span>
+        }
+
+        // Brendan said the backend now verifies the requester with requesterID.
+        // The body stays minimal because this endpoint only updates status.
+<span class="nc" id="L214">        String url = ROOT_URL + &quot;/users/status_edit/&quot; + request.userId</span>
+                + &quot;?&quot; + REQUESTER_PARAM + &quot;=&quot; + adminUserId;
+
+<span class="nc" id="L217">        JSONObject jsonBody = new JSONObject();</span>
+        try {
+<span class="nc" id="L219">            jsonBody.put(&quot;status&quot;, newStatus);</span>
+<span class="nc" id="L220">        } catch (JSONException e) {</span>
+<span class="nc" id="L221">            Toast.makeText(this, &quot;Failed to build status request&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L222">            return;</span>
+<span class="nc" id="L223">        }</span>
+
+<span class="nc" id="L225">        android.util.Log.d(&quot;STATUS_UPDATE_URL&quot;, url);</span>
+<span class="nc" id="L226">        android.util.Log.d(&quot;STATUS_UPDATE_BODY&quot;, jsonBody.toString());</span>
+
+<span class="nc" id="L228">        StringRequest putRequest = new StringRequest(Request.Method.PUT, url,</span>
+                response -&gt; {
+<span class="nc bnc" id="L230" title="All 2 branches missed.">                    android.util.Log.d(&quot;STATUS_UPDATE_OK&quot;, response == null ? &quot;&quot; : response);</span>
+<span class="nc" id="L231">                    handleStatusUpdateSuccess(request, approving);</span>
+<span class="nc" id="L232">                },</span>
+                error -&gt; {
+<span class="nc bnc" id="L234" title="All 2 branches missed.">                    logVolleyError(approving ? &quot;APPROVE_ERROR&quot; : &quot;REJECT_ERROR&quot;, error);</span>
+<span class="nc" id="L235">                    retryUserStatusWithLowercaseRequester(request, newStatus, approving);</span>
+<span class="nc" id="L236">                }</span>
+<span class="nc" id="L237">        ) {</span>
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+<span class="nc" id="L240">                return jsonBody.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);</span>
+            }
+
+            @Override
+            public String getBodyContentType() {
+<span class="nc" id="L245">                return &quot;application/json; charset=utf-8&quot;;</span>
+            }
+        };
+
+<span class="nc" id="L249">        putRequest.setShouldCache(false);</span>
+<span class="nc" id="L250">        VolleySingleton.getInstance(this).addToRequestQueue(putRequest);</span>
+<span class="nc" id="L251">    }</span>
+
+    private void retryUserStatusWithLowercaseRequester(PendingModeratorRequest request,
+                                                       String newStatus,
+                                                       boolean approving) {
+        // Safety fallback in case the deployed backend accepts requesterId instead of requesterID.
+<span class="nc" id="L257">        String url = ROOT_URL + &quot;/users/status_edit/&quot; + request.userId</span>
+                + &quot;?requesterId=&quot; + adminUserId;
+
+<span class="nc" id="L260">        JSONObject jsonBody = new JSONObject();</span>
+        try {
+<span class="nc" id="L262">            jsonBody.put(&quot;status&quot;, newStatus);</span>
+<span class="nc" id="L263">        } catch (JSONException e) {</span>
+<span class="nc" id="L264">            Toast.makeText(this, &quot;Failed to build retry request&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L265">            return;</span>
+<span class="nc" id="L266">        }</span>
+
+<span class="nc" id="L268">        android.util.Log.d(&quot;STATUS_RETRY_URL&quot;, url);</span>
+<span class="nc" id="L269">        android.util.Log.d(&quot;STATUS_RETRY_BODY&quot;, jsonBody.toString());</span>
+
+<span class="nc" id="L271">        StringRequest retryRequest = new StringRequest(Request.Method.PUT, url,</span>
+                response -&gt; {
+<span class="nc bnc" id="L273" title="All 2 branches missed.">                    android.util.Log.d(&quot;STATUS_RETRY_OK&quot;, response == null ? &quot;&quot; : response);</span>
+<span class="nc" id="L274">                    handleStatusUpdateSuccess(request, approving);</span>
+<span class="nc" id="L275">                },</span>
+                error -&gt; {
+<span class="nc bnc" id="L277" title="All 2 branches missed.">                    logVolleyError(approving ? &quot;APPROVE_RETRY_ERROR&quot; : &quot;REJECT_RETRY_ERROR&quot;, error);</span>
+<span class="nc" id="L278">                    Toast.makeText(</span>
+                            this,
+<span class="nc bnc" id="L280" title="All 2 branches missed.">                            (approving ? &quot;approve&quot; : &quot;reject&quot;) + &quot; failed: backend rejected status update&quot;,</span>
+                            Toast.LENGTH_SHORT
+<span class="nc" id="L282">                    ).show();</span>
+<span class="nc" id="L283">                }</span>
+<span class="nc" id="L284">        ) {</span>
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+<span class="nc" id="L287">                return jsonBody.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);</span>
+            }
+
+            @Override
+            public String getBodyContentType() {
+<span class="nc" id="L292">                return &quot;application/json; charset=utf-8&quot;;</span>
+            }
+        };
+
+<span class="nc" id="L296">        retryRequest.setShouldCache(false);</span>
+<span class="nc" id="L297">        VolleySingleton.getInstance(this).addToRequestQueue(retryRequest);</span>
+<span class="nc" id="L298">    }</span>
+
+    private void handleStatusUpdateSuccess(PendingModeratorRequest request, boolean approving) {
+<span class="nc" id="L301">        pendingRequests.remove(request);</span>
+<span class="nc" id="L302">        renderPendingRequests();</span>
+<span class="nc" id="L303">        Toast.makeText(</span>
+                this,
+<span class="nc bnc" id="L305" title="All 2 branches missed.">                approving ? &quot;approve success!&quot; : &quot;reject success!&quot;,</span>
+                Toast.LENGTH_SHORT
+<span class="nc" id="L307">        ).show();</span>
+<span class="nc" id="L308">    }</span>
+
+    private void logVolleyError(String tag, com.android.volley.VolleyError error) {
+<span class="nc bnc" id="L311" title="All 2 branches missed.">        if (error == null) {</span>
+<span class="nc" id="L312">            android.util.Log.e(tag, &quot;Volley error is null&quot;);</span>
+<span class="nc" id="L313">            return;</span>
+        }
+
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        if (error.networkResponse != null) {</span>
+<span class="nc" id="L317">            android.util.Log.e(tag, &quot;Status: &quot; + error.networkResponse.statusCode);</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">            if (error.networkResponse.data != null) {</span>
+<span class="nc" id="L319">                android.util.Log.e(tag, &quot;Body: &quot; + new String(error.networkResponse.data));</span>
+            }
+        } else {
+<span class="nc" id="L322">            android.util.Log.e(tag, &quot;No network response: &quot; + error.toString());</span>
+        }
+<span class="nc" id="L324">    }</span>
+
+
+    private boolean isValidIsuEmail(String email) {
+<span class="nc bnc" id="L328" title="All 4 branches missed.">        return email != null &amp;&amp; email.toLowerCase().endsWith(&quot;@iastate.edu&quot;);</span>
+    }
+
+    private String getIsuEmailMessage(String email) {
+<span class="nc bnc" id="L332" title="All 4 branches missed.">        if (email == null || email.trim().isEmpty()) {</span>
+<span class="nc" id="L333">            return &quot;Email loading...&quot;;</span>
+        }
+
+<span class="nc bnc" id="L336" title="All 2 branches missed.">        if (isValidIsuEmail(email)) {</span>
+<span class="nc" id="L337">            return &quot;ISU email verified&quot;;</span>
+        }
+
+<span class="nc" id="L340">        return &quot;Warning: Non-ISU email&quot;;</span>
+    }
+
+    private int getIsuEmailColor(String email) {
+<span class="nc bnc" id="L344" title="All 4 branches missed.">        if (email == null || email.trim().isEmpty()) {</span>
+<span class="nc" id="L345">            return android.graphics.Color.parseColor(&quot;#AAAAAA&quot;);</span>
+        }
+
+<span class="nc bnc" id="L348" title="All 2 branches missed.">        if (isValidIsuEmail(email)) {</span>
+<span class="nc" id="L349">            return android.graphics.Color.parseColor(&quot;#7BFFB2&quot;);</span>
+        }
+
+<span class="nc" id="L352">        return android.graphics.Color.parseColor(&quot;#FFB86B&quot;);</span>
+    }
+
+    private void fetchPendingRequests() {
+<span class="nc" id="L356">        String primaryUrl = ROOT_URL + &quot;/users/status/NEED_APPROVAL&quot;</span>
+                + &quot;?&quot; + REQUESTER_PARAM + &quot;=&quot; + adminUserId;
+
+<span class="nc" id="L359">        requestPendingUsersFromUrl(primaryUrl, true);</span>
+<span class="nc" id="L360">    }</span>
+
+    private void requestPendingUsersFromUrl(String url, boolean allowFallback) {
+<span class="nc" id="L363">        android.util.Log.d(&quot;FETCH_PENDING_URL&quot;, url);</span>
+
+<span class="nc" id="L365">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+<span class="nc" id="L367">                    android.util.Log.d(&quot;FETCH_PENDING_RAW&quot;, response);</span>
+<span class="nc" id="L368">                    loadPendingRequestsFromResponse(response);</span>
+<span class="nc" id="L369">                },</span>
+                error -&gt; {
+<span class="nc bnc" id="L371" title="All 2 branches missed.">                    String statusCode = error.networkResponse != null</span>
+<span class="nc" id="L372">                            ? String.valueOf(error.networkResponse.statusCode)</span>
+<span class="nc" id="L373">                            : &quot;no response&quot;;</span>
+
+<span class="nc" id="L375">                    android.util.Log.e(&quot;FETCH_PENDING_ERROR&quot;, &quot;URL: &quot; + url);</span>
+<span class="nc" id="L376">                    android.util.Log.e(&quot;FETCH_PENDING_ERROR&quot;, &quot;Status: &quot; + statusCode);</span>
+
+<span class="nc bnc" id="L378" title="All 4 branches missed.">                    if (error.networkResponse != null &amp;&amp; error.networkResponse.data != null) {</span>
+<span class="nc" id="L379">                        android.util.Log.e(&quot;FETCH_PENDING_ERROR&quot;,</span>
+                                &quot;Body: &quot; + new String(error.networkResponse.data));
+                    }
+
+<span class="nc bnc" id="L383" title="All 2 branches missed.">                    if (allowFallback) {</span>
+                        // Fallback to the compact all-users endpoint if the status endpoint fails.
+<span class="nc" id="L385">                        String fallbackUrl = ROOT_URL + &quot;/users/all&quot;</span>
+                                + &quot;?&quot; + REQUESTER_PARAM + &quot;=&quot; + adminUserId;
+<span class="nc" id="L387">                        requestPendingUsersFromUrl(fallbackUrl, false);</span>
+<span class="nc" id="L388">                        return;</span>
+                    }
+
+<span class="nc" id="L391">                    Toast.makeText(this, &quot;Error fetching pending requests&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L392">                    pendingRequests.clear();</span>
+<span class="nc" id="L393">                    renderPendingRequests();</span>
+<span class="nc" id="L394">                });</span>
+
+<span class="nc" id="L396">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L397">    }</span>
+
+    private void loadPendingRequestsFromResponse(String response) {
+<span class="nc" id="L400">        pendingRequests.clear();</span>
+
+        try {
+<span class="nc" id="L403">            JSONArray users = extractUsersArray(response);</span>
+
+<span class="nc bnc" id="L405" title="All 2 branches missed.">            for (int i = 0; i &lt; users.length(); i++) {</span>
+<span class="nc" id="L406">                JSONObject rawUser = users.optJSONObject(i);</span>
+<span class="nc bnc" id="L407" title="All 2 branches missed.">                if (rawUser == null) {</span>
+<span class="nc" id="L408">                    continue;</span>
+                }
+
+<span class="nc" id="L411">                JSONObject user = unwrapUserObject(rawUser);</span>
+
+<span class="nc" id="L413">                String status = getStringAny(user, rawUser,</span>
+                        &quot;status&quot;, &quot;userStatus&quot;, &quot;UserStatus&quot;, &quot;user_status&quot;);
+
+<span class="nc bnc" id="L416" title="All 2 branches missed.">                if (!&quot;NEED_APPROVAL&quot;.equalsIgnoreCase(status)) {</span>
+<span class="nc" id="L417">                    continue;</span>
+                }
+
+<span class="nc" id="L420">                long userId = getLongAny(user, rawUser,</span>
+                        &quot;userId&quot;, &quot;userID&quot;, &quot;user_id&quot;, &quot;id&quot;);
+
+<span class="nc" id="L423">                String email = getStringAny(user, rawUser,</span>
+                        &quot;email&quot;, &quot;Email&quot;, &quot;userEmail&quot;, &quot;user_email&quot;);
+
+<span class="nc" id="L426">                String displayName = getStringAny(user, rawUser,</span>
+                        &quot;displayName&quot;, &quot;display_name&quot;, &quot;name&quot;, &quot;username&quot;, &quot;userName&quot;, &quot;user_name&quot;);
+
+<span class="nc bnc" id="L429" title="All 2 branches missed.">                if (displayName.isEmpty()) {</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">                    displayName = email.isEmpty() ? &quot;Unknown User&quot; : email;</span>
+                }
+
+<span class="nc" id="L433">                android.util.Log.d(&quot;FETCH_PENDING_USER&quot;,</span>
+                        &quot;id=&quot; + userId + &quot;, email=&quot; + email + &quot;, name=&quot; + displayName + &quot;, status=&quot; + status);
+
+<span class="nc" id="L436">                PendingModeratorRequest pendingRequest = new PendingModeratorRequest(</span>
+<span class="nc" id="L437">                        userId,</span>
+                        email,
+                        displayName,
+                        status
+                );
+<span class="nc" id="L442">                pendingRequests.add(pendingRequest);</span>
+
+<span class="nc bnc" id="L444" title="All 4 branches missed.">                if (userId &gt; 0 &amp;&amp; email.isEmpty()) {</span>
+<span class="nc" id="L445">                    fetchUserEmailForPendingRequest(pendingRequest);</span>
+                }
+            }
+
+<span class="nc" id="L449">        } catch (Exception e) {</span>
+<span class="nc" id="L450">            android.util.Log.e(&quot;FETCH_PENDING_ERROR&quot;, &quot;Parse error: &quot; + e.getMessage());</span>
+<span class="nc" id="L451">            android.util.Log.e(&quot;FETCH_PENDING_ERROR&quot;, &quot;Raw body: &quot; + response);</span>
+<span class="nc" id="L452">            Toast.makeText(this, &quot;Error parsing pending users&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L453">        }</span>
+
+<span class="nc" id="L455">        renderPendingRequests();</span>
+<span class="nc" id="L456">    }</span>
+
+    private void fetchUserEmailForPendingRequest(PendingModeratorRequest pendingRequest) {
+<span class="nc" id="L459">        String url = ROOT_URL + &quot;/users/&quot; + pendingRequest.userId;</span>
+<span class="nc" id="L460">        android.util.Log.d(&quot;FETCH_USER_DETAIL_URL&quot;, url);</span>
+
+<span class="nc" id="L462">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+<span class="nc" id="L464">                    android.util.Log.d(&quot;FETCH_USER_DETAIL_RAW&quot;, response);</span>
+                    try {
+<span class="nc" id="L466">                        JSONObject raw = new JSONObject(response);</span>
+<span class="nc" id="L467">                        JSONObject user = unwrapUserObject(raw);</span>
+
+<span class="nc" id="L469">                        String email = getStringAny(user, raw,</span>
+                                &quot;email&quot;, &quot;Email&quot;, &quot;userEmail&quot;, &quot;user_email&quot;);
+<span class="nc" id="L471">                        String displayName = getStringAny(user, raw,</span>
+                                &quot;displayName&quot;, &quot;display_name&quot;, &quot;name&quot;, &quot;username&quot;, &quot;userName&quot;, &quot;user_name&quot;);
+
+<span class="nc bnc" id="L474" title="All 2 branches missed.">                        if (!email.isEmpty()) {</span>
+<span class="nc" id="L475">                            pendingRequest.email = email;</span>
+                        }
+<span class="nc bnc" id="L477" title="All 2 branches missed.">                        if (!displayName.isEmpty()) {</span>
+<span class="nc" id="L478">                            pendingRequest.displayName = displayName;</span>
+                        }
+
+<span class="nc" id="L481">                        renderPendingRequests();</span>
+<span class="nc" id="L482">                    } catch (Exception e) {</span>
+<span class="nc" id="L483">                        android.util.Log.e(&quot;FETCH_USER_DETAIL_ERROR&quot;, &quot;Parse error: &quot; + e.getMessage());</span>
+<span class="nc" id="L484">                    }</span>
+<span class="nc" id="L485">                },</span>
+                error -&gt; {
+<span class="nc bnc" id="L487" title="All 2 branches missed.">                    String statusCode = error.networkResponse != null</span>
+<span class="nc" id="L488">                            ? String.valueOf(error.networkResponse.statusCode)</span>
+<span class="nc" id="L489">                            : &quot;no response&quot;;</span>
+<span class="nc" id="L490">                    android.util.Log.e(&quot;FETCH_USER_DETAIL_ERROR&quot;,</span>
+                            &quot;Could not load user &quot; + pendingRequest.userId + &quot; status=&quot; + statusCode);
+<span class="nc" id="L492">                }</span>
+        );
+
+<span class="nc" id="L495">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L496">    }</span>
+    private JSONArray extractUsersArray(String response) throws JSONException {
+<span class="nc bnc" id="L498" title="All 4 branches missed.">        if (response == null || response.trim().isEmpty()) {</span>
+<span class="nc" id="L499">            return new JSONArray();</span>
+        }
+
+<span class="nc" id="L502">        String trimmed = response.trim();</span>
+
+<span class="nc bnc" id="L504" title="All 2 branches missed.">        if (trimmed.startsWith(&quot;[&quot;)) {</span>
+<span class="nc" id="L505">            return new JSONArray(trimmed);</span>
+        }
+
+<span class="nc" id="L508">        JSONObject object = new JSONObject(trimmed);</span>
+
+<span class="nc" id="L510">        String[] possibleArrayKeys = new String[]{</span>
+                &quot;users&quot;, &quot;data&quot;, &quot;results&quot;, &quot;items&quot;, &quot;content&quot;
+        };
+
+<span class="nc bnc" id="L514" title="All 2 branches missed.">        for (String key : possibleArrayKeys) {</span>
+<span class="nc" id="L515">            JSONArray arr = object.optJSONArray(key);</span>
+<span class="nc bnc" id="L516" title="All 2 branches missed.">            if (arr != null) {</span>
+<span class="nc" id="L517">                return arr;</span>
+            }
+        }
+
+<span class="nc" id="L521">        JSONArray single = new JSONArray();</span>
+<span class="nc" id="L522">        single.put(object);</span>
+<span class="nc" id="L523">        return single;</span>
+    }
+
+    private JSONObject unwrapUserObject(JSONObject object) {
+<span class="nc bnc" id="L527" title="All 2 branches missed.">        if (object == null) {</span>
+<span class="nc" id="L528">            return new JSONObject();</span>
+        }
+
+<span class="nc" id="L531">        JSONObject nestedUser = object.optJSONObject(&quot;user&quot;);</span>
+<span class="nc bnc" id="L532" title="All 2 branches missed.">        if (nestedUser != null) {</span>
+<span class="nc" id="L533">            return nestedUser;</span>
+        }
+
+<span class="nc" id="L536">        JSONObject nestedAccount = object.optJSONObject(&quot;account&quot;);</span>
+<span class="nc bnc" id="L537" title="All 2 branches missed.">        if (nestedAccount != null) {</span>
+<span class="nc" id="L538">            return nestedAccount;</span>
+        }
+
+<span class="nc" id="L541">        JSONObject nestedUserInfo = object.optJSONObject(&quot;userInfo&quot;);</span>
+<span class="nc bnc" id="L542" title="All 2 branches missed.">        if (nestedUserInfo != null) {</span>
+<span class="nc" id="L543">            return nestedUserInfo;</span>
+        }
+
+<span class="nc" id="L546">        JSONObject nestedProfile = object.optJSONObject(&quot;profile&quot;);</span>
+<span class="nc bnc" id="L547" title="All 2 branches missed.">        if (nestedProfile != null) {</span>
+<span class="nc" id="L548">            return nestedProfile;</span>
+        }
+
+<span class="nc" id="L551">        return object;</span>
+    }
+
+    private String getStringAny(JSONObject primary, JSONObject fallback, String... keys) {
+<span class="nc bnc" id="L555" title="All 2 branches missed.">        for (String key : keys) {</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">            String value = primary != null ? primary.optString(key, &quot;&quot;).trim() : &quot;&quot;;</span>
+<span class="nc bnc" id="L557" title="All 4 branches missed.">            if (!value.isEmpty() &amp;&amp; !&quot;null&quot;.equalsIgnoreCase(value)) {</span>
+<span class="nc" id="L558">                return value;</span>
+            }
+        }
+
+<span class="nc bnc" id="L562" title="All 2 branches missed.">        for (String key : keys) {</span>
+<span class="nc bnc" id="L563" title="All 2 branches missed.">            String value = fallback != null ? fallback.optString(key, &quot;&quot;).trim() : &quot;&quot;;</span>
+<span class="nc bnc" id="L564" title="All 4 branches missed.">            if (!value.isEmpty() &amp;&amp; !&quot;null&quot;.equalsIgnoreCase(value)) {</span>
+<span class="nc" id="L565">                return value;</span>
+            }
+        }
+
+<span class="nc" id="L569">        return &quot;&quot;;</span>
+    }
+
+    private long getLongAny(JSONObject primary, JSONObject fallback, String... keys) {
+<span class="nc bnc" id="L573" title="All 2 branches missed.">        for (String key : keys) {</span>
+<span class="nc bnc" id="L574" title="All 2 branches missed.">            long value = primary != null ? primary.optLong(key, -1) : -1;</span>
+<span class="nc bnc" id="L575" title="All 2 branches missed.">            if (value &gt; 0) {</span>
+<span class="nc" id="L576">                return value;</span>
+            }
+        }
+
+<span class="nc bnc" id="L580" title="All 2 branches missed.">        for (String key : keys) {</span>
+<span class="nc bnc" id="L581" title="All 2 branches missed.">            long value = fallback != null ? fallback.optLong(key, -1) : -1;</span>
+<span class="nc bnc" id="L582" title="All 2 branches missed.">            if (value &gt; 0) {</span>
+<span class="nc" id="L583">                return value;</span>
+            }
+        }
+
+<span class="nc" id="L587">        return -1;</span>
+    }
+    }
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

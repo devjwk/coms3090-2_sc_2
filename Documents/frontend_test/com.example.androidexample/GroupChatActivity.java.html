@@ -1,0 +1,1340 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupChatActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">GroupChatActivity.java</span></div><h1>GroupChatActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.PopupMenu;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+
+import org.java_websocket.handshake.ServerHandshake;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+<span class="fc" id="L35">public class GroupChatActivity extends AppCompatActivity implements WebSocketEventListener {</span>
+
+    private static final String TAG = &quot;GroupChatActivity&quot;;
+    private static final String PREFS_NAME = &quot;GroupChatPrefs&quot;;
+
+    private Button sendBtn, backBtn, btnManageGroupChat, btnViewEvents, btnViewAnnouncements;
+    private EditText msgEtx;
+    private RecyclerView recyclerChat;
+    private TextView tvGroupName, tvMemberCount;
+    private LinearLayout layoutPinnedAnnouncement;
+    private TextView tvPinnedAnnouncement;
+
+    private ChatAdapter chatAdapter;
+<span class="fc" id="L48">    private final List&lt;ChatMessage&gt; messageList = new ArrayList&lt;&gt;();</span>
+    private ModeratorRepository moderatorRepository;
+
+    // Maps senderId -&gt; display name for group members
+<span class="fc" id="L52">    private final Map&lt;Integer, String&gt; memberNames = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L53">    private final List&lt;Integer&gt; memberUserIds = new ArrayList&lt;&gt;();</span>
+
+    private int currentUserId;
+    private int groupId;
+<span class="fc" id="L57">    private int moderatorId = -1;</span>
+<span class="fc" id="L58">    private boolean isModeratorView = false;</span>
+<span class="fc" id="L59">    private int conversationId = -1;</span>
+    private String groupName;
+<span class="fc" id="L61">    private String lastSentMessage = null;</span>
+<span class="fc" id="L62">    private boolean canModerateMessages = false;</span>
+
+    private static final String WS_BASE = &quot;ws://coms-3090-015.class.las.iastate.edu:8080/chat/&quot;;
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L69">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L70">        setContentView(R.layout.activity_group_chat);</span>
+
+<span class="fc" id="L72">        currentUserId = getIntent().getIntExtra(&quot;USER_ID&quot;, -1);</span>
+<span class="fc" id="L73">        groupId       = getIntent().getIntExtra(&quot;GROUP_ID&quot;, -1);</span>
+<span class="fc" id="L74">        groupName     = getIntent().getStringExtra(&quot;GROUP_NAME&quot;);</span>
+<span class="fc" id="L75">        moderatorId   = getIntent().getIntExtra(&quot;MODERATOR_ID&quot;, -1);</span>
+<span class="fc" id="L76">        isModeratorView = getIntent().getBooleanExtra(&quot;IS_MODERATOR&quot;, false);</span>
+
+<span class="fc" id="L78">        sendBtn       = findViewById(R.id.sendBtn);</span>
+<span class="fc" id="L79">        backBtn       = findViewById(R.id.backBtn);</span>
+<span class="fc" id="L80">        btnManageGroupChat = findViewById(R.id.btnManageGroupChat);</span>
+<span class="fc" id="L81">        btnViewEvents = findViewById(R.id.btnViewEvents);</span>
+<span class="fc" id="L82">        btnViewAnnouncements = findViewById(R.id.btnViewAnnouncements);</span>
+<span class="fc" id="L83">        msgEtx        = findViewById(R.id.msgEdt);</span>
+<span class="fc" id="L84">        recyclerChat  = findViewById(R.id.recyclerChat);</span>
+<span class="fc" id="L85">        tvGroupName   = findViewById(R.id.tvGroupName);</span>
+<span class="fc" id="L86">        tvMemberCount = findViewById(R.id.tvMemberCount);</span>
+<span class="fc" id="L87">        layoutPinnedAnnouncement = findViewById(R.id.layoutPinnedAnnouncement);</span>
+<span class="fc" id="L88">        tvPinnedAnnouncement = findViewById(R.id.tvPinnedAnnouncement);</span>
+
+<span class="fc" id="L90">        moderatorRepository = new ModeratorRepository();</span>
+
+        // If USER_ID was not passed for a normal user flow, fall back to the WebSocket manager's
+        // current identity instead of hardcoding a user id. That keeps sent/received alignment
+        // tied to the real logged-in user.
+<span class="pc bpc" id="L95" title="2 of 4 branches missed.">        if (!isModeratorView &amp;&amp; currentUserId &lt;= 0) {</span>
+<span class="nc" id="L96">            int wsUserId = WebSocketClientManager.getInstance().getCurrentUserId();</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">            if (wsUserId &gt; 0) {</span>
+<span class="nc" id="L98">                currentUserId = wsUserId;</span>
+<span class="nc" id="L99">                Log.d(TAG, &quot;Recovered currentUserId from WebSocket manager: &quot; + currentUserId);</span>
+            }
+        }
+
+<span class="fc" id="L103">        ModeratorSessionManager moderatorSessionManager = new ModeratorSessionManager(this);</span>
+<span class="fc" id="L104">        ModeratorAccount moderatorAccount = moderatorSessionManager.getSession();</span>
+<span class="pc bpc" id="L105" title="1 of 4 branches missed.">        if (moderatorId &lt;= 0 &amp;&amp; moderatorAccount != null) {</span>
+<span class="nc" id="L106">            moderatorId = moderatorAccount.getModeratorId();</span>
+        }
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        boolean hasAssignedGroupsPayload = moderatorAccount != null</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                &amp;&amp; moderatorAccount.getAssignedGroups() != null</span>
+<span class="pc bnc" id="L110" title="All 2 branches missed.">                &amp;&amp; !moderatorAccount.getAssignedGroups().isEmpty();</span>
+<span class="pc bpc" id="L111" title="3 of 4 branches missed.">        boolean canManageThisGroup = !hasAssignedGroupsPayload</span>
+<span class="pc bnc" id="L112" title="All 2 branches missed.">                || (moderatorAccount != null &amp;&amp; moderatorAccount.getAssignedGroups().contains(groupId));</span>
+        // IMPORTANT: Only show the Manage button for an explicit moderator view. Do NOT show
+        // it to regular users even if a stale moderator session exists on the device.
+<span class="pc bpc" id="L115" title="5 of 6 branches missed.">        boolean showManageButton = isModeratorView &amp;&amp; moderatorId &gt; 0 &amp;&amp; canManageThisGroup;</span>
+<span class="fc" id="L116">        Set&lt;String&gt; moderatorPermissions = moderatorSessionManager.getPermissions();</span>
+<span class="pc bpc" id="L117" title="2 of 4 branches missed.">        boolean hasPermissionPayload = moderatorPermissions != null &amp;&amp; !moderatorPermissions.isEmpty();</span>
+<span class="pc bpc" id="L118" title="3 of 4 branches missed.">        canModerateMessages = showManageButton</span>
+<span class="pc bnc" id="L119" title="All 2 branches missed.">                &amp;&amp; (!hasPermissionPayload || moderatorPermissions.contains(ModeratorPermissions.MODERATE_CONVERSATIONS));</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        btnManageGroupChat.setVisibility(showManageButton ? View.VISIBLE : View.GONE);</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        btnViewEvents.setVisibility(groupId &gt; 0 ? View.VISIBLE : View.GONE);</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        btnViewAnnouncements.setVisibility(groupId &gt; 0 ? View.VISIBLE : View.GONE);</span>
+<span class="pc" id="L123">        btnViewEvents.setOnClickListener(v -&gt; loadAndShowGroupEvents());</span>
+<span class="fc" id="L124">        btnViewAnnouncements.setOnClickListener(v -&gt; loadAndShowAnnouncements());</span>
+<span class="fc" id="L125">        btnManageGroupChat.setOnClickListener(v -&gt; {</span>
+<span class="nc bnc" id="L126" title="All 4 branches missed.">            if (!showManageButton || moderatorId &lt;= 0) {</span>
+<span class="nc" id="L127">                Toast.makeText(this, &quot;Moderator session required&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L128">                return;</span>
+            }
+<span class="nc" id="L130">            Intent manageIntent = new Intent(GroupChatActivity.this, ModeratorGroupManagementActivity.class);</span>
+<span class="nc" id="L131">            manageIntent.putExtra(&quot;MODERATOR_ID&quot;, moderatorId);</span>
+<span class="nc" id="L132">            manageIntent.putExtra(&quot;GROUP_ID&quot;, groupId);</span>
+<span class="nc" id="L133">            manageIntent.putExtra(&quot;GROUP_NAME&quot;, groupName);</span>
+<span class="nc" id="L134">            startActivity(manageIntent);</span>
+<span class="nc" id="L135">        });</span>
+
+<span class="fc" id="L137">        sendBtn.setEnabled(true); // Always enable send button immediately</span>
+
+<span class="fc" id="L139">        LinearLayoutManager layoutManager = new LinearLayoutManager(this);</span>
+<span class="fc" id="L140">        layoutManager.setStackFromEnd(true);</span>
+<span class="fc" id="L141">        recyclerChat.setLayoutManager(layoutManager);</span>
+<span class="fc" id="L142">        chatAdapter = new ChatAdapter(</span>
+                messageList,
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">                canDeleteMessagesInThisChat() ? this::showMessageActionMenu : null,</span>
+                isModeratorView
+        );
+<span class="fc" id="L147">        recyclerChat.setAdapter(chatAdapter);</span>
+
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        tvGroupName.setText(groupName != null ? groupName : &quot;Group Chat&quot;);</span>
+<span class="fc" id="L150">        tvMemberCount.setVisibility(View.VISIBLE);</span>
+<span class="fc" id="L151">        tvMemberCount.setOnClickListener(v -&gt; showMembersDialog());</span>
+
+<span class="fc" id="L153">        backBtn.setOnClickListener(v -&gt; {</span>
+<span class="fc" id="L154">            WebSocketClientManager.getInstance().removeWebSocketEventListener();</span>
+<span class="fc" id="L155">            finish();</span>
+<span class="fc" id="L156">        });</span>
+
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">        if (groupId &gt; 0) {</span>
+<span class="fc" id="L159">            loadPinnedAnnouncement();</span>
+<span class="fc" id="L160">            conversationId = getCachedConversationId(groupId);</span>
+<span class="fc" id="L161">            Log.d(TAG, &quot;Cached conversationId for group &quot; + groupId + &quot; = &quot; + conversationId);</span>
+<span class="fc" id="L162">            fetchGroupMembers();</span>
+        } else {
+<span class="nc" id="L164">            Toast.makeText(this, &quot;No group specified&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L165">            finish();</span>
+        }
+<span class="fc" id="L167">    }</span>
+
+    private int getCachedConversationId(int gId) {
+<span class="fc" id="L170">        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);</span>
+<span class="fc" id="L171">        return prefs.getInt(&quot;group_conv_&quot; + gId, -1);</span>
+    }
+
+    private void cacheConversationId(int gId, int convId) {
+<span class="fc" id="L175">        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);</span>
+<span class="fc" id="L176">        prefs.edit().putInt(&quot;group_conv_&quot; + gId, convId).apply();</span>
+<span class="fc" id="L177">        Log.d(TAG, &quot;Cached conversationId &quot; + convId + &quot; for group &quot; + gId);</span>
+<span class="fc" id="L178">    }</span>
+
+    private void fetchGroupMembers() {
+<span class="fc" id="L181">        String url = BASE_URL + &quot;/gm/glist/&quot; + groupId;</span>
+<span class="fc" id="L182">        Log.d(TAG, &quot;Step 1: GET members: &quot; + url);</span>
+
+<span class="fc" id="L184">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+<span class="fc" id="L186">                    Log.d(TAG, &quot;Members response: &quot; + response);</span>
+                    try {
+<span class="fc" id="L188">                        memberNames.clear();</span>
+<span class="fc" id="L189">                        memberUserIds.clear();</span>
+<span class="fc" id="L190">                        JSONArray arr = new JSONArray(response);</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">                        for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="fc" id="L192">                            JSONObject obj = arr.getJSONObject(i);</span>
+<span class="fc" id="L193">                            int uid = obj.optInt(&quot;userId&quot;, obj.optInt(&quot;userid&quot;, -1));</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">                            if (uid &lt;= 0) {</span>
+<span class="nc" id="L195">                                continue;</span>
+                            }
+<span class="fc" id="L197">                            String name = obj.optString(&quot;displayName&quot;,</span>
+<span class="fc" id="L198">                                    obj.optString(&quot;displayname&quot;,</span>
+<span class="fc" id="L199">                                            obj.optString(&quot;name&quot;,</span>
+<span class="fc" id="L200">                                                    obj.optString(&quot;userName&quot;,</span>
+<span class="fc" id="L201">                                                            obj.optString(&quot;username&quot;, &quot;&quot;)))));</span>
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">                            if (name.isEmpty()) {</span>
+<span class="nc" id="L203">                                continue;</span>
+                            }
+<span class="fc" id="L205">                            memberNames.put(uid, name);</span>
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">                            if (!memberUserIds.contains(uid)) {</span>
+<span class="fc" id="L207">                                memberUserIds.add(uid);</span>
+                            }
+                        }
+<span class="fc" id="L210">                        tvMemberCount.setText(memberUserIds.size() + &quot; members · Tap to view&quot;);</span>
+<span class="fc" id="L211">                        Log.d(TAG, &quot;Loaded members from /gm/glist: &quot; + memberNames);</span>
+<span class="nc" id="L212">                    } catch (Exception e) {</span>
+<span class="nc" id="L213">                        Log.e(TAG, &quot;Error parsing members response: &quot; + e.getMessage());</span>
+<span class="fc" id="L214">                    }</span>
+<span class="fc" id="L215">                    startConversationFlow();</span>
+<span class="fc" id="L216">                },</span>
+                error -&gt; {
+<span class="nc" id="L218">                    Log.e(TAG, &quot;GET /gm/glist/&quot; + groupId + &quot; failed: &quot; + error);</span>
+<span class="nc" id="L219">                    tvMemberCount.setText(&quot;Group Chat&quot;);</span>
+<span class="nc" id="L220">                    startConversationFlow();</span>
+<span class="nc" id="L221">                });</span>
+
+<span class="fc" id="L223">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L224">    }</span>
+
+    private void refreshGroupMembersForDialog() {
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">        if (groupId &lt;= 0) {</span>
+<span class="nc" id="L228">            return;</span>
+        }
+<span class="fc" id="L230">        String url = BASE_URL + &quot;/gm/glist/&quot; + groupId;</span>
+<span class="fc" id="L231">        Log.d(TAG, &quot;Refreshing members list: &quot; + url);</span>
+
+<span class="fc" id="L233">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+                    try {
+<span class="fc" id="L236">                        memberNames.clear();</span>
+<span class="fc" id="L237">                        memberUserIds.clear();</span>
+<span class="fc" id="L238">                        JSONArray arr = new JSONArray(response);</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">                        for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="fc" id="L240">                            JSONObject obj = arr.getJSONObject(i);</span>
+<span class="fc" id="L241">                            int uid = obj.optInt(&quot;userId&quot;, obj.optInt(&quot;userid&quot;, -1));</span>
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">                            if (uid &lt;= 0) {</span>
+<span class="nc" id="L243">                                continue;</span>
+                            }
+<span class="fc" id="L245">                            String name = obj.optString(&quot;displayName&quot;,</span>
+<span class="fc" id="L246">                                    obj.optString(&quot;displayname&quot;,</span>
+<span class="fc" id="L247">                                            obj.optString(&quot;name&quot;,</span>
+<span class="fc" id="L248">                                                    obj.optString(&quot;userName&quot;,</span>
+<span class="fc" id="L249">                                                            obj.optString(&quot;username&quot;, &quot;&quot;)))));</span>
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">                            if (name.isEmpty()) {</span>
+<span class="nc" id="L251">                                continue;</span>
+                            }
+<span class="fc" id="L253">                            memberNames.put(uid, name);</span>
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">                            if (!memberUserIds.contains(uid)) {</span>
+<span class="fc" id="L255">                                memberUserIds.add(uid);</span>
+                            }
+                        }
+<span class="fc" id="L258">                        tvMemberCount.setText(memberUserIds.size() + &quot; members · Tap to view&quot;);</span>
+<span class="fc" id="L259">                        Log.d(TAG, &quot;Refreshed members: &quot; + memberNames);</span>
+<span class="nc" id="L260">                    } catch (Exception e) {</span>
+<span class="nc" id="L261">                        Log.e(TAG, &quot;Error refreshing members: &quot; + e.getMessage());</span>
+<span class="fc" id="L262">                    }</span>
+<span class="fc" id="L263">                },</span>
+<span class="nc" id="L264">                error -&gt; Log.e(TAG, &quot;Refresh members failed: &quot; + error));</span>
+
+<span class="fc" id="L266">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L267">    }</span>
+
+
+    private void fetchUserNameAndUpdate(int uid) {
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        if (uid &lt;= 0) return;</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">        if (memberNames.containsKey(uid)) return;</span>
+<span class="nc" id="L273">        String url = BASE_URL + &quot;/users/&quot; + uid;</span>
+<span class="nc" id="L274">        Log.d(TAG, &quot;Fetching user name for &quot; + uid + &quot; -&gt; &quot; + url);</span>
+<span class="nc" id="L275">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L278">                        JSONObject user = new JSONObject(response);</span>
+<span class="nc" id="L279">                        String name = user.optString(&quot;name&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">                        if (name.isEmpty()) name = user.optString(&quot;displayName&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">                        if (!name.isEmpty()) {</span>
+<span class="nc" id="L282">                            memberNames.put(uid, name);</span>
+<span class="nc" id="L283">                            Log.d(TAG, &quot;Fetched name for &quot; + uid + &quot; -&gt; &quot; + name);</span>
+<span class="nc" id="L284">                            final String finalName = name;</span>
+<span class="nc" id="L285">                            runOnUiThread(new Runnable() {</span>
+                                @Override
+                                public void run() {
+<span class="nc" id="L288">                                    boolean changed = false;</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">                                    for (ChatMessage m : messageList) {</span>
+<span class="nc bnc" id="L290" title="All 4 branches missed.">                                        if (!m.isSent() &amp;&amp; m.getSenderId() == uid) {</span>
+<span class="nc" id="L291">                                            String cur = m.getSenderName();</span>
+<span class="nc bnc" id="L292" title="All 6 branches missed.">                                            if (cur == null || cur.isEmpty() || cur.equals(&quot;User &quot; + uid)) {</span>
+<span class="nc" id="L293">                                                m.setSenderName(finalName);</span>
+<span class="nc" id="L294">                                                changed = true;</span>
+                                            }
+                                        }
+<span class="nc" id="L297">                                    }</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                                    if (changed) chatAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L299">                                    tvMemberCount.setText(memberUserIds.size() + &quot; members · Tap to view&quot;);</span>
+<span class="nc" id="L300">                                }</span>
+                            });
+                        }
+<span class="nc" id="L303">                    } catch (Exception ignored) {}</span>
+<span class="nc" id="L304">                }, error -&gt; {</span>
+<span class="nc" id="L305">            Log.d(TAG, &quot;Failed to fetch user &quot; + uid + &quot; : &quot; + error);</span>
+<span class="nc" id="L306">        });</span>
+<span class="nc" id="L307">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="nc" id="L308">    }</span>
+
+    private void startConversationFlow() {
+        // For moderator view, skip conversation API and load messages directly
+<span class="pc bpc" id="L312" title="3 of 4 branches missed.">        if (isModeratorView &amp;&amp; moderatorId &gt; 0) {</span>
+<span class="nc" id="L313">            Log.d(TAG, &quot;Moderator view: Loading messages directly from group endpoint&quot;);</span>
+<span class="nc" id="L314">            loadModeratorGroupMessages();</span>
+<span class="nc" id="L315">            return;</span>
+        }
+
+<span class="fc bfc" id="L318" title="All 2 branches covered.">        if (conversationId &gt; 0) {</span>
+<span class="fc" id="L319">            Log.d(TAG, &quot;Step 2: Using cached conversationId = &quot; + conversationId);</span>
+<span class="fc" id="L320">            loadChatHistoryThenConnect();</span>
+        } else {
+<span class="fc" id="L322">            fetchGroupConversationId();</span>
+        }
+<span class="fc" id="L324">    }</span>
+
+    private void fetchGroupConversationId() {
+<span class="fc" id="L327">        String url = BASE_URL + &quot;/conversations/group&quot;;</span>
+<span class="fc" id="L328">        List&lt;Integer&gt; userIds = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L329" title="1 of 2 branches missed.">        if (!memberUserIds.contains(currentUserId)) {</span>
+<span class="fc" id="L330">            userIds.add(currentUserId);</span>
+        }
+<span class="fc" id="L332">        userIds.addAll(memberUserIds);</span>
+<span class="fc" id="L333">        Collections.sort(userIds);</span>
+<span class="fc" id="L334">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="fc" id="L336">            body.put(&quot;groupId&quot;, groupId);</span>
+<span class="pc bpc" id="L337" title="1 of 2 branches missed.">            body.put(&quot;name&quot;, groupName != null ? groupName : &quot;Group &quot; + groupId);</span>
+<span class="fc" id="L338">            JSONArray idsArray = new JSONArray();</span>
+<span class="fc bfc" id="L339" title="All 2 branches covered.">            for (int uid : userIds) {</span>
+<span class="fc" id="L340">                idsArray.put(uid);</span>
+<span class="fc" id="L341">            }</span>
+<span class="fc" id="L342">            body.put(&quot;userIds&quot;, idsArray);</span>
+<span class="nc" id="L343">        } catch (Exception e) {</span>
+<span class="nc" id="L344">            Log.e(TAG, &quot;Error building body&quot;, e);</span>
+<span class="nc" id="L345">            connectWebSocket();</span>
+<span class="nc" id="L346">            return;</span>
+<span class="fc" id="L347">        }</span>
+<span class="fc" id="L348">        Log.d(TAG, &quot;Step 2: POST &quot; + url + &quot; body=&quot; + body);</span>
+<span class="fc" id="L349">        StringRequest request = new StringRequest(Request.Method.POST, url,</span>
+                response -&gt; {
+<span class="fc" id="L351">                    Log.d(TAG, &quot;Conversation response: &quot; + response);</span>
+                    try {
+<span class="fc" id="L353">                        JSONObject json = new JSONObject(response);</span>
+<span class="fc" id="L354">                        conversationId = json.optInt(&quot;conversationId&quot;,</span>
+<span class="fc" id="L355">                                json.optInt(&quot;id&quot;,</span>
+<span class="fc" id="L356">                                        json.optInt(&quot;conversation_id&quot;, -1)));</span>
+<span class="nc" id="L357">                    } catch (Exception e) {</span>
+                        try {
+<span class="nc" id="L359">                            conversationId = Integer.parseInt(response.trim());</span>
+<span class="nc" id="L360">                        } catch (NumberFormatException nfe) {</span>
+<span class="nc" id="L361">                            Log.e(TAG, &quot;Could not parse conversationId from: &quot; + response);</span>
+<span class="nc" id="L362">                        }</span>
+<span class="fc" id="L363">                    }</span>
+<span class="fc" id="L364">                    Log.d(TAG, &quot;Got conversationId = &quot; + conversationId);</span>
+<span class="pc bpc" id="L365" title="1 of 2 branches missed.">                    if (conversationId &gt; 0) {</span>
+<span class="fc" id="L366">                        cacheConversationId(groupId, conversationId);</span>
+<span class="fc" id="L367">                        fetchConversationDetails(conversationId);</span>
+                    }
+<span class="fc" id="L369">                    loadChatHistoryThenConnect();</span>
+<span class="fc" id="L370">                },</span>
+                error -&gt; {
+<span class="nc" id="L372">                    Log.e(TAG, &quot;Failed to create group conversation: &quot; + error);</span>
+<span class="nc bnc" id="L373" title="All 2 branches missed.">                    if (error.networkResponse != null) {</span>
+<span class="nc" id="L374">                        String errBody = new String(error.networkResponse.data);</span>
+<span class="nc" id="L375">                        Log.e(TAG, &quot;Status: &quot; + error.networkResponse.statusCode + &quot; Body: &quot; + errBody);</span>
+                        try {
+<span class="nc" id="L377">                            JSONObject errJson = new JSONObject(errBody);</span>
+<span class="nc" id="L378">                            int cid = errJson.optInt(&quot;conversationId&quot;, errJson.optInt(&quot;id&quot;, -1));</span>
+<span class="nc bnc" id="L379" title="All 2 branches missed.">                            if (cid &gt; 0) {</span>
+<span class="nc" id="L380">                                conversationId = cid;</span>
+<span class="nc" id="L381">                                cacheConversationId(groupId, conversationId);</span>
+<span class="nc" id="L382">                                Log.d(TAG, &quot;Got conversationId from error response: &quot; + conversationId);</span>
+<span class="nc" id="L383">                                loadChatHistoryThenConnect();</span>
+<span class="nc" id="L384">                                return;</span>
+                            }
+<span class="nc" id="L386">                        } catch (Exception ignored) {}</span>
+                    }
+<span class="nc" id="L388">                    Log.w(TAG, &quot;No conversationId obtained — messages cannot be sent.&quot;);</span>
+<span class="nc" id="L389">                    connectWebSocket();</span>
+<span class="pc" id="L390">                }) {</span>
+            @Override
+<span class="fc" id="L392">            public byte[] getBody() { return body.toString().getBytes(); }</span>
+            @Override
+<span class="fc" id="L394">            public String getBodyContentType() { return &quot;application/json&quot;; }</span>
+        };
+
+<span class="fc" id="L397">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L398">    }</span>
+
+    private void loadChatHistoryThenConnect() {
+<span class="pc bpc" id="L401" title="1 of 2 branches missed.">        if (conversationId &lt;= 0) {</span>
+<span class="nc" id="L402">            Log.w(TAG, &quot;No valid conversationId (&quot; + conversationId + &quot;), skipping history&quot;);</span>
+<span class="nc" id="L403">            connectWebSocket();</span>
+<span class="nc" id="L404">            return;</span>
+        }
+<span class="fc" id="L406">        String primaryUrl = BASE_URL + &quot;/messages/conversation/&quot; + conversationId + &quot;/user/&quot; + currentUserId;</span>
+<span class="fc" id="L407">        Log.d(TAG, &quot;Step 3: GET (primary) &quot; + primaryUrl);</span>
+
+<span class="fc" id="L409">        StringRequest request = new StringRequest(Request.Method.GET, primaryUrl,</span>
+                response -&gt; {
+<span class="fc" id="L411">                    Log.d(TAG, &quot;Primary history (&quot; + response.length() + &quot; chars)&quot;);</span>
+<span class="fc" id="L412">                    int loaded = parseAndLoadMessages(response);</span>
+<span class="pc bpc" id="L413" title="1 of 2 branches missed.">                    if (loaded == 0) {</span>
+<span class="fc" id="L414">                        Log.d(TAG, &quot;Primary returned 0, trying fallback...&quot;);</span>
+<span class="fc" id="L415">                        loadChatHistoryFallback();</span>
+                    } else {
+<span class="nc" id="L417">                        Log.d(TAG, &quot;Loaded &quot; + loaded + &quot; messages from primary URL&quot;);</span>
+<span class="nc" id="L418">                        connectWebSocket();</span>
+                    }
+<span class="fc" id="L420">                },</span>
+                error -&gt; {
+<span class="nc" id="L422">                    Log.e(TAG, &quot;Primary history FAILED: &quot; + error);</span>
+<span class="nc bnc" id="L423" title="All 2 branches missed.">                    int status = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">                    String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : &quot;&quot;;</span>
+<span class="nc" id="L425">                    Log.e(TAG, &quot;Primary error status: &quot; + status + &quot; body: &quot; + errBody);</span>
+<span class="nc bnc" id="L426" title="All 8 branches missed.">                    if ((status == 403 || status == 401 || status == 404) &amp;&amp; errBody.toLowerCase().contains(&quot;not in this conversation&quot;)) {</span>
+<span class="nc" id="L427">                        Log.w(TAG, &quot;Membership warning from backend; proceeding despite message: &quot; + errBody);</span>
+                        // Try fallback; fallback will also treat membership warnings as non-fatal
+<span class="nc" id="L429">                        loadChatHistoryFallback();</span>
+<span class="nc" id="L430">                        return;</span>
+                    }
+<span class="nc" id="L432">                    loadChatHistoryFallback();</span>
+<span class="nc" id="L433">                });</span>
+
+<span class="fc" id="L435">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L436">    }</span>
+
+    private void loadChatHistoryFallback() {
+<span class="fc" id="L439">        String fallbackUrl = BASE_URL + &quot;/messages/conversation/&quot; + conversationId;</span>
+<span class="fc" id="L440">        Log.d(TAG, &quot;GET (fallback) &quot; + fallbackUrl);</span>
+
+<span class="fc" id="L442">        StringRequest request = new StringRequest(Request.Method.GET, fallbackUrl,</span>
+                response -&gt; {
+<span class="nc" id="L444">                    int loaded = parseAndLoadMessages(response);</span>
+<span class="nc" id="L445">                    Log.d(TAG, &quot;Fallback loaded &quot; + loaded + &quot; messages&quot;);</span>
+<span class="nc" id="L446">                    connectWebSocket();</span>
+<span class="nc" id="L447">                },</span>
+                error -&gt; {
+<span class="fc" id="L449">                    Log.e(TAG, &quot;Fallback also FAILED: &quot; + error);</span>
+<span class="pc bpc" id="L450" title="1 of 2 branches missed.">                    int status = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="pc bpc" id="L451" title="1 of 2 branches missed.">                    String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : &quot;&quot;;</span>
+<span class="fc" id="L452">                    Log.e(TAG, &quot;Fallback error status: &quot; + status + &quot; body: &quot; + errBody);</span>
+<span class="pc bpc" id="L453" title="4 of 8 branches missed.">                    if ((status == 403 || status == 401 || status == 404) &amp;&amp; errBody.toLowerCase().contains(&quot;not in this conversation&quot;)) {</span>
+<span class="nc" id="L454">                        Log.w(TAG, &quot;Membership warning from backend on fallback; connecting anyway: &quot; + errBody);</span>
+<span class="nc" id="L455">                        connectWebSocket();</span>
+<span class="nc" id="L456">                        return;</span>
+                    }
+<span class="fc" id="L458">                    connectWebSocket();</span>
+<span class="fc" id="L459">                });</span>
+
+<span class="fc" id="L461">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L462">    }</span>
+
+    private int parseAndLoadMessages(String response) {
+        try {
+<span class="fc" id="L466">            JSONArray arr = new JSONArray(response);</span>
+<span class="pc bpc" id="L467" title="1 of 2 branches missed.">            if (arr.length() &gt; 0) {</span>
+<span class="nc" id="L468">                Log.d(TAG, &quot;FIRST MSG JSON: &quot; + arr.getJSONObject(0).toString());</span>
+            }
+<span class="pc bpc" id="L470" title="1 of 2 branches missed.">            for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L471">                JSONObject obj = arr.getJSONObject(i);</span>
+<span class="nc" id="L472">                long id = obj.optLong(&quot;messageId&quot;, obj.optLong(&quot;id&quot;, 0));</span>
+<span class="nc" id="L473">                String content = obj.optString(&quot;content&quot;, obj.optString(&quot;message&quot;, &quot;&quot;));</span>
+<span class="nc" id="L474">                String timestamp = obj.optString(&quot;sentAt&quot;, obj.optString(&quot;timestamp&quot;, &quot;&quot;));</span>
+<span class="nc" id="L475">                int senderId = extractUserId(obj, &quot;sender&quot;, &quot;senderUserId&quot;, &quot;senderId&quot;, &quot;sender_id&quot;, &quot;fromId&quot;);</span>
+<span class="nc" id="L476">                int receiverId = extractUserId(obj, &quot;receiver&quot;, &quot;receiverUserId&quot;, &quot;receiverId&quot;, &quot;receiver_id&quot;, &quot;toId&quot;);</span>
+
+<span class="nc bnc" id="L478" title="All 2 branches missed.">                if (i &lt; 3) {</span>
+<span class="nc" id="L479">                    Log.d(TAG, &quot;MSG[&quot; + i + &quot;] senderId=&quot; + senderId + &quot; currentUserId=&quot; + currentUserId</span>
+<span class="nc" id="L480">                            + &quot; keys=&quot; + obj.keys().toString() + &quot; raw=&quot; + obj.toString().substring(0, Math.min(200, obj.toString().length())));</span>
+                }
+
+<span class="nc" id="L483">                String senderName = extractSenderName(obj, senderId);</span>
+<span class="nc" id="L484">                boolean isSent = isOutgoingMessage(senderId, senderName);</span>
+<span class="nc" id="L485">                ChatMessage msg = new ChatMessage(id, senderId, receiverId, content, timestamp, isSent);</span>
+<span class="nc bnc" id="L486" title="All 2 branches missed.">                if (isMessageRemoved(obj, content)) {</span>
+<span class="nc" id="L487">                    msg.markRemovedByModerator();</span>
+                }
+<span class="nc bnc" id="L489" title="All 2 branches missed.">                if (!isSent) {</span>
+<span class="nc bnc" id="L490" title="All 4 branches missed.">                    if (senderName != null &amp;&amp; !senderName.isEmpty()) {</span>
+<span class="nc" id="L491">                        msg.setSenderName(senderName);</span>
+<span class="nc bnc" id="L492" title="All 2 branches missed.">                    } else if (memberNames.containsKey(senderId)) {</span>
+<span class="nc" id="L493">                        msg.setSenderName(memberNames.get(senderId));</span>
+                    } else {
+<span class="nc" id="L495">                        msg.setSenderName(&quot;User &quot; + senderId);</span>
+<span class="nc" id="L496">                        fetchUserNameAndUpdate(senderId);</span>
+                    }
+                }
+<span class="nc" id="L499">                messageList.add(msg);</span>
+            }
+<span class="fc" id="L501">            chatAdapter.notifyDataSetChanged();</span>
+<span class="fc" id="L502">            scrollToBottom();</span>
+<span class="fc" id="L503">            return arr.length();</span>
+<span class="nc" id="L504">        } catch (Exception e) {</span>
+<span class="nc" id="L505">            Log.e(TAG, &quot;Error parsing history: &quot; + e.getMessage());</span>
+<span class="nc" id="L506">            return 0;</span>
+        }
+    }
+
+    private boolean isMessageRemoved(JSONObject obj, String content) {
+<span class="nc bnc" id="L511" title="All 2 branches missed.">        if (obj == null) {</span>
+<span class="nc" id="L512">            return false;</span>
+        }
+<span class="nc bnc" id="L514" title="All 2 branches missed.">        if (obj.optBoolean(&quot;removed&quot;, false)</span>
+<span class="nc bnc" id="L515" title="All 2 branches missed.">                || obj.optBoolean(&quot;isRemoved&quot;, false)</span>
+<span class="nc bnc" id="L516" title="All 2 branches missed.">                || obj.optBoolean(&quot;deleted&quot;, false)</span>
+<span class="nc bnc" id="L517" title="All 2 branches missed.">                || obj.optBoolean(&quot;hidden&quot;, false)) {</span>
+<span class="nc" id="L518">            return true;</span>
+        }
+<span class="nc bnc" id="L520" title="All 4 branches missed.">        if (obj.has(&quot;active&quot;) &amp;&amp; !obj.optBoolean(&quot;active&quot;, true)) {</span>
+<span class="nc" id="L521">            return true;</span>
+        }
+<span class="nc bnc" id="L523" title="All 2 branches missed.">        String lowered = content == null ? &quot;&quot; : content.trim().toLowerCase();</span>
+<span class="nc bnc" id="L524" title="All 2 branches missed.">        return lowered.equals(&quot;[deleted]&quot;)</span>
+<span class="nc bnc" id="L525" title="All 2 branches missed.">                || lowered.equals(&quot;message removed by moderator&quot;)</span>
+<span class="nc bnc" id="L526" title="All 2 branches missed.">                || lowered.equals(&quot;this message was deleted&quot;);</span>
+    }
+
+    private int extractUserId(JSONObject obj, String objectKey, String... flatKeys) {
+<span class="nc bnc" id="L530" title="All 2 branches missed.">        for (String key : flatKeys) {</span>
+<span class="nc" id="L531">            int val = obj.optInt(key, -1);</span>
+<span class="nc bnc" id="L532" title="All 2 branches missed.">            if (val &gt; 0) return val;</span>
+        }
+<span class="nc bnc" id="L534" title="All 2 branches missed.">        if (obj.has(objectKey)) {</span>
+<span class="nc" id="L535">            int flatVal = obj.optInt(objectKey, -1);</span>
+<span class="nc bnc" id="L536" title="All 2 branches missed.">            if (flatVal &gt; 0) return flatVal;</span>
+        }
+<span class="nc bnc" id="L538" title="All 4 branches missed.">        if (obj.has(objectKey) &amp;&amp; !obj.isNull(objectKey)) {</span>
+            try {
+<span class="nc" id="L540">                JSONObject nested = obj.getJSONObject(objectKey);</span>
+<span class="nc" id="L541">                int val = nested.optInt(&quot;id&quot;,</span>
+<span class="nc" id="L542">                        nested.optInt(&quot;userId&quot;,</span>
+<span class="nc" id="L543">                                nested.optInt(&quot;user_id&quot;,</span>
+<span class="nc" id="L544">                                        nested.optInt(&quot;senderUserId&quot;, -1))));</span>
+<span class="nc bnc" id="L545" title="All 2 branches missed.">                if (val &gt; 0) return val;</span>
+<span class="nc" id="L546">            } catch (Exception ignored) {}</span>
+        }
+<span class="nc" id="L548">        return 0;</span>
+    }
+
+    private String extractSenderName(JSONObject obj, int senderId) {
+<span class="nc bnc" id="L552" title="All 2 branches missed.">        if (obj == null) return &quot;&quot;;</span>
+        try {
+<span class="nc" id="L554">            String[] flatNameKeys = new String[]{</span>
+                    &quot;senderName&quot;, &quot;sender_name&quot;, &quot;senderDisplayName&quot;, &quot;sender_display_name&quot;,
+                    &quot;displayName&quot;, &quot;display_name&quot;, &quot;name&quot;, &quot;username&quot;, &quot;userName&quot;
+            };
+<span class="nc bnc" id="L558" title="All 2 branches missed.">            for (String k : flatNameKeys) {</span>
+<span class="nc bnc" id="L559" title="All 2 branches missed.">                if (obj.has(k)) {</span>
+<span class="nc" id="L560">                    String v = obj.optString(k, &quot;&quot;).trim();</span>
+<span class="nc bnc" id="L561" title="All 2 branches missed.">                    if (!v.isEmpty()) return v;</span>
+                }
+            }
+<span class="nc bnc" id="L564" title="All 4 branches missed.">            if (obj.has(&quot;sender&quot;) &amp;&amp; !obj.isNull(&quot;sender&quot;)) {</span>
+                try {
+<span class="nc" id="L566">                    JSONObject s = obj.getJSONObject(&quot;sender&quot;);</span>
+<span class="nc bnc" id="L567" title="All 2 branches missed.">                    for (String k : new String[]{&quot;displayName&quot;, &quot;display_name&quot;, &quot;name&quot;, &quot;username&quot;, &quot;userName&quot;}) {</span>
+<span class="nc bnc" id="L568" title="All 2 branches missed.">                        if (s.has(k)) {</span>
+<span class="nc" id="L569">                            String v = s.optString(k, &quot;&quot;).trim();</span>
+<span class="nc bnc" id="L570" title="All 2 branches missed.">                            if (!v.isEmpty()) return v;</span>
+                        }
+                    }
+<span class="nc" id="L573">                } catch (Exception ignored) {}</span>
+            }
+<span class="nc bnc" id="L575" title="All 4 branches missed.">            if (obj.has(&quot;user&quot;) &amp;&amp; !obj.isNull(&quot;user&quot;)) {</span>
+                try {
+<span class="nc" id="L577">                    JSONObject s = obj.getJSONObject(&quot;user&quot;);</span>
+<span class="nc bnc" id="L578" title="All 2 branches missed.">                    for (String k : new String[]{&quot;displayName&quot;, &quot;display_name&quot;, &quot;name&quot;, &quot;username&quot;, &quot;userName&quot;}) {</span>
+<span class="nc bnc" id="L579" title="All 2 branches missed.">                        if (s.has(k)) {</span>
+<span class="nc" id="L580">                            String v = s.optString(k, &quot;&quot;).trim();</span>
+<span class="nc bnc" id="L581" title="All 2 branches missed.">                            if (!v.isEmpty()) return v;</span>
+                        }
+                    }
+<span class="nc" id="L584">                } catch (Exception ignored) {}</span>
+            }
+<span class="nc bnc" id="L586" title="All 2 branches missed.">            if (memberNames.containsKey(senderId)) return memberNames.get(senderId);</span>
+<span class="nc" id="L587">        } catch (Exception ignored) {}</span>
+<span class="nc" id="L588">        return &quot;&quot;;</span>
+    }
+
+    private boolean isOutgoingMessage(int senderId, String senderName) {
+<span class="nc bnc" id="L592" title="All 4 branches missed.">        if (senderId &gt; 0 &amp;&amp; currentUserId &gt; 0) {</span>
+<span class="nc bnc" id="L593" title="All 2 branches missed.">            return senderId == currentUserId;</span>
+        }
+
+<span class="nc bnc" id="L596" title="All 6 branches missed.">        if (senderName == null || senderName.trim().isEmpty() || currentUserId &lt;= 0) {</span>
+<span class="nc" id="L597">            return false;</span>
+        }
+
+<span class="nc" id="L600">        String currentName = memberNames.get(currentUserId);</span>
+<span class="nc bnc" id="L601" title="All 4 branches missed.">        if (currentName == null || currentName.trim().isEmpty()) {</span>
+<span class="nc" id="L602">            return false;</span>
+        }
+
+<span class="nc" id="L605">        return senderName.trim().equalsIgnoreCase(currentName.trim());</span>
+    }
+
+    
+
+    private void fetchConversationDetails(int convId) {
+<span class="fc" id="L611">        String url = BASE_URL + &quot;/conversations/&quot; + convId;</span>
+<span class="fc" id="L612">        Log.d(TAG, &quot;GET conversation details: &quot; + url);</span>
+
+<span class="fc" id="L614">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+<span class="fc" id="L616">                    Log.d(TAG, &quot;Conversation details response: &quot; + response);</span>
+                    try {
+<span class="fc" id="L618">                        JSONObject json = new JSONObject(response);</span>
+<span class="fc" id="L619">                        List&lt;Integer&gt; partIds = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L620" title="1 of 2 branches missed.">                        if (json.has(&quot;userIds&quot;)) {</span>
+<span class="nc" id="L621">                            JSONArray u = json.optJSONArray(&quot;userIds&quot;);</span>
+<span class="nc bnc" id="L622" title="All 4 branches missed.">                            if (u != null) for (int i = 0; i &lt; u.length(); i++) partIds.add(u.optInt(i, -1));</span>
+                        }
+<span class="pc bpc" id="L624" title="2 of 4 branches missed.">                        if (partIds.isEmpty() &amp;&amp; json.has(&quot;participants&quot;)) {</span>
+<span class="nc" id="L625">                            JSONArray u = json.optJSONArray(&quot;participants&quot;);</span>
+<span class="nc bnc" id="L626" title="All 4 branches missed.">                            if (u != null) for (int i = 0; i &lt; u.length(); i++) partIds.add(u.optInt(i, -1));</span>
+                        }
+<span class="pc bpc" id="L628" title="2 of 4 branches missed.">                        if (partIds.isEmpty() &amp;&amp; json.has(&quot;members&quot;)) {</span>
+<span class="nc" id="L629">                            JSONArray u = json.optJSONArray(&quot;members&quot;);</span>
+<span class="nc bnc" id="L630" title="All 4 branches missed.">                            if (u != null) for (int i = 0; i &lt; u.length(); i++) partIds.add(u.optInt(i, -1));</span>
+                        }
+<span class="pc bpc" id="L632" title="2 of 4 branches missed.">                        if (partIds.isEmpty() &amp;&amp; json.has(&quot;users&quot;)) {</span>
+                            try {
+<span class="nc" id="L634">                                JSONArray u = json.optJSONArray(&quot;users&quot;);</span>
+<span class="nc bnc" id="L635" title="All 2 branches missed.">                                if (u != null) {</span>
+<span class="nc bnc" id="L636" title="All 2 branches missed.">                                    for (int i = 0; i &lt; u.length(); i++) {</span>
+<span class="nc" id="L637">                                        JSONObject o = u.optJSONObject(i);</span>
+<span class="nc bnc" id="L638" title="All 2 branches missed.">                                        if (o != null) {</span>
+<span class="nc" id="L639">                                            int id = o.optInt(&quot;id&quot;, o.optInt(&quot;userId&quot;, -1));</span>
+<span class="nc bnc" id="L640" title="All 2 branches missed.">                                            if (id &gt; 0) partIds.add(id);</span>
+                                        }
+                                    }
+                                }
+<span class="nc" id="L644">                            } catch (Exception ignored) {}</span>
+                        }
+<span class="fc" id="L646">                        Log.d(TAG, &quot;Conversation participants parsed: &quot; + partIds);</span>
+<span class="fc" id="L647">                        boolean amMember = partIds.contains(currentUserId);</span>
+<span class="pc bpc" id="L648" title="1 of 2 branches missed.">                        if (!amMember) {</span>
+                            // Backend no longer requires strict membership enforcement in many cases.
+                            // Treat missing membership as a warning but do NOT block the user or auto force-add.
+<span class="fc" id="L651">                            Log.w(TAG, &quot;Current user &quot; + currentUserId + &quot; is NOT listed as participant of conversation &quot; + convId + &quot;. Proceeding without forcing membership. Participants: &quot; + partIds);</span>
+                        } else {
+<span class="nc" id="L653">                            Log.d(TAG, &quot;Current user is a participant of conversation &quot; + convId);</span>
+                        }
+<span class="nc" id="L655">                    } catch (Exception e) {</span>
+<span class="nc" id="L656">                        Log.e(TAG, &quot;Error parsing conversation details: &quot; + e.getMessage());</span>
+<span class="fc" id="L657">                    }</span>
+<span class="fc" id="L658">                },</span>
+                error -&gt; {
+<span class="nc" id="L660">                    Log.e(TAG, &quot;Failed to fetch conversation details: &quot; + error);</span>
+<span class="nc bnc" id="L661" title="All 2 branches missed.">                    if (error.networkResponse != null) {</span>
+                        try {
+<span class="nc" id="L663">                            Log.e(TAG, &quot;Status: &quot; + error.networkResponse.statusCode + &quot; Body: &quot; + new String(error.networkResponse.data));</span>
+<span class="nc" id="L664">                        } catch (Exception ignored) {}</span>
+                    }
+<span class="nc" id="L666">                });</span>
+<span class="fc" id="L667">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L668">    }</span>
+
+    private void loadModeratorGroupMessages() {
+<span class="nc bnc" id="L671" title="All 4 branches missed.">        if (moderatorId &lt;= 0 || groupId &lt;= 0) {</span>
+<span class="nc" id="L672">            Log.w(TAG, &quot;Invalid moderatorId (&quot; + moderatorId + &quot;) or groupId (&quot; + groupId + &quot;)&quot;);</span>
+<span class="nc" id="L673">            Toast.makeText(this, &quot;Moderator data missing&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L674">            return;</span>
+        }
+        // If we have a cached conversationId prefer the conversation messages endpoint
+<span class="nc bnc" id="L677" title="All 2 branches missed.">        if (conversationId &gt; 0) {</span>
+<span class="nc" id="L678">            Log.d(TAG, &quot;Loading messages from conversation endpoint: conversationId=&quot; + conversationId);</span>
+<span class="nc" id="L679">            moderatorRepository.getConversationMessages(this, conversationId, new ModeratorRepository.JsonArrayCallback() {</span>
+                @Override
+                public void onSuccess(JSONArray array) {
+<span class="nc" id="L682">                    Log.d(TAG, &quot;Conversation loaded &quot; + array.length() + &quot; messages&quot;);</span>
+<span class="nc" id="L683">                    runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L684">                        messageList.clear();</span>
+<span class="nc" id="L685">                        parseAndLoadMessages(array.toString());</span>
+<span class="nc" id="L686">                        Log.d(TAG, &quot;Moderator view: conversation messages loaded, not connecting WebSocket&quot;);</span>
+<span class="nc" id="L687">                    });</span>
+<span class="nc" id="L688">                }</span>
+
+                @Override
+                public void onError(String error) {
+<span class="nc" id="L692">                    Log.w(TAG, &quot;Conversation endpoint failed, falling back to moderator group messages: &quot; + error);</span>
+                    // Try the moderator-specific group messages endpoint as a fallback
+<span class="nc" id="L694">                    loadModeratorGroupMessagesFallback();</span>
+<span class="nc" id="L695">                }</span>
+            });
+<span class="nc" id="L697">            return;</span>
+        }
+
+        // No conversationId available - use moderator-specific group messages endpoint
+<span class="nc" id="L701">        loadModeratorGroupMessagesFallback();</span>
+<span class="nc" id="L702">    }</span>
+
+    private void loadModeratorGroupMessagesFallback() {
+<span class="nc" id="L705">        Log.d(TAG, &quot;Loading messages from moderator endpoint: moderatorId=&quot; + moderatorId + &quot; groupId=&quot; + groupId);</span>
+<span class="nc" id="L706">        moderatorRepository.getModeratorGroupMessages(this, moderatorId, groupId, new ModeratorRepository.JsonArrayCallback() {</span>
+            @Override
+            public void onSuccess(JSONArray array) {
+<span class="nc" id="L709">                Log.d(TAG, &quot;Moderator loaded &quot; + array.length() + &quot; messages&quot;);</span>
+<span class="nc" id="L710">                runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L711">                    messageList.clear();</span>
+<span class="nc" id="L712">                    parseAndLoadMessages(array.toString());</span>
+                    // For moderator view, don't connect WebSocket - just show message history
+<span class="nc" id="L714">                    Log.d(TAG, &quot;Moderator view: loading complete, not connecting WebSocket&quot;);</span>
+<span class="nc" id="L715">                });</span>
+<span class="nc" id="L716">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L720">                Log.e(TAG, &quot;Failed to load moderator messages: &quot; + error);</span>
+<span class="nc" id="L721">                runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L722">                    Toast.makeText(GroupChatActivity.this, &quot;Failed to load messages: &quot; + error, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L723">                });</span>
+<span class="nc" id="L724">            }</span>
+        });
+<span class="nc" id="L726">    }</span>
+
+    private void connectWebSocket() {
+<span class="fc" id="L729">        WebSocketClientManager.getInstance().clearMessageQueue();</span>
+<span class="fc" id="L730">        WebSocketClientManager.getInstance().setWebSocketEventListener(this);</span>
+<span class="fc bfc" id="L731" title="All 2 branches covered.">        if (WebSocketClientManager.getInstance().isConnected()) {</span>
+<span class="fc" id="L732">            Log.d(TAG, &quot;WebSocket already connected, reusing&quot;);</span>
+        } else {
+<span class="fc" id="L734">            String wsUrl = WS_BASE + currentUserId;</span>
+<span class="fc" id="L735">            Log.d(TAG, &quot;Connecting WebSocket: &quot; + wsUrl);</span>
+<span class="fc" id="L736">            WebSocketClientManager.getInstance().connectWebSocket(wsUrl);</span>
+        }
+<span class="fc" id="L738">        sendBtn.setOnClickListener(v -&gt; {</span>
+<span class="fc" id="L739">            String message = msgEtx.getText().toString().trim();</span>
+<span class="pc bpc" id="L740" title="1 of 2 branches missed.">            if (message.isEmpty()) {</span>
+<span class="fc" id="L741">                Toast.makeText(this, &quot;Message cannot be empty!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L742">                return;</span>
+            }
+            //if (conversationId &lt;= 0) {
+              //  Toast.makeText(this, &quot;Chat not ready — no conversationId&quot;, Toast.LENGTH_SHORT).show();
+               // return;
+            //}
+            try {
+<span class="nc" id="L749">                JSONObject jsonMsg = new JSONObject();</span>
+<span class="nc" id="L750">                jsonMsg.put(&quot;conversationId&quot;, conversationId);</span>
+<span class="nc" id="L751">                jsonMsg.put(&quot;content&quot;, message);</span>
+<span class="nc" id="L752">                Log.d(TAG, &quot;Sending: &quot; + jsonMsg);</span>
+
+<span class="nc" id="L754">                boolean sent = WebSocketClientManager.getInstance().sendMessage(jsonMsg.toString());</span>
+<span class="nc bnc" id="L755" title="All 2 branches missed.">                if (sent) {</span>
+<span class="nc" id="L756">                    lastSentMessage = message;</span>
+<span class="nc" id="L757">                    appendMessage(message, true, null);</span>
+<span class="nc" id="L758">                    msgEtx.setText(&quot;&quot;);</span>
+                } else {
+<span class="nc" id="L760">                    Toast.makeText(this, &quot;Not connected. Reconnecting...&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L761">                    WebSocketClientManager.getInstance().connectWebSocket(WS_BASE + currentUserId);</span>
+                }
+<span class="nc" id="L763">            } catch (Exception e) {</span>
+<span class="nc" id="L764">                Log.e(TAG, &quot;Send error: &quot; + e.getMessage());</span>
+<span class="nc" id="L765">            }</span>
+<span class="nc" id="L766">        });</span>
+<span class="fc" id="L767">    }</span>
+
+    private void appendMessage(String content, boolean isSent, String senderName) {
+<span class="fc" id="L770">        ChatMessage msg = new ChatMessage(content, isSent);</span>
+<span class="pc bpc" id="L771" title="1 of 2 branches missed.">        if (senderName != null) msg.setSenderName(senderName);</span>
+<span class="fc" id="L772">        messageList.add(msg);</span>
+<span class="fc" id="L773">        chatAdapter.notifyItemInserted(messageList.size() - 1);</span>
+<span class="fc" id="L774">        scrollToBottom();</span>
+<span class="fc" id="L775">    }</span>
+
+    private void scrollToBottom() {
+<span class="fc bfc" id="L778" title="All 2 branches covered.">        if (!messageList.isEmpty()) {</span>
+<span class="fc" id="L779">            recyclerChat.scrollToPosition(messageList.size() - 1);</span>
+        }
+<span class="fc" id="L781">    }</span>
+
+    @Override
+    public void onWebSocketOpen(ServerHandshake handshakedata) {
+<span class="fc" id="L785">        Log.d(TAG, &quot;WebSocket OPEN&quot;);</span>
+<span class="fc" id="L786">    }</span>
+
+    @Override
+    public void onWebSocketMessage(String message) {
+<span class="fc" id="L790">        runOnUiThread(() -&gt; {</span>
+<span class="fc" id="L791">            Log.d(TAG, &quot;WS message: &quot; + message);</span>
+            try {
+<span class="nc" id="L793">                JSONObject json = new JSONObject(message);</span>
+<span class="nc bnc" id="L794" title="All 2 branches missed.">                if (handleDeleteEvent(json)) {</span>
+<span class="nc" id="L795">                    return;</span>
+                }
+<span class="nc" id="L797">                 String content = json.optString(&quot;content&quot;, json.optString(&quot;message&quot;, &quot;&quot;));</span>
+<span class="nc" id="L798">                 int senderId = json.optInt(&quot;senderUserId&quot;,</span>
+<span class="nc" id="L799">                         json.optInt(&quot;senderId&quot;, json.optInt(&quot;sender_id&quot;, -1)));</span>
+
+<span class="nc bnc" id="L801" title="All 2 branches missed.">                if (!content.isEmpty()) {</span>
+<span class="nc" id="L802">                    String senderName = extractSenderName(json, senderId);</span>
+<span class="nc" id="L803">                    boolean isSent = isOutgoingMessage(senderId, senderName);</span>
+
+                    // Detect echo
+<span class="nc bnc" id="L806" title="All 6 branches missed.">                    if (!isSent &amp;&amp; lastSentMessage != null &amp;&amp; content.equals(lastSentMessage)) {</span>
+<span class="nc" id="L807">                        isSent = true;</span>
+                    }
+<span class="nc bnc" id="L809" title="All 2 branches missed.">                    if (isSent) {</span>
+<span class="nc" id="L810">                        lastSentMessage = null;</span>
+<span class="nc" id="L811">                        return;</span>
+                    }
+
+<span class="nc" id="L814">                    String name = senderName;</span>
+<span class="nc bnc" id="L815" title="All 4 branches missed.">                    if (name == null || name.isEmpty()) {</span>
+<span class="nc bnc" id="L816" title="All 2 branches missed.">                        if (memberNames.containsKey(senderId)) {</span>
+<span class="nc" id="L817">                            name = memberNames.get(senderId);</span>
+                        } else {
+<span class="nc" id="L819">                            name = &quot;User &quot; + senderId;</span>
+                            // fetch and update later
+<span class="nc" id="L821">                            fetchUserNameAndUpdate(senderId);</span>
+                        }
+                    }
+<span class="nc" id="L824">                    long messageId = json.optLong(&quot;messageId&quot;, json.optLong(&quot;id&quot;, 0));</span>
+<span class="nc" id="L825">                    String timestamp = json.optString(&quot;sentAt&quot;, json.optString(&quot;timestamp&quot;, &quot;&quot;));</span>
+<span class="nc" id="L826">                    ChatMessage incoming = new ChatMessage(messageId, senderId, currentUserId, content, timestamp, false);</span>
+<span class="nc" id="L827">                    incoming.setSenderName(name);</span>
+<span class="nc" id="L828">                    messageList.add(incoming);</span>
+<span class="nc" id="L829">                    chatAdapter.notifyItemInserted(messageList.size() - 1);</span>
+<span class="nc" id="L830">                    scrollToBottom();</span>
+<span class="nc" id="L831">                    return;</span>
+                }
+<span class="pc" id="L833">            } catch (Exception ignored) {}</span>
+
+            // Echo filter for plain text
+<span class="pc bpc" id="L836" title="1 of 2 branches missed.">            if (lastSentMessage != null) {</span>
+<span class="nc bnc" id="L837" title="All 4 branches missed.">                if (message.equals(lastSentMessage) || message.contains(lastSentMessage)) {</span>
+<span class="nc" id="L838">                    lastSentMessage = null;</span>
+<span class="nc" id="L839">                    return;</span>
+                }
+            }
+
+            // Filter system messages
+<span class="fc" id="L844">            String lower = message.toLowerCase();</span>
+<span class="pc bpc" id="L845" title="2 of 4 branches missed.">            if (lower.contains(&quot;has joined&quot;) || lower.contains(&quot;has left&quot;)</span>
+<span class="pc bpc" id="L846" title="2 of 4 branches missed.">                    || lower.contains(&quot;welcome&quot;) || lower.contains(&quot;entered&quot;)</span>
+<span class="pc bpc" id="L847" title="2 of 4 branches missed.">                    || lower.contains(&quot;connected&quot;) || lower.contains(&quot;disconnected&quot;)) {</span>
+<span class="nc" id="L848">                return;</span>
+            }
+
+<span class="fc" id="L851">            appendMessage(message, false, null);</span>
+<span class="fc" id="L852">        });</span>
+<span class="fc" id="L853">    }</span>
+
+    @Override
+    public void onWebSocketClose(int code, String reason, boolean remote) {
+<span class="fc" id="L857">        Log.d(TAG, &quot;WebSocket CLOSED: &quot; + code + &quot; &quot; + reason);</span>
+<span class="fc" id="L858">        runOnUiThread(() -&gt; Toast.makeText(this, &quot;Chat disconnected&quot;, Toast.LENGTH_SHORT).show());</span>
+<span class="fc" id="L859">    }</span>
+
+    @Override
+    public void onWebSocketError(Exception ex) {
+<span class="nc bnc" id="L863" title="All 2 branches missed.">        Log.e(TAG, &quot;WebSocket ERROR: &quot; + (ex != null ? ex.getMessage() : &quot;unknown&quot;));</span>
+<span class="nc" id="L864">    }</span>
+
+    private void showMembersDialog() {
+<span class="fc" id="L867">        View dialogView = getLayoutInflater().inflate(R.layout.dialog_group_members, null);</span>
+<span class="fc" id="L868">        TextView tvCount = dialogView.findViewById(R.id.tvDialogMemberCount);</span>
+<span class="fc" id="L869">        LinearLayout container = dialogView.findViewById(R.id.membersContainer);</span>
+<span class="fc" id="L870">        Button btnClose = dialogView.findViewById(R.id.btnCloseMembersDialog);</span>
+
+<span class="fc" id="L872">        container.setVisibility(View.VISIBLE);</span>
+<span class="fc" id="L873">        tvCount.setText(memberNames.size() + &quot; members&quot;);</span>
+
+<span class="pc bpc" id="L875" title="1 of 2 branches missed.">        for (Map.Entry&lt;Integer, String&gt; entry : memberNames.entrySet()) {</span>
+<span class="nc" id="L876">            int userId = entry.getKey();</span>
+<span class="nc" id="L877">            String name = entry.getValue();</span>
+
+<span class="nc" id="L879">            LinearLayout row = new LinearLayout(this);</span>
+<span class="nc" id="L880">            row.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="nc" id="L881">            row.setPadding(dp(8), dp(10), dp(8), dp(10));</span>
+
+<span class="nc" id="L883">            TextView tvName = new TextView(this);</span>
+<span class="nc" id="L884">            tvName.setText(name + &quot; (User ID: &quot; + userId + &quot;)&quot;);</span>
+<span class="nc" id="L885">            tvName.setTextColor(Color.WHITE);</span>
+<span class="nc" id="L886">            tvName.setTextSize(15);</span>
+<span class="nc" id="L887">            tvName.setTypeface(null, android.graphics.Typeface.BOLD);</span>
+<span class="nc" id="L888">            row.addView(tvName);</span>
+
+<span class="nc" id="L890">            View divider = new View(this);</span>
+<span class="nc" id="L891">            divider.setLayoutParams(new LinearLayout.LayoutParams(</span>
+<span class="nc" id="L892">                    LinearLayout.LayoutParams.MATCH_PARENT, dp(1)));</span>
+<span class="nc" id="L893">            divider.setBackgroundColor(Color.parseColor(&quot;#2A2A42&quot;));</span>
+
+<span class="nc" id="L895">            container.addView(row);</span>
+<span class="nc" id="L896">            container.addView(divider);</span>
+<span class="nc" id="L897">        }</span>
+
+<span class="fc" id="L899">        AlertDialog dialog = new AlertDialog.Builder(this)</span>
+<span class="fc" id="L900">                .setView(dialogView).setCancelable(true).create();</span>
+<span class="pc bpc" id="L901" title="1 of 2 branches missed.">        if (dialog.getWindow() != null)</span>
+<span class="fc" id="L902">            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);</span>
+<span class="pc" id="L903">        btnClose.setOnClickListener(v -&gt; dialog.dismiss());</span>
+<span class="fc" id="L904">        dialog.show();</span>
+<span class="fc" id="L905">    }</span>
+
+    @Override
+    protected void onResume() {
+<span class="fc" id="L909">        super.onResume();</span>
+<span class="pc bpc" id="L910" title="1 of 2 branches missed.">        if (groupId &gt; 0) {</span>
+<span class="fc" id="L911">            loadPinnedAnnouncement();</span>
+<span class="fc" id="L912">            refreshGroupMembersForDialog();</span>
+        }
+<span class="fc" id="L914">    }</span>
+
+    @Override
+    protected void onDestroy() {
+<span class="fc" id="L918">        super.onDestroy();</span>
+<span class="fc" id="L919">        WebSocketClientManager.getInstance().removeWebSocketEventListener();</span>
+<span class="fc" id="L920">    }</span>
+
+    private int dp(int value) {
+<span class="nc" id="L923">        return (int) (value * getResources().getDisplayMetrics().density);</span>
+    }
+
+    private void showMessageActionMenu(View anchor, ChatMessage message, int position) {
+<span class="nc bnc" id="L927" title="All 2 branches missed.">        if (!canDeleteMessagesInThisChat()) {</span>
+<span class="nc" id="L928">            return;</span>
+        }
+<span class="nc bnc" id="L930" title="All 4 branches missed.">        if (message == null || message.getId() &lt;= 0) {</span>
+<span class="nc" id="L931">            Toast.makeText(this, &quot;Message cannot be moderated yet&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L932">            return;</span>
+        }
+
+<span class="nc" id="L935">        PopupMenu popupMenu = new PopupMenu(this, anchor);</span>
+<span class="nc bnc" id="L936" title="All 2 branches missed.">        if (message.isModeratedRemoved()) {</span>
+<span class="nc" id="L937">            popupMenu.getMenu().add(&quot;Restore&quot;);</span>
+        } else {
+<span class="nc" id="L939">            popupMenu.getMenu().add(&quot;Delete&quot;);</span>
+        }
+<span class="nc" id="L941">        popupMenu.setOnMenuItemClickListener(item -&gt; {</span>
+<span class="nc bnc" id="L942" title="All 2 branches missed.">            String title = item.getTitle() == null ? &quot;&quot; : item.getTitle().toString();</span>
+<span class="nc bnc" id="L943" title="All 2 branches missed.">            if (&quot;Delete&quot;.equalsIgnoreCase(title)) {</span>
+<span class="nc" id="L944">                confirmDeleteMessage(message, position);</span>
+<span class="nc" id="L945">                return true;</span>
+            }
+<span class="nc bnc" id="L947" title="All 2 branches missed.">            if (&quot;Restore&quot;.equalsIgnoreCase(title)) {</span>
+<span class="nc" id="L948">                confirmRestoreMessage(message, position);</span>
+<span class="nc" id="L949">                return true;</span>
+            }
+<span class="nc" id="L951">            return false;</span>
+        });
+<span class="nc" id="L953">        popupMenu.show();</span>
+<span class="nc" id="L954">    }</span>
+
+    private void confirmRestoreMessage(ChatMessage message, int position) {
+<span class="nc" id="L957">        new AlertDialog.Builder(this)</span>
+<span class="nc" id="L958">                .setTitle(&quot;Restore message&quot;)</span>
+<span class="nc" id="L959">                .setMessage(&quot;This will restore the message for everyone.&quot;)</span>
+<span class="nc" id="L960">                .setNegativeButton(&quot;Cancel&quot;, null)</span>
+<span class="nc" id="L961">                .setPositiveButton(&quot;Restore&quot;, (dialog, which) -&gt; restoreMessageForEveryone(message, position))</span>
+<span class="nc" id="L962">                .show();</span>
+<span class="nc" id="L963">    }</span>
+
+    private void restoreMessageForEveryone(ChatMessage message, int position) {
+<span class="nc bnc" id="L966" title="All 2 branches missed.">        if (moderatorId &lt;= 0) {</span>
+<span class="nc" id="L967">            Toast.makeText(this, &quot;Moderator session required&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L968">            return;</span>
+        }
+<span class="nc" id="L970">        moderatorRepository.restoreMessage(this, moderatorId, (int) message.getId(), new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="nc bnc" id="L973" title="All 4 branches missed.">                if (position &gt;= 0 &amp;&amp; position &lt; messageList.size()) {</span>
+<span class="nc" id="L974">                    messageList.get(position).setModeratedRemoved(false);</span>
+<span class="nc" id="L975">                    chatAdapter.notifyItemChanged(position);</span>
+                }
+<span class="nc" id="L977">                Toast.makeText(GroupChatActivity.this, &quot;Message restored&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L978">                reloadConversationMessages();</span>
+<span class="nc" id="L979">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L983">                Toast.makeText(GroupChatActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L984">            }</span>
+        });
+<span class="nc" id="L986">    }</span>
+
+    private boolean canDeleteMessagesInThisChat() {
+<span class="pc bpc" id="L989" title="5 of 6 branches missed.">        return isModeratorView &amp;&amp; moderatorId &gt; 0 &amp;&amp; canModerateMessages;</span>
+    }
+
+    private void confirmDeleteMessage(ChatMessage message, int position) {
+<span class="nc" id="L993">        new AlertDialog.Builder(this)</span>
+<span class="nc" id="L994">                .setTitle(&quot;Delete message&quot;)</span>
+<span class="nc" id="L995">                .setMessage(&quot;This will remove the message for everyone.&quot;)</span>
+<span class="nc" id="L996">                .setNegativeButton(&quot;Cancel&quot;, null)</span>
+<span class="nc" id="L997">                .setPositiveButton(&quot;Delete&quot;, (dialog, which) -&gt; deleteMessageForEveryone(message, position))</span>
+<span class="nc" id="L998">                .show();</span>
+<span class="nc" id="L999">    }</span>
+
+    private void deleteMessageForEveryone(ChatMessage message, int position) {
+<span class="nc bnc" id="L1002" title="All 2 branches missed.">        if (moderatorId &lt;= 0) {</span>
+<span class="nc" id="L1003">            Toast.makeText(this, &quot;Moderator session required&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L1004">            return;</span>
+        }
+<span class="nc" id="L1006">        moderatorRepository.removeMessage(this, moderatorId, (int) message.getId(), new ModeratorRepository.ActionCallback() {</span>
+            @Override
+            public void onSuccess(String response) {
+<span class="nc bnc" id="L1009" title="All 4 branches missed.">                if (position &gt;= 0 &amp;&amp; position &lt; messageList.size()) {</span>
+<span class="nc" id="L1010">                    messageList.get(position).markRemovedByModerator();</span>
+<span class="nc" id="L1011">                    chatAdapter.notifyItemChanged(position);</span>
+                }
+<span class="nc" id="L1013">                Toast.makeText(GroupChatActivity.this, &quot;Message deleted&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L1014">                reloadConversationMessages();</span>
+<span class="nc" id="L1015">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L1019">                Toast.makeText(GroupChatActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L1020">            }</span>
+        });
+<span class="nc" id="L1022">    }</span>
+
+    private void reloadConversationMessages() {
+<span class="nc bnc" id="L1025" title="All 2 branches missed.">        if (conversationId &lt;= 0) {</span>
+<span class="nc" id="L1026">            return;</span>
+        }
+<span class="nc" id="L1028">        moderatorRepository.getConversationMessages(this, conversationId, new ModeratorRepository.JsonArrayCallback() {</span>
+            @Override
+            public void onSuccess(JSONArray array) {
+<span class="nc" id="L1031">                messageList.clear();</span>
+<span class="nc" id="L1032">                parseAndLoadMessages(array.toString());</span>
+<span class="nc" id="L1033">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L1037">                Log.e(TAG, &quot;Failed to refresh messages after moderation: &quot; + error);</span>
+<span class="nc" id="L1038">            }</span>
+        });
+<span class="nc" id="L1040">    }</span>
+
+    private boolean handleDeleteEvent(JSONObject json) {
+<span class="nc bnc" id="L1043" title="All 2 branches missed.">        if (json == null) {</span>
+<span class="nc" id="L1044">            return false;</span>
+        }
+<span class="nc" id="L1046">        String action = json.optString(&quot;action&quot;, json.optString(&quot;type&quot;, &quot;&quot;)).toLowerCase();</span>
+<span class="nc bnc" id="L1047" title="All 6 branches missed.">        boolean looksLikeDelete = action.contains(&quot;delete&quot;) || action.contains(&quot;remove&quot;) || action.contains(&quot;hide&quot;);</span>
+<span class="nc bnc" id="L1048" title="All 2 branches missed.">        if (!looksLikeDelete) {</span>
+<span class="nc" id="L1049">            return false;</span>
+        }
+
+<span class="nc" id="L1052">        long messageId = json.optLong(&quot;messageId&quot;, json.optLong(&quot;id&quot;, -1));</span>
+<span class="nc bnc" id="L1053" title="All 2 branches missed.">        if (messageId &lt;= 0) {</span>
+<span class="nc" id="L1054">            return false;</span>
+        }
+
+<span class="nc" id="L1057">        int index = -1;</span>
+<span class="nc bnc" id="L1058" title="All 2 branches missed.">        for (int i = 0; i &lt; messageList.size(); i++) {</span>
+<span class="nc bnc" id="L1059" title="All 2 branches missed.">            if (messageList.get(i).getId() == messageId) {</span>
+<span class="nc" id="L1060">                index = i;</span>
+<span class="nc" id="L1061">                break;</span>
+            }
+        }
+<span class="nc bnc" id="L1064" title="All 2 branches missed.">        if (index &lt; 0) {</span>
+<span class="nc" id="L1065">            reloadConversationMessages();</span>
+<span class="nc" id="L1066">            return false;</span>
+        }
+
+<span class="nc" id="L1069">        messageList.get(index).markRemovedByModerator();</span>
+<span class="nc" id="L1070">        chatAdapter.notifyItemChanged(index);</span>
+<span class="nc" id="L1071">        return true;</span>
+    }
+
+    private void loadAndShowGroupEvents() {
+<span class="nc bnc" id="L1075" title="All 2 branches missed.">        if (groupId &lt;= 0) {</span>
+<span class="nc" id="L1076">            Toast.makeText(this, &quot;Invalid group&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L1077">            return;</span>
+        }
+
+<span class="nc" id="L1080">        moderatorRepository.getGroupEventsForChat(this, groupId, moderatorId, new ModeratorRepository.JsonArrayCallback() {</span>
+            @Override
+            public void onSuccess(JSONArray array) {
+<span class="nc" id="L1083">                runOnUiThread(() -&gt; showEventsDialog(array));</span>
+<span class="nc" id="L1084">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L1088">                runOnUiThread(() -&gt; Toast.makeText(GroupChatActivity.this, error, Toast.LENGTH_SHORT).show());</span>
+<span class="nc" id="L1089">            }</span>
+        });
+<span class="nc" id="L1091">    }</span>
+
+    private void showEventsDialog(JSONArray events) {
+<span class="nc" id="L1094">        String message = formatEventsForDialog(events);</span>
+<span class="nc" id="L1095">        new AlertDialog.Builder(this)</span>
+<span class="nc" id="L1096">                .setTitle(&quot;Group Events&quot;)</span>
+<span class="nc" id="L1097">                .setMessage(message)</span>
+<span class="nc" id="L1098">                .setPositiveButton(&quot;Close&quot;, null)</span>
+<span class="nc" id="L1099">                .show();</span>
+<span class="nc" id="L1100">    }</span>
+
+    private String formatEventsForDialog(JSONArray events) {
+<span class="nc bnc" id="L1103" title="All 4 branches missed.">        if (events == null || events.length() == 0) {</span>
+<span class="nc" id="L1104">            return &quot;No events yet.&quot;;</span>
+        }
+
+<span class="nc" id="L1107">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L1108" title="All 2 branches missed.">        for (int i = 0; i &lt; events.length(); i++) {</span>
+<span class="nc" id="L1109">            Object raw = events.opt(i);</span>
+<span class="nc" id="L1110">            String line = extractEventDisplayLine(raw);</span>
+<span class="nc bnc" id="L1111" title="All 2 branches missed.">            if (line.isEmpty()) {</span>
+<span class="nc" id="L1112">                continue;</span>
+            }
+<span class="nc" id="L1114">            sb.append(i + 1).append(&quot;. &quot;).append(line).append(&quot;\n&quot;);</span>
+        }
+
+<span class="nc bnc" id="L1117" title="All 2 branches missed.">        if (sb.length() == 0) {</span>
+<span class="nc" id="L1118">            return &quot;No events yet.&quot;;</span>
+        }
+<span class="nc" id="L1120">        return sb.toString().trim();</span>
+    }
+
+    private String extractEventDisplayLine(Object raw) {
+<span class="nc bnc" id="L1124" title="All 2 branches missed.">        if (raw == null) return &quot;&quot;;</span>
+<span class="nc bnc" id="L1125" title="All 2 branches missed.">        if (raw instanceof String) return ((String) raw).trim();</span>
+<span class="nc bnc" id="L1126" title="All 2 branches missed.">        if (!(raw instanceof JSONObject)) return String.valueOf(raw);</span>
+
+<span class="nc" id="L1128">        JSONObject obj = (JSONObject) raw;</span>
+<span class="nc" id="L1129">        String title = obj.optString(&quot;title&quot;,</span>
+<span class="nc" id="L1130">                obj.optString(&quot;event&quot;,</span>
+<span class="nc" id="L1131">                        obj.optString(&quot;name&quot;, &quot;&quot;))).trim();</span>
+<span class="nc" id="L1132">        String id = obj.optString(&quot;eventId&quot;, obj.optString(&quot;id&quot;, &quot;&quot;)).trim();</span>
+<span class="nc" id="L1133">        String when = obj.optString(&quot;when&quot;,</span>
+<span class="nc" id="L1134">                obj.optString(&quot;timestamp&quot;,</span>
+<span class="nc" id="L1135">                        obj.optString(&quot;scheduledAt&quot;,</span>
+<span class="nc" id="L1136">                                obj.optString(&quot;eventTime&quot;, &quot;&quot;)))).trim();</span>
+<span class="nc" id="L1137">        String location = obj.optString(&quot;location&quot;,</span>
+<span class="nc" id="L1138">                obj.optString(&quot;eventLocation&quot;,</span>
+<span class="nc" id="L1139">                        obj.optString(&quot;place&quot;, &quot;&quot;))).trim();</span>
+<span class="nc" id="L1140">        String description = obj.optString(&quot;description&quot;,</span>
+<span class="nc" id="L1141">                obj.optString(&quot;details&quot;,</span>
+<span class="nc" id="L1142">                        obj.optString(&quot;content&quot;, &quot;&quot;))).trim();</span>
+
+<span class="nc bnc" id="L1144" title="All 2 branches missed.">        String titleWithId = title.isEmpty()</span>
+<span class="nc" id="L1145">                ? &quot;&quot;</span>
+<span class="nc bnc" id="L1146" title="All 2 branches missed.">                : (id.isEmpty() ? title : title + &quot; (ID: &quot; + id + &quot;)&quot;);</span>
+
+<span class="nc" id="L1148">        StringBuilder line = new StringBuilder();</span>
+<span class="nc bnc" id="L1149" title="All 2 branches missed.">        if (!titleWithId.isEmpty()) {</span>
+<span class="nc" id="L1150">            line.append(titleWithId);</span>
+        }
+<span class="nc bnc" id="L1152" title="All 2 branches missed.">        if (!when.isEmpty()) {</span>
+<span class="nc bnc" id="L1153" title="All 2 branches missed.">            if (line.length() &gt; 0) line.append(&quot;\n&quot;);</span>
+<span class="nc" id="L1154">            line.append(&quot;Time: &quot;).append(when);</span>
+        }
+<span class="nc bnc" id="L1156" title="All 2 branches missed.">        if (!location.isEmpty()) {</span>
+<span class="nc bnc" id="L1157" title="All 2 branches missed.">            if (line.length() &gt; 0) line.append(&quot;\n&quot;);</span>
+<span class="nc" id="L1158">            line.append(&quot;Location: &quot;).append(location);</span>
+        }
+<span class="nc bnc" id="L1160" title="All 2 branches missed.">        if (!description.isEmpty()) {</span>
+<span class="nc bnc" id="L1161" title="All 2 branches missed.">            if (line.length() &gt; 0) line.append(&quot;\n&quot;);</span>
+<span class="nc" id="L1162">            line.append(&quot;Description: &quot;).append(description);</span>
+        }
+
+<span class="nc bnc" id="L1165" title="All 2 branches missed.">        if (line.length() == 0) return obj.toString();</span>
+<span class="nc" id="L1166">        return line.toString();</span>
+    }
+
+    private void loadAndShowAnnouncements() {
+<span class="pc bpc" id="L1170" title="1 of 2 branches missed.">        if (groupId &lt;= 0) {</span>
+<span class="nc" id="L1171">            Toast.makeText(this, &quot;Invalid group&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L1172">            return;</span>
+        }
+
+<span class="fc" id="L1175">        moderatorRepository.getOrderedAnnouncementsForChat(this, groupId, moderatorId, new ModeratorRepository.JsonArrayCallback() {</span>
+            @Override
+            public void onSuccess(JSONArray array) {
+<span class="nc" id="L1178">                runOnUiThread(() -&gt; showAnnouncementsDialog(array));</span>
+<span class="nc" id="L1179">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="fc" id="L1183">                runOnUiThread(() -&gt; Toast.makeText(GroupChatActivity.this, error, Toast.LENGTH_SHORT).show());</span>
+<span class="fc" id="L1184">            }</span>
+        });
+<span class="fc" id="L1186">    }</span>
+
+    private void showAnnouncementsDialog(JSONArray announcements) {
+<span class="nc" id="L1189">        String message = formatAnnouncementsForDialog(announcements);</span>
+<span class="nc" id="L1190">        new AlertDialog.Builder(this)</span>
+<span class="nc" id="L1191">                .setTitle(&quot;Announcements&quot;)</span>
+<span class="nc" id="L1192">                .setMessage(message)</span>
+<span class="nc" id="L1193">                .setPositiveButton(&quot;Close&quot;, null)</span>
+<span class="nc" id="L1194">                .show();</span>
+<span class="nc" id="L1195">    }</span>
+
+    private String formatAnnouncementsForDialog(JSONArray announcements) {
+<span class="nc bnc" id="L1198" title="All 4 branches missed.">        if (announcements == null || announcements.length() == 0) {</span>
+<span class="nc" id="L1199">            return &quot;No announcements yet.&quot;;</span>
+        }
+
+<span class="nc" id="L1202">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L1203" title="All 2 branches missed.">        for (int i = 0; i &lt; announcements.length(); i++) {</span>
+<span class="nc" id="L1204">            JSONObject announcement = announcements.optJSONObject(i);</span>
+<span class="nc bnc" id="L1205" title="All 2 branches missed.">            if (announcement == null) {</span>
+<span class="nc" id="L1206">                continue;</span>
+            }
+<span class="nc" id="L1208">            String block = extractAnnouncementDisplayBlock(announcement);</span>
+<span class="nc bnc" id="L1209" title="All 2 branches missed.">            if (block.isEmpty()) {</span>
+<span class="nc" id="L1210">                continue;</span>
+            }
+<span class="nc" id="L1212">            sb.append(i + 1).append(&quot;. &quot;).append(block).append(&quot;\n\n&quot;);</span>
+        }
+
+<span class="nc bnc" id="L1215" title="All 2 branches missed.">        if (sb.length() == 0) {</span>
+<span class="nc" id="L1216">            return &quot;No announcements yet.&quot;;</span>
+        }
+<span class="nc" id="L1218">        return sb.toString().trim();</span>
+    }
+
+    private String extractAnnouncementDisplayBlock(JSONObject announcement) {
+<span class="nc bnc" id="L1222" title="All 2 branches missed.">        if (announcement == null) {</span>
+<span class="nc" id="L1223">            return &quot;&quot;;</span>
+        }
+
+<span class="nc" id="L1226">        String title = announcement.optString(&quot;title&quot;, &quot;&quot;).trim();</span>
+<span class="nc" id="L1227">        String content = announcement.optString(&quot;content&quot;,</span>
+<span class="nc" id="L1228">                announcement.optString(&quot;announcement&quot;, &quot;&quot;)).trim();</span>
+<span class="nc" id="L1229">        String createdAt = announcement.optString(&quot;createdAt&quot;, &quot;&quot;).trim();</span>
+<span class="nc bnc" id="L1230" title="All 2 branches missed.">        boolean pinned = announcement.optBoolean(&quot;pinned&quot;, false)</span>
+<span class="nc bnc" id="L1231" title="All 2 branches missed.">                || announcement.optBoolean(&quot;isPinned&quot;, false);</span>
+
+<span class="nc" id="L1233">        StringBuilder block = new StringBuilder();</span>
+<span class="nc bnc" id="L1234" title="All 2 branches missed.">        if (pinned) {</span>
+<span class="nc" id="L1235">            block.append(&quot;[PINNED]&quot;);</span>
+        }
+
+<span class="nc bnc" id="L1238" title="All 2 branches missed.">        if (!title.isEmpty()) {</span>
+<span class="nc bnc" id="L1239" title="All 2 branches missed.">            if (block.length() &gt; 0) block.append(&quot; &quot;);</span>
+<span class="nc" id="L1240">            block.append(title);</span>
+        }
+<span class="nc bnc" id="L1242" title="All 2 branches missed.">        if (!content.isEmpty()) {</span>
+<span class="nc bnc" id="L1243" title="All 2 branches missed.">            if (block.length() &gt; 0) block.append(&quot;\n&quot;);</span>
+<span class="nc" id="L1244">            block.append(content);</span>
+        }
+<span class="nc bnc" id="L1246" title="All 2 branches missed.">        if (!createdAt.isEmpty()) {</span>
+<span class="nc bnc" id="L1247" title="All 2 branches missed.">            if (block.length() &gt; 0) block.append(&quot;\n&quot;);</span>
+<span class="nc" id="L1248">            block.append(&quot;Created: &quot;).append(createdAt);</span>
+        }
+
+<span class="nc" id="L1251">        return block.toString().trim();</span>
+    }
+
+    private void loadPinnedAnnouncement() {
+<span class="fc" id="L1255">        moderatorRepository.getPinnedAnnouncementsForGroup(this, groupId, new ModeratorRepository.JsonArrayCallback() {</span>
+            @Override
+            public void onSuccess(JSONArray array) {
+<span class="fc" id="L1258">                runOnUiThread(() -&gt; renderPinnedAnnouncement(array));</span>
+<span class="fc" id="L1259">            }</span>
+
+            @Override
+            public void onError(String error) {
+                // Fallback to broader announcements endpoint if pinned endpoint is unavailable.
+<span class="fc" id="L1264">                moderatorRepository.getOrderedAnnouncementsForChat(GroupChatActivity.this, groupId, moderatorId, new ModeratorRepository.JsonArrayCallback() {</span>
+                    @Override
+                    public void onSuccess(JSONArray array) {
+<span class="nc" id="L1267">                        runOnUiThread(() -&gt; renderPinnedAnnouncement(array));</span>
+<span class="nc" id="L1268">                    }</span>
+
+                    @Override
+                    public void onError(String fallbackError) {
+<span class="fc" id="L1272">                        Log.d(TAG, &quot;Pinned announcement unavailable: &quot; + fallbackError);</span>
+<span class="fc" id="L1273">                        runOnUiThread(() -&gt; hidePinnedAnnouncement());</span>
+<span class="fc" id="L1274">                    }</span>
+                });
+<span class="fc" id="L1276">            }</span>
+        });
+<span class="fc" id="L1278">    }</span>
+
+    private void renderPinnedAnnouncement(JSONArray announcements) {
+<span class="fc" id="L1281">        JSONObject pinned = selectPinnedAnnouncement(announcements);</span>
+<span class="pc bpc" id="L1282" title="1 of 2 branches missed.">        if (pinned == null) {</span>
+<span class="fc" id="L1283">            hidePinnedAnnouncement();</span>
+<span class="fc" id="L1284">            return;</span>
+        }
+
+<span class="nc" id="L1287">        String displayText = formatPinnedAnnouncement(pinned);</span>
+<span class="nc bnc" id="L1288" title="All 2 branches missed.">        if (displayText.isEmpty()) {</span>
+<span class="nc" id="L1289">            hidePinnedAnnouncement();</span>
+<span class="nc" id="L1290">            return;</span>
+        }
+
+<span class="nc" id="L1293">        tvPinnedAnnouncement.setText(displayText);</span>
+<span class="nc" id="L1294">        layoutPinnedAnnouncement.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L1295">    }</span>
+
+    private void hidePinnedAnnouncement() {
+<span class="fc" id="L1298">        tvPinnedAnnouncement.setText(&quot;&quot;);</span>
+<span class="fc" id="L1299">        layoutPinnedAnnouncement.setVisibility(View.GONE);</span>
+<span class="fc" id="L1300">    }</span>
+
+    private JSONObject selectPinnedAnnouncement(JSONArray announcements) {
+<span class="pc bpc" id="L1303" title="2 of 4 branches missed.">        if (announcements == null || announcements.length() == 0) {</span>
+<span class="fc" id="L1304">            return null;</span>
+        }
+
+<span class="nc bnc" id="L1307" title="All 2 branches missed.">        for (int i = 0; i &lt; announcements.length(); i++) {</span>
+<span class="nc" id="L1308">            JSONObject obj = announcements.optJSONObject(i);</span>
+<span class="nc bnc" id="L1309" title="All 2 branches missed.">            if (obj == null) {</span>
+<span class="nc" id="L1310">                continue;</span>
+            }
+<span class="nc bnc" id="L1312" title="All 4 branches missed.">            if (obj.optBoolean(&quot;pinned&quot;, false) || obj.optBoolean(&quot;isPinned&quot;, false)) {</span>
+<span class="nc" id="L1313">                return obj;</span>
+            }
+        }
+<span class="nc" id="L1316">        return null;</span>
+    }
+
+    private String formatPinnedAnnouncement(JSONObject announcement) {
+<span class="nc bnc" id="L1320" title="All 2 branches missed.">        if (announcement == null) {</span>
+<span class="nc" id="L1321">            return &quot;&quot;;</span>
+        }
+
+<span class="nc" id="L1324">        String title = announcement.optString(&quot;title&quot;, &quot;&quot;).trim();</span>
+<span class="nc" id="L1325">        String content = announcement.optString(&quot;content&quot;,</span>
+<span class="nc" id="L1326">                announcement.optString(&quot;announcement&quot;, &quot;&quot;)).trim();</span>
+
+<span class="nc bnc" id="L1328" title="All 4 branches missed.">        if (title.isEmpty() &amp;&amp; content.isEmpty()) {</span>
+<span class="nc" id="L1329">            return &quot;&quot;;</span>
+        }
+<span class="nc bnc" id="L1331" title="All 2 branches missed.">        if (title.isEmpty()) {</span>
+<span class="nc" id="L1332">            return content;</span>
+        }
+<span class="nc bnc" id="L1334" title="All 2 branches missed.">        if (content.isEmpty()) {</span>
+<span class="nc" id="L1335">            return title;</span>
+        }
+<span class="nc" id="L1337">        return title + &quot;\n&quot; + content;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

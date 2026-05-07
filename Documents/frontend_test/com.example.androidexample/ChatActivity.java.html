@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">ChatActivity.java</span></div><h1>ChatActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+
+import org.java_websocket.handshake.ServerHandshake;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L24">public class ChatActivity extends AppCompatActivity implements WebSocketEventListener {</span>
+
+    private static final String TAG = &quot;ChatActivity&quot;;
+    private static final int MAX_CONVO_RETRIES = 2;
+<span class="fc" id="L28">    private int convoTries = 0;</span>
+
+    private Button sendBtn, backBtn;
+    private EditText msgEtx;
+    private RecyclerView recyclerChat;
+    private TextView tvChatWith;
+
+    private ChatAdapter chatAdapter;
+<span class="fc" id="L36">    private List&lt;ChatMessage&gt; messageList = new ArrayList&lt;&gt;();</span>
+
+    private int currentUserId;
+    private int otherUserId;
+<span class="fc" id="L40">    private int conversationId = -1;</span>
+    private String otherUsername;
+<span class="fc" id="L42">    private String lastSentMessage = null;</span>
+
+    private static final String WS_BASE = &quot;ws://coms-3090-015.class.las.iastate.edu:8080/chat/&quot;;
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L49">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L50">        setContentView(R.layout.activity_chat);</span>
+
+<span class="fc" id="L52">        currentUserId = getIntent().getIntExtra(&quot;USER_ID&quot;, 1);</span>
+<span class="fc" id="L53">        otherUserId   = getIntent().getIntExtra(&quot;OTHER_USER_ID&quot;, -1);</span>
+<span class="fc" id="L54">        otherUsername  = getIntent().getStringExtra(&quot;OTHER_USERNAME&quot;);</span>
+
+<span class="fc" id="L56">        sendBtn       = findViewById(R.id.sendBtn);</span>
+<span class="fc" id="L57">        backBtn       = findViewById(R.id.backBtn);</span>
+<span class="fc" id="L58">        msgEtx        = findViewById(R.id.msgEdt);</span>
+<span class="fc" id="L59">        recyclerChat  = findViewById(R.id.recyclerChat);</span>
+<span class="fc" id="L60">        tvChatWith    = findViewById(R.id.tvChatWith);</span>
+
+<span class="fc" id="L62">        LinearLayoutManager layoutManager = new LinearLayoutManager(this);</span>
+<span class="fc" id="L63">        layoutManager.setStackFromEnd(true);</span>
+<span class="fc" id="L64">        recyclerChat.setLayoutManager(layoutManager);</span>
+<span class="fc" id="L65">        chatAdapter = new ChatAdapter(messageList);</span>
+<span class="fc" id="L66">        recyclerChat.setAdapter(chatAdapter);</span>
+
+        // Disable send button until chat is ready
+<span class="fc" id="L69">        sendBtn.setEnabled(false);</span>
+
+<span class="fc" id="L71">        backBtn.setOnClickListener(v -&gt; {</span>
+<span class="fc" id="L72">            WebSocketClientManager.getInstance().removeWebSocketEventListener();</span>
+<span class="fc" id="L73">            finish();</span>
+<span class="fc" id="L74">        });</span>
+
+<span class="pc bpc" id="L76" title="2 of 6 branches missed.">        if (otherUsername != null &amp;&amp; !otherUsername.isEmpty() &amp;&amp; !otherUsername.equals(&quot;Chat&quot;)) {</span>
+<span class="fc" id="L77">            tvChatWith.setText(otherUsername);</span>
+<span class="fc" id="L78">            fetchConversationId();</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        } else if (otherUserId &gt; 0) {</span>
+<span class="fc" id="L80">            tvChatWith.setText(&quot;Loading...&quot;);</span>
+<span class="fc" id="L81">            fetchOtherUserName(otherUserId);</span>
+        } else {
+<span class="fc" id="L83">            Toast.makeText(this, &quot;No chat partner specified&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L84">            finish();</span>
+        }
+
+        // Optionally show a loading message in chat
+<span class="fc" id="L88">        appendMessage(&quot;Preparing chat...&quot;, false);</span>
+<span class="fc" id="L89">    }</span>
+
+
+    private void fetchConversationId() {
+<span class="fc" id="L93">        convoTries++;</span>
+<span class="fc" id="L94">        String url = BASE_URL + &quot;/conversations/direct&quot;;</span>
+<span class="fc" id="L95">        Log.d(TAG, &quot;POST &quot; + url + &quot; with user1Id=&quot; + currentUserId + &quot; user2Id=&quot; + otherUserId + &quot; (try &quot; + convoTries + &quot;)&quot;);</span>
+
+<span class="fc" id="L97">        JSONObject body = new JSONObject();</span>
+        try {
+<span class="fc" id="L99">            body.put(&quot;user1Id&quot;, currentUserId);</span>
+<span class="fc" id="L100">            body.put(&quot;user2Id&quot;, otherUserId);</span>
+<span class="nc" id="L101">        } catch (Exception e) {</span>
+<span class="nc" id="L102">            Log.e(TAG, &quot;Error building request body&quot;, e);</span>
+<span class="nc" id="L103">            connectWebSocket();</span>
+<span class="nc" id="L104">            return;</span>
+<span class="fc" id="L105">        }</span>
+
+<span class="fc" id="L107">        StringRequest request = new StringRequest(Request.Method.POST, url,</span>
+                response -&gt; {
+<span class="fc" id="L109">                    Log.d(TAG, &quot;Conversation response: &quot; + response);</span>
+                    try {
+<span class="fc" id="L111">                        JSONObject json = new JSONObject(response);</span>
+<span class="fc" id="L112">                        conversationId = json.optInt(&quot;conversationId&quot;,</span>
+<span class="fc" id="L113">                                json.optInt(&quot;id&quot;,</span>
+<span class="fc" id="L114">                                        json.optInt(&quot;conversation_id&quot;, -1)));</span>
+<span class="fc" id="L115">                        Log.d(TAG, &quot;Got conversationId = &quot; + conversationId);</span>
+<span class="nc" id="L116">                    } catch (Exception e) {</span>
+                        try {
+<span class="nc" id="L118">                            conversationId = Integer.parseInt(response.trim());</span>
+<span class="nc" id="L119">                            Log.d(TAG, &quot;Parsed conversationId from plain response = &quot; + conversationId);</span>
+<span class="nc" id="L120">                        } catch (NumberFormatException nfe) {</span>
+<span class="nc" id="L121">                            Log.e(TAG, &quot;Could not parse conversationId from: &quot; + response);</span>
+<span class="nc" id="L122">                        }</span>
+<span class="fc" id="L123">                    }</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">                    if (conversationId &lt;= 0) {</span>
+<span class="nc" id="L125">                        Log.e(TAG, &quot;No valid conversationId returned from backend for users &quot; + currentUserId + &quot; and &quot; + otherUserId + &quot;. Response: &quot; + response);</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">                        if (convoTries &lt; MAX_CONVO_RETRIES) {</span>
+<span class="nc" id="L127">                            Log.d(TAG, &quot;Retrying fetchConversationId (try &quot; + (convoTries+1) + &quot;)&quot;);</span>
+<span class="nc" id="L128">                            fetchConversationId();</span>
+                        } else {
+<span class="nc" id="L130">                            Toast.makeText(this, &quot;Could not establish conversation (no valid ID returned)&quot;, Toast.LENGTH_LONG).show();</span>
+                        }
+<span class="nc" id="L132">                        return;</span>
+                    }
+<span class="fc" id="L134">                    loadChatHistoryThenConnect();</span>
+<span class="fc" id="L135">                },</span>
+                error -&gt; {
+<span class="nc" id="L137">                    Log.e(TAG, &quot;Failed to get conversationId: &quot; + error);</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                    if (error.networkResponse != null) {</span>
+<span class="nc" id="L139">                        String errBody = new String(error.networkResponse.data);</span>
+<span class="nc" id="L140">                        Log.e(TAG, &quot;Status: &quot; + error.networkResponse.statusCode</span>
+                                + &quot; Body: &quot; + errBody);
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                        if (convoTries &lt; MAX_CONVO_RETRIES) {</span>
+<span class="nc" id="L143">                            Log.d(TAG, &quot;Retrying fetchConversationId (try &quot; + (convoTries+1) + &quot;)&quot;);</span>
+<span class="nc" id="L144">                            fetchConversationId();</span>
+                        } else {
+<span class="nc" id="L146">                            Toast.makeText(this, &quot;Could not establish conversation: &quot; + errBody, Toast.LENGTH_LONG).show();</span>
+                        }
+<span class="nc" id="L148">                    } else {</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                        if (convoTries &lt; MAX_CONVO_RETRIES) {</span>
+<span class="nc" id="L150">                            Log.d(TAG, &quot;Retrying fetchConversationId (try &quot; + (convoTries+1) + &quot;)&quot;);</span>
+<span class="nc" id="L151">                            fetchConversationId();</span>
+                        } else {
+<span class="nc" id="L153">                            Toast.makeText(this, &quot;Could not establish conversation (network error)&quot;, Toast.LENGTH_LONG).show();</span>
+                        }
+                    }
+<span class="nc" id="L156">                    connectWebSocket();</span>
+<span class="pc" id="L157">                }) {</span>
+            @Override
+            public byte[] getBody() {
+<span class="fc" id="L160">                return body.toString().getBytes();</span>
+            }
+
+            @Override
+            public String getBodyContentType() {
+<span class="fc" id="L165">                return &quot;application/json&quot;;</span>
+            }
+        };
+
+<span class="fc" id="L169">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L170">    }</span>
+
+    private void loadChatHistoryThenConnect() {
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        if (conversationId &lt;= 0) {</span>
+<span class="nc" id="L174">            Log.w(TAG, &quot;No valid conversationId (&quot; + conversationId + &quot;), skipping history load&quot;);</span>
+<span class="nc" id="L175">            Log.w(TAG, &quot;This means POST /conversations/direct did not return a valid ID&quot;);</span>
+<span class="nc" id="L176">            connectWebSocket();</span>
+<span class="nc" id="L177">            return;</span>
+        }
+
+<span class="fc" id="L180">        String primaryUrl = BASE_URL + &quot;/messages/conversation/&quot; + conversationId + &quot;/user/&quot; + currentUserId;</span>
+<span class="fc" id="L181">        Log.d(TAG, &quot;GET (primary) &quot; + primaryUrl);</span>
+
+<span class="fc" id="L183">        StringRequest request = new StringRequest(Request.Method.GET, primaryUrl,</span>
+                response -&gt; {
+<span class="fc" id="L185">                    Log.d(TAG, &quot;Primary history response (&quot; + response.length() + &quot; chars): &quot;</span>
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">                            + (response.length() &gt; 200 ? response.substring(0, 200) + &quot;...&quot; : response));</span>
+<span class="fc" id="L187">                    int loaded = parseAndLoadMessages(response);</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">                    if (loaded == 0) {</span>
+<span class="fc" id="L189">                        Log.d(TAG, &quot;Primary URL returned 0 messages, trying fallback URL...&quot;);</span>
+<span class="fc" id="L190">                        loadChatHistoryFallback();</span>
+                    } else {
+<span class="nc" id="L192">                        Log.d(TAG, &quot;Loaded &quot; + loaded + &quot; history messages from primary URL&quot;);</span>
+<span class="nc" id="L193">                        connectWebSocket();</span>
+                    }
+                    // Chat is ready, enable send button
+<span class="fc" id="L196">                    sendBtn.setEnabled(true);</span>
+<span class="fc" id="L197">                },</span>
+                error -&gt; {
+<span class="nc" id="L199">                    Log.e(TAG, &quot;Primary history URL FAILED: &quot; + error);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">                    int status = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                    String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : &quot;&quot;;</span>
+<span class="nc" id="L202">                    Log.e(TAG, &quot;Primary error status: &quot; + status + &quot; body: &quot; + errBody);</span>
+<span class="nc bnc" id="L203" title="All 8 branches missed.">                    if ((status == 403 || status == 401 || status == 404) &amp;&amp; errBody.toLowerCase().contains(&quot;not in this conversation&quot;)) {</span>
+                        // Backend may still return a &quot;not in this conversation&quot; message, but
+                        // membership enforcement was removed. Proceed to fallback and allow sending.
+<span class="nc" id="L206">                        Log.w(TAG, &quot;Membership warning from backend; proceeding despite message: &quot; + errBody);</span>
+<span class="nc" id="L207">                        loadChatHistoryFallback();</span>
+<span class="nc" id="L208">                        return;</span>
+                    }
+<span class="nc" id="L210">                    Log.d(TAG, &quot;Trying fallback history URL...&quot;);</span>
+<span class="nc" id="L211">                    loadChatHistoryFallback();</span>
+<span class="nc" id="L212">                });</span>
+
+<span class="fc" id="L214">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L215">    }</span>
+
+
+    private void loadChatHistoryFallback() {
+<span class="fc" id="L219">        String fallbackUrl = BASE_URL + &quot;/messages/conversation/&quot; + conversationId;</span>
+<span class="fc" id="L220">        Log.d(TAG, &quot;GET (fallback) &quot; + fallbackUrl);</span>
+
+<span class="fc" id="L222">        StringRequest request = new StringRequest(Request.Method.GET, fallbackUrl,</span>
+                response -&gt; {
+<span class="nc" id="L224">                    Log.d(TAG, &quot;Fallback history response (&quot; + response.length() + &quot; chars): &quot;</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                            + (response.length() &gt; 200 ? response.substring(0, 200) + &quot;...&quot; : response));</span>
+<span class="nc" id="L226">                    int loaded = parseAndLoadMessages(response);</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                    if (loaded == 0) {</span>
+<span class="nc" id="L228">                        Log.d(TAG, &quot;Fallback also returned 0 messages — conversation is likely new (no messages yet)&quot;);</span>
+                    } else {
+<span class="nc" id="L230">                        Log.d(TAG, &quot;Loaded &quot; + loaded + &quot; history messages from fallback URL&quot;);</span>
+                    }
+<span class="nc" id="L232">                    connectWebSocket();</span>
+                    // Chat is ready, enable send button
+<span class="nc" id="L234">                    sendBtn.setEnabled(true);</span>
+<span class="nc" id="L235">                },</span>
+                error -&gt; {
+<span class="fc" id="L237">                    Log.e(TAG, &quot;Fallback history URL also FAILED: &quot; + error);</span>
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">                    int status = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">                    String errBody = error.networkResponse != null ? new String(error.networkResponse.data) : &quot;&quot;;</span>
+<span class="fc" id="L240">                    Log.e(TAG, &quot;Fallback error status: &quot; + status + &quot; body: &quot; + errBody);</span>
+<span class="pc bpc" id="L241" title="4 of 8 branches missed.">                    if ((status == 403 || status == 401 || status == 404) &amp;&amp; errBody.toLowerCase().contains(&quot;not in this conversation&quot;)) {</span>
+                        // Treat membership warnings as non-fatal (backend removed enforcement)
+<span class="nc" id="L243">                        Log.w(TAG, &quot;Membership warning from backend on fallback; connecting anyway: &quot; + errBody);</span>
+<span class="nc" id="L244">                        connectWebSocket();</span>
+                        // Chat is ready, enable send button
+<span class="nc" id="L246">                        sendBtn.setEnabled(true);</span>
+<span class="nc" id="L247">                        return;</span>
+                    }
+<span class="fc" id="L249">                    Log.d(TAG, &quot;Both history URLs failed — conversation may be new&quot;);</span>
+<span class="fc" id="L250">                    connectWebSocket();</span>
+                    // Chat is ready, enable send button
+<span class="fc" id="L252">                    sendBtn.setEnabled(true);</span>
+<span class="fc" id="L253">                });</span>
+
+<span class="fc" id="L255">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L256">    }</span>
+
+
+    private int parseAndLoadMessages(String response) {
+        try {
+<span class="fc" id="L261">            JSONArray arr = new JSONArray(response);</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">            if (arr.length() &gt; 0) {</span>
+<span class="nc" id="L263">                Log.d(TAG, &quot;FIRST MSG JSON: &quot; + arr.getJSONObject(0).toString());</span>
+<span class="nc" id="L264">                Log.d(TAG, &quot;currentUserId = &quot; + currentUserId);</span>
+            }
+<span class="pc bpc" id="L266" title="1 of 2 branches missed.">            for (int i = 0; i &lt; arr.length(); i++) {</span>
+<span class="nc" id="L267">                JSONObject obj = arr.getJSONObject(i);</span>
+
+<span class="nc" id="L269">                long id = obj.optLong(&quot;messageId&quot;, obj.optLong(&quot;id&quot;, 0));</span>
+<span class="nc" id="L270">                String content = obj.optString(&quot;content&quot;, obj.optString(&quot;message&quot;, &quot;&quot;));</span>
+<span class="nc" id="L271">                String timestamp = obj.optString(&quot;sentAt&quot;, obj.optString(&quot;timestamp&quot;, &quot;&quot;));</span>
+
+<span class="nc" id="L273">                int senderId = extractUserId(obj, &quot;sender&quot;, &quot;senderUserId&quot;, &quot;senderId&quot;, &quot;sender_id&quot;, &quot;fromId&quot;);</span>
+<span class="nc" id="L274">                int receiverId = extractUserId(obj, &quot;receiver&quot;, &quot;receiverUserId&quot;, &quot;receiverId&quot;, &quot;receiver_id&quot;, &quot;toId&quot;);</span>
+
+<span class="nc bnc" id="L276" title="All 2 branches missed.">                boolean isSent = (senderId == currentUserId);</span>
+<span class="nc" id="L277">                Log.d(TAG, &quot;Msg #&quot; + i + &quot; senderId=&quot; + senderId + &quot; currentUserId=&quot; + currentUserId + &quot; isSent=&quot; + isSent);</span>
+
+<span class="nc" id="L279">                ChatMessage msg = new ChatMessage(id, senderId, receiverId, content, timestamp, isSent);</span>
+<span class="nc" id="L280">                messageList.add(msg);</span>
+            }
+<span class="fc" id="L282">            chatAdapter.notifyDataSetChanged();</span>
+<span class="fc" id="L283">            scrollToBottom();</span>
+<span class="fc" id="L284">            return arr.length();</span>
+<span class="nc" id="L285">        } catch (Exception e) {</span>
+<span class="nc" id="L286">            Log.e(TAG, &quot;Error parsing chat history: &quot; + e.getMessage());</span>
+<span class="nc" id="L287">            return 0;</span>
+        }
+    }
+
+
+    private int extractUserId(JSONObject obj, String objectKey, String... flatKeys) {
+<span class="nc bnc" id="L293" title="All 2 branches missed.">        for (String key : flatKeys) {</span>
+<span class="nc" id="L294">            int val = obj.optInt(key, -1);</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">            if (val &gt; 0) return val;</span>
+        }
+<span class="nc bnc" id="L297" title="All 4 branches missed.">        if (obj.has(objectKey) &amp;&amp; !obj.isNull(objectKey)) {</span>
+            try {
+<span class="nc" id="L299">                JSONObject nested = obj.getJSONObject(objectKey);</span>
+<span class="nc" id="L300">                int val = nested.optInt(&quot;id&quot;, -1);</span>
+<span class="nc bnc" id="L301" title="All 2 branches missed.">                if (val &gt; 0) return val;</span>
+<span class="nc" id="L302">                val = nested.optInt(&quot;userId&quot;, -1);</span>
+<span class="nc bnc" id="L303" title="All 2 branches missed.">                if (val &gt; 0) return val;</span>
+<span class="nc" id="L304">                val = nested.optInt(&quot;user_id&quot;, -1);</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">                if (val &gt; 0) return val;</span>
+<span class="nc" id="L306">            } catch (Exception ignored) {}</span>
+        }
+<span class="nc" id="L308">        return 0;</span>
+    }
+
+    private void connectWebSocket() {
+        // Clear queued messages — history already has everything
+<span class="fc" id="L313">        WebSocketClientManager.getInstance().clearMessageQueue();</span>
+
+        // Ensure WebSocket manager knows who we are (used for echo filtering and queuing)
+<span class="fc" id="L316">        WebSocketClientManager.getInstance().setCurrentUserId(currentUserId);</span>
+<span class="fc" id="L317">        WebSocketClientManager.getInstance().setWebSocketEventListener(this);</span>
+
+<span class="fc" id="L319">        String wsUrl = WS_BASE + currentUserId;</span>
+
+<span class="fc bfc" id="L321" title="All 2 branches covered.">        if (WebSocketClientManager.getInstance().isConnected()) {</span>
+<span class="fc" id="L322">            Log.d(TAG, &quot;WebSocket already connected (from HomeActivity), reusing&quot;);</span>
+        } else {
+<span class="fc" id="L324">            Log.d(TAG, &quot;WebSocket not connected, connecting now: &quot; + wsUrl);</span>
+<span class="fc" id="L325">            WebSocketClientManager.getInstance().connectWebSocket(wsUrl);</span>
+        }
+
+<span class="fc" id="L328">        sendBtn.setOnClickListener(v -&gt; {</span>
+<span class="fc" id="L329">            String message = msgEtx.getText().toString().trim();</span>
+<span class="fc bfc" id="L330" title="All 2 branches covered.">            if (message.isEmpty()) {</span>
+<span class="fc" id="L331">                Toast.makeText(this, &quot;Message cannot be empty!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L332">                return;</span>
+            }
+            // If conversationId is not yet available (new match), don't send — try to create it and retry
+<span class="pc bpc" id="L335" title="1 of 2 branches missed.">            if (conversationId &lt;= 0) {</span>
+<span class="nc" id="L336">                Log.w(TAG, &quot;Send blocked: conversationId not ready (&quot; + conversationId + &quot;) — fetching/creating conversation&quot;);</span>
+<span class="nc" id="L337">                Toast.makeText(this, &quot;Preparing conversation, please wait...&quot;, Toast.LENGTH_SHORT).show();</span>
+                // Try to (re)create the direct conversation
+<span class="nc" id="L339">                fetchConversationId();</span>
+                // Ensure websocket is connected or connecting
+<span class="nc bnc" id="L341" title="All 2 branches missed.">                if (!WebSocketClientManager.getInstance().isConnected()) {</span>
+<span class="nc" id="L342">                    WebSocketClientManager.getInstance().connectWebSocket(WS_BASE + currentUserId);</span>
+                }
+<span class="nc" id="L344">                return;</span>
+            }
+
+            // Ensure websocket is connected before sending
+<span class="pc bpc" id="L348" title="1 of 2 branches missed.">            if (!WebSocketClientManager.getInstance().isConnected()) {</span>
+<span class="nc" id="L349">                Log.w(TAG, &quot;WebSocket not connected when trying to send — attempting reconnect&quot;);</span>
+<span class="nc" id="L350">                Toast.makeText(this, &quot;Connecting to chat, please wait...&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L351">                WebSocketClientManager.getInstance().connectWebSocket(WS_BASE + currentUserId);</span>
+<span class="nc" id="L352">                return;</span>
+            }
+
+            try {
+<span class="fc" id="L356">                JSONObject jsonMsg = new JSONObject();</span>
+<span class="fc" id="L357">                jsonMsg.put(&quot;conversationId&quot;, conversationId);</span>
+<span class="fc" id="L358">                jsonMsg.put(&quot;content&quot;, message);</span>
+
+                // Diagnostic info: log socket state and conversationId
+<span class="fc" id="L361">                Log.d(TAG, &quot;About to send. socketConnected=&quot; + WebSocketClientManager.getInstance().isConnected()</span>
+                        + &quot; conversationId=&quot; + conversationId + &quot; user=&quot; + currentUserId + &quot; -&gt; other=&quot; + otherUserId);
+
+<span class="fc" id="L364">                Log.d(TAG, &quot;Sending: &quot; + jsonMsg);</span>
+
+<span class="fc" id="L366">                boolean sent = WebSocketClientManager.getInstance().sendMessage(jsonMsg.toString());</span>
+<span class="pc bpc" id="L367" title="1 of 2 branches missed.">                if (sent) {</span>
+<span class="fc" id="L368">                    lastSentMessage = message;</span>
+<span class="fc" id="L369">                    appendMessage(message, true);</span>
+<span class="fc" id="L370">                    msgEtx.setText(&quot;&quot;);</span>
+                } else {
+<span class="nc" id="L372">                    Log.e(TAG, &quot;sendMessage returned false despite isConnected() == true&quot;);</span>
+<span class="nc" id="L373">                    Toast.makeText(this, &quot;Not connected. Reconnecting...&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L374">                    WebSocketClientManager.getInstance().connectWebSocket(WS_BASE + currentUserId);</span>
+                }
+<span class="nc" id="L376">            } catch (Exception e) {</span>
+<span class="nc" id="L377">                Log.e(TAG, &quot;Send error: &quot; + e.getMessage());</span>
+<span class="nc" id="L378">                Toast.makeText(this, &quot;Failed to send message&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L379">            }</span>
+<span class="fc" id="L380">        });</span>
+<span class="fc" id="L381">    }</span>
+
+    private void fetchOtherUserName(int userId) {
+<span class="fc" id="L384">        String url = BASE_URL + &quot;/users/&quot; + userId;</span>
+
+<span class="fc" id="L386">        StringRequest request = new StringRequest(Request.Method.GET, url,</span>
+                response -&gt; {
+                    try {
+<span class="fc" id="L389">                        JSONObject user = new JSONObject(response);</span>
+<span class="fc" id="L390">                        String name = user.optString(&quot;name&quot;, &quot;&quot;);</span>
+<span class="pc bpc" id="L391" title="1 of 2 branches missed.">                        if (name.isEmpty()) name = user.optString(&quot;displayName&quot;, &quot;&quot;);</span>
+<span class="pc bpc" id="L392" title="1 of 2 branches missed.">                        if (name.isEmpty()) name = &quot;User &quot; + userId;</span>
+<span class="fc" id="L393">                        otherUsername = name;</span>
+<span class="nc" id="L394">                    } catch (Exception e) {</span>
+<span class="nc" id="L395">                        otherUsername = &quot;User &quot; + userId;</span>
+<span class="fc" id="L396">                    }</span>
+<span class="fc" id="L397">                    tvChatWith.setText(otherUsername);</span>
+<span class="fc" id="L398">                    fetchConversationId();</span>
+<span class="fc" id="L399">                },</span>
+                error -&gt; {
+<span class="nc" id="L401">                    Log.e(TAG, &quot;Failed to fetch user name: &quot; + error);</span>
+<span class="nc" id="L402">                    otherUsername = &quot;User &quot; + userId;</span>
+<span class="nc" id="L403">                    tvChatWith.setText(otherUsername);</span>
+<span class="nc" id="L404">                    fetchConversationId();</span>
+<span class="nc" id="L405">                });</span>
+
+<span class="fc" id="L407">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L408">    }</span>
+
+    private void appendMessage(String content, boolean isSent) {
+<span class="fc" id="L411">        ChatMessage msg = new ChatMessage(content, isSent);</span>
+<span class="fc" id="L412">        messageList.add(msg);</span>
+<span class="fc" id="L413">        chatAdapter.notifyItemInserted(messageList.size() - 1);</span>
+<span class="fc" id="L414">        scrollToBottom();</span>
+<span class="fc" id="L415">    }</span>
+
+    private void scrollToBottom() {
+<span class="pc bpc" id="L418" title="1 of 2 branches missed.">        if (!messageList.isEmpty()) {</span>
+<span class="fc" id="L419">            recyclerChat.scrollToPosition(messageList.size() - 1);</span>
+        }
+<span class="fc" id="L421">    }</span>
+
+    @Override
+    public void onWebSocketOpen(ServerHandshake handshakedata) {
+<span class="fc" id="L425">        Log.d(TAG, &quot;WebSocket OPEN&quot;);</span>
+        // Do not append a user-visible &quot;Connected&quot; system message to chat history
+<span class="fc" id="L427">    }</span>
+
+    @Override
+    public void onWebSocketMessage(String message) {
+<span class="fc" id="L431">        runOnUiThread(() -&gt; {</span>
+<span class="fc" id="L432">            Log.d(TAG, &quot;WS message: &quot; + message);</span>
+
+            try {
+<span class="nc" id="L435">                JSONObject json = new JSONObject(message);</span>
+<span class="nc" id="L436">                String content = json.optString(&quot;content&quot;, json.optString(&quot;message&quot;, &quot;&quot;));</span>
+<span class="nc" id="L437">                int senderId = json.optInt(&quot;senderUserId&quot;,</span>
+<span class="nc" id="L438">                        json.optInt(&quot;senderId&quot;, json.optInt(&quot;sender_id&quot;, -1)));</span>
+
+<span class="nc bnc" id="L440" title="All 2 branches missed.">                if (!content.isEmpty()) {</span>
+<span class="nc bnc" id="L441" title="All 2 branches missed.">                    boolean isSent = (senderId == currentUserId);</span>
+
+                    // Detect echo
+<span class="nc bnc" id="L444" title="All 6 branches missed.">                    if (!isSent &amp;&amp; lastSentMessage != null &amp;&amp; content.equals(lastSentMessage)) {</span>
+<span class="nc" id="L445">                        isSent = true;</span>
+                    }
+
+<span class="nc bnc" id="L448" title="All 2 branches missed.">                    if (isSent) {</span>
+<span class="nc" id="L449">                        lastSentMessage = null;</span>
+<span class="nc" id="L450">                        return;</span>
+                    }
+<span class="nc" id="L452">                    appendMessage(content, false);</span>
+<span class="nc" id="L453">                    return;</span>
+                }
+<span class="fc" id="L455">            } catch (Exception ignored) {</span>
+<span class="nc" id="L456">            }</span>
+
+<span class="pc bpc" id="L458" title="1 of 2 branches missed.">            if (lastSentMessage != null) {</span>
+<span class="nc bnc" id="L459" title="All 4 branches missed.">                if (message.equals(lastSentMessage) || message.contains(lastSentMessage)) {</span>
+<span class="nc" id="L460">                    lastSentMessage = null;</span>
+<span class="nc" id="L461">                    return;</span>
+                }
+            }
+
+<span class="fc" id="L465">            String lower = message.toLowerCase();</span>
+<span class="pc bpc" id="L466" title="2 of 4 branches missed.">            if (lower.contains(&quot;has joined&quot;) || lower.contains(&quot;has left&quot;)</span>
+<span class="pc bpc" id="L467" title="2 of 4 branches missed.">                    || lower.contains(&quot;welcome&quot;) || lower.contains(&quot;entered&quot;)</span>
+<span class="pc bpc" id="L468" title="2 of 4 branches missed.">                    || lower.contains(&quot;connected&quot;) || lower.contains(&quot;disconnected&quot;)) {</span>
+<span class="nc" id="L469">                Log.d(TAG, &quot;Filtered system msg: &quot; + message);</span>
+<span class="nc" id="L470">                return;</span>
+            }
+
+<span class="fc" id="L473">            appendMessage(message, false);</span>
+<span class="fc" id="L474">        });</span>
+<span class="fc" id="L475">    }</span>
+
+    @Override
+    public void onWebSocketClose(int code, String reason, boolean remote) {
+<span class="fc" id="L479">        Log.d(TAG, &quot;WebSocket CLOSED: code=&quot; + code + &quot; reason=&quot; + reason);</span>
+<span class="fc" id="L480">        runOnUiThread(() -&gt;</span>
+<span class="fc" id="L481">            Toast.makeText(this, &quot;Chat disconnected&quot;, Toast.LENGTH_SHORT).show()</span>
+        );
+<span class="fc" id="L483">    }</span>
+
+    @Override
+    public void onWebSocketError(Exception ex) {
+<span class="nc bnc" id="L487" title="All 2 branches missed.">        Log.e(TAG, &quot;WebSocket ERROR: &quot; + (ex != null ? ex.getMessage() : &quot;unknown&quot;));</span>
+<span class="nc" id="L488">        runOnUiThread(() -&gt;</span>
+<span class="nc bnc" id="L489" title="All 2 branches missed.">            Toast.makeText(this, &quot;Connection error: &quot; + (ex != null ? ex.getMessage() : &quot;unknown&quot;),</span>
+<span class="nc" id="L490">                    Toast.LENGTH_LONG).show()</span>
+        );
+<span class="nc" id="L492">    }</span>
+
+    @Override
+    protected void onDestroy() {
+<span class="fc" id="L496">        super.onDestroy();</span>
+<span class="fc" id="L497">        WebSocketClientManager.getInstance().removeWebSocketEventListener();</span>
+<span class="fc" id="L498">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

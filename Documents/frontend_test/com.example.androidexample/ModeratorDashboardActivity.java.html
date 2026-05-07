@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ModeratorDashboardActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">ModeratorDashboardActivity.java</span></div><h1>ModeratorDashboardActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.Gravity;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+
+<span class="fc" id="L24">public class ModeratorDashboardActivity extends AppCompatActivity {</span>
+    private ModeratorRepository repository;
+    private ModeratorSessionManager sessionManager;
+
+    private int moderatorId;
+    private int currentUserId;
+
+    private TextView tvModeratorPermissions;
+    private EditText etGroupName;
+    private EditText etGroupDescription;
+    private EditText etGroupInterests;
+    private Button btnCreateModeratorGroup;
+    private LinearLayout layoutModeratorGroups;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L40">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L41">        setContentView(R.layout.activity_moderator_dashboard);</span>
+
+<span class="fc" id="L43">        repository = new ModeratorRepository();</span>
+<span class="fc" id="L44">        sessionManager = new ModeratorSessionManager(this);</span>
+
+<span class="fc" id="L46">        moderatorId = getIntent().getIntExtra(&quot;MODERATOR_ID&quot;, sessionManager.getModeratorId());</span>
+<span class="fc" id="L47">        currentUserId = getIntent().getIntExtra(&quot;USER_ID&quot;, -1);</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (moderatorId &lt;= 0) {</span>
+<span class="fc" id="L49">            Toast.makeText(this, &quot;No moderator session found&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L50">            finish();</span>
+<span class="fc" id="L51">            return;</span>
+        }
+
+<span class="fc" id="L54">        etGroupName = findViewById(R.id.etCreateModeratorGroupName);</span>
+<span class="fc" id="L55">        etGroupDescription = findViewById(R.id.etCreateModeratorGroupDescription);</span>
+<span class="fc" id="L56">        etGroupInterests = findViewById(R.id.etCreateModeratorGroupInterests);</span>
+<span class="fc" id="L57">        btnCreateModeratorGroup = findViewById(R.id.btnCreateModeratorGroup);</span>
+<span class="fc" id="L58">        layoutModeratorGroups = findViewById(R.id.layoutModeratorGroups);</span>
+
+<span class="fc" id="L60">        Button btnRefresh = findViewById(R.id.btnRefreshModeratorDashboard);</span>
+<span class="fc" id="L61">        Button btnLogout = findViewById(R.id.btnModeratorLogout);</span>
+
+<span class="pc" id="L63">        btnRefresh.setOnClickListener(v -&gt; loadDashboard());</span>
+<span class="fc" id="L64">        btnLogout.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L65">            sessionManager.clear();</span>
+<span class="nc" id="L66">            finish();</span>
+<span class="nc" id="L67">        });</span>
+
+<span class="fc" id="L69">        btnCreateModeratorGroup.setOnClickListener(v -&gt; createGroup());</span>
+
+<span class="fc" id="L71">        applyPermissionGates();</span>
+<span class="fc" id="L72">        loadDashboard();</span>
+<span class="fc" id="L73">    }</span>
+
+    private void applyPermissionGates() {
+<span class="fc" id="L76">        Set&lt;String&gt; permissions = sessionManager.getPermissions();</span>
+
+        // Fallback: some backend responses do not include permissions yet.
+        // If empty, keep moderator actions usable instead of hard-disabling UI.
+<span class="pc bpc" id="L80" title="2 of 4 branches missed.">        boolean hasPermissionPayload = permissions != null &amp;&amp; !permissions.isEmpty();</span>
+<span class="pc bpc" id="L81" title="3 of 4 branches missed.">        boolean canCreate = !hasPermissionPayload || permissions.contains(ModeratorPermissions.CREATE_GROUP);</span>
+
+<span class="fc" id="L83">        btnCreateModeratorGroup.setEnabled(canCreate);</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        btnCreateModeratorGroup.setAlpha(canCreate ? 1f : 0.5f);</span>
+<span class="fc" id="L85">    }</span>
+
+    private void loadDashboard() {
+<span class="fc" id="L88">        loadGroups();</span>
+<span class="fc" id="L89">    }</span>
+
+
+
+
+
+    private void loadGroups() {
+<span class="fc" id="L96">        repository.getManagedGroups(this, moderatorId, new ModeratorRepository.GroupsCallback() {</span>
+            @Override
+            public void onSuccess(List&lt;ModeratorManagedGroup&gt; groups) {
+<span class="fc" id="L99">                renderGroupCards(groups);</span>
+<span class="fc" id="L100">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L104">                layoutModeratorGroups.removeAllViews();</span>
+<span class="nc" id="L105">                TextView tv = new TextView(ModeratorDashboardActivity.this);</span>
+<span class="nc" id="L106">                tv.setText(error);</span>
+<span class="nc" id="L107">                tv.setTextColor(0xFFFFFFFF);</span>
+<span class="nc" id="L108">                layoutModeratorGroups.addView(tv);</span>
+<span class="nc" id="L109">            }</span>
+        });
+<span class="fc" id="L111">    }</span>
+
+    private void renderGroupCards(List&lt;ModeratorManagedGroup&gt; groups) {
+<span class="fc" id="L114">        layoutModeratorGroups.removeAllViews();</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">        if (groups.isEmpty()) {</span>
+<span class="nc" id="L116">            TextView empty = new TextView(this);</span>
+<span class="nc" id="L117">            empty.setText(&quot;No assigned groups yet.&quot;);</span>
+<span class="nc" id="L118">            empty.setTextColor(0xFFFFFFFF);</span>
+<span class="nc" id="L119">            layoutModeratorGroups.addView(empty);</span>
+<span class="nc" id="L120">            return;</span>
+        }
+
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        for (ModeratorManagedGroup group : groups) {</span>
+<span class="fc" id="L124">            LinearLayout card = new LinearLayout(this);</span>
+<span class="fc" id="L125">            card.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="fc" id="L126">            card.setPadding(dp(14), dp(14), dp(14), dp(14));</span>
+
+<span class="fc" id="L128">            GradientDrawable background = new GradientDrawable(</span>
+                    GradientDrawable.Orientation.TOP_BOTTOM,
+<span class="fc" id="L130">                    new int[]{Color.parseColor(&quot;#282844&quot;), Color.parseColor(&quot;#1E1E30&quot;)}</span>
+            );
+<span class="fc" id="L132">            background.setCornerRadius(dp(14));</span>
+<span class="fc" id="L133">            background.setStroke(dp(1), Color.parseColor(&quot;#39395A&quot;));</span>
+<span class="fc" id="L134">            card.setBackground(background);</span>
+
+<span class="fc" id="L136">            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(</span>
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+<span class="fc" id="L140">            params.setMargins(0, 0, 0, dp(12));</span>
+<span class="fc" id="L141">            card.setLayoutParams(params);</span>
+<span class="fc" id="L142">            card.setElevation(dp(2));</span>
+
+<span class="fc" id="L144">            TextView tvName = new TextView(this);</span>
+<span class="fc" id="L145">            tvName.setText(group.getGroupName() + &quot;  (#&quot; + group.getGroupId() + &quot;)&quot;);</span>
+<span class="fc" id="L146">            tvName.setTextColor(0xFFFFFFFF);</span>
+<span class="fc" id="L147">            tvName.setTextSize(17);</span>
+<span class="fc" id="L148">            tvName.setTypeface(null, android.graphics.Typeface.BOLD);</span>
+
+<span class="fc" id="L150">            TextView tvDesc = new TextView(this);</span>
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">            String description = group.getDescription() == null ? &quot;No description yet.&quot; : group.getDescription();</span>
+<span class="fc" id="L152">            tvDesc.setText(description);</span>
+<span class="fc" id="L153">            tvDesc.setTextColor(0xFFBFC0D4);</span>
+<span class="fc" id="L154">            tvDesc.setTextSize(13);</span>
+<span class="fc" id="L155">            tvDesc.setPadding(0, dp(4), 0, dp(10));</span>
+
+<span class="fc" id="L157">            TextView tvOpen = new TextView(this);</span>
+<span class="fc" id="L158">            tvOpen.setText(&quot;Open Group Chat&quot;);</span>
+<span class="fc" id="L159">            tvOpen.setTextColor(0xFF8D83FF);</span>
+<span class="fc" id="L160">            tvOpen.setGravity(Gravity.END);</span>
+<span class="fc" id="L161">            tvOpen.setTextSize(13);</span>
+
+<span class="fc" id="L163">            card.addView(tvName);</span>
+<span class="fc" id="L164">            card.addView(tvDesc);</span>
+<span class="fc" id="L165">            card.addView(tvOpen);</span>
+
+<span class="fc" id="L167">            card.setOnClickListener(v -&gt; {</span>
+<span class="nc" id="L168">                Intent intent = new Intent(ModeratorDashboardActivity.this, GroupChatActivity.class);</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">                if (currentUserId &gt; 0) {</span>
+<span class="nc" id="L170">                    intent.putExtra(&quot;USER_ID&quot;, currentUserId);</span>
+                }
+<span class="nc" id="L172">                intent.putExtra(&quot;MODERATOR_ID&quot;, moderatorId);</span>
+<span class="nc" id="L173">                intent.putExtra(&quot;IS_MODERATOR&quot;, true);</span>
+<span class="nc" id="L174">                intent.putExtra(&quot;GROUP_ID&quot;, group.getGroupId());</span>
+<span class="nc" id="L175">                intent.putExtra(&quot;GROUP_NAME&quot;, group.getGroupName());</span>
+<span class="nc" id="L176">                startActivity(intent);</span>
+<span class="nc" id="L177">            });</span>
+
+<span class="fc" id="L179">            layoutModeratorGroups.addView(card);</span>
+<span class="fc" id="L180">        }</span>
+<span class="fc" id="L181">    }</span>
+
+    private void createGroup() {
+<span class="fc" id="L184">        String name = etGroupName.getText().toString().trim();</span>
+<span class="fc" id="L185">        String description = etGroupDescription.getText().toString().trim();</span>
+<span class="fc" id="L186">        String interestsRaw = etGroupInterests.getText().toString().trim();</span>
+
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">        if (name.isEmpty()) {</span>
+<span class="fc" id="L189">            Toast.makeText(this, &quot;Enter group name&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L190">            return;</span>
+        }
+
+<span class="nc" id="L193">        List&lt;String&gt; interests = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        if (!interestsRaw.isEmpty()) {</span>
+<span class="nc" id="L195">            interests = Arrays.asList(interestsRaw.split(&quot;,&quot;));</span>
+        }
+
+<span class="nc" id="L198">        repository.createGroup(this, moderatorId, name, description, interests, new ModeratorRepository.JsonObjectCallback() {</span>
+            @Override
+            public void onSuccess(JSONObject object) {
+<span class="nc" id="L201">                Toast.makeText(ModeratorDashboardActivity.this, &quot;Group created&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L202">                etGroupName.setText(&quot;&quot;);</span>
+<span class="nc" id="L203">                etGroupDescription.setText(&quot;&quot;);</span>
+<span class="nc" id="L204">                etGroupInterests.setText(&quot;&quot;);</span>
+<span class="nc" id="L205">                loadGroups();</span>
+<span class="nc" id="L206">            }</span>
+
+            @Override
+            public void onError(String error) {
+<span class="nc" id="L210">                Toast.makeText(ModeratorDashboardActivity.this, error, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L211">            }</span>
+        });
+<span class="nc" id="L213">    }</span>
+
+    private int dp(int value) {
+<span class="fc" id="L216">        return (int) (value * getResources().getDisplayMetrics().density);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SignupActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">SignupActivity.java</span></div><h1>SignupActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+// SignupActivity.java
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
+<span class="fc" id="L20">public class SignupActivity extends AppCompatActivity {</span>
+
+    private EditText etEmail, etPassword, etDisplayName, etBio, etMajor, etAge, etInterests;
+    private Button btnSignup, btnBackToMain;
+
+    private static final String URL_SIGNUP = &quot;http://coms-3090-015.class.las.iastate.edu:8080/users&quot;;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L29">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L30">        setContentView(R.layout.activity_signup);</span>
+
+        // Initialize UI components
+<span class="fc" id="L33">        etEmail = findViewById(R.id.etEmail);</span>
+<span class="fc" id="L34">        etPassword = findViewById(R.id.etPassword);</span>
+<span class="fc" id="L35">        etDisplayName = findViewById(R.id.etDisplayName);</span>
+<span class="fc" id="L36">        etBio = findViewById(R.id.etBio);</span>
+<span class="fc" id="L37">        etMajor = findViewById(R.id.etMajor);</span>
+<span class="fc" id="L38">        etAge = findViewById(R.id.etAge);</span>
+<span class="fc" id="L39">        etInterests = findViewById(R.id.etInterests);</span>
+<span class="fc" id="L40">        btnSignup = findViewById(R.id.btnSignup);</span>
+<span class="fc" id="L41">        btnBackToMain = findViewById(R.id.btnBackToMain);</span>
+
+<span class="fc" id="L43">        btnSignup.setOnClickListener(v -&gt; performSignup());</span>
+<span class="pc" id="L44">        btnBackToMain.setOnClickListener(v -&gt; finish());</span>
+<span class="fc" id="L45">    }</span>
+
+    private void performSignup() {
+<span class="fc" id="L48">        String email = etEmail.getText().toString().trim();</span>
+<span class="fc" id="L49">        String password = etPassword.getText().toString().trim();</span>
+
+<span class="pc bpc" id="L51" title="1 of 4 branches missed.">        if (email.isEmpty() || password.isEmpty()) {</span>
+<span class="fc" id="L52">            Toast.makeText(this, &quot;Email and Password are required&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L53">            return;</span>
+        }
+
+<span class="nc" id="L56">        final Map&lt;String, Object&gt; params = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L57">        params.put(&quot;email&quot;, email);</span>
+<span class="nc" id="L58">        params.put(&quot;passwordHash&quot;, password); // Matches backend User entity field</span>
+<span class="nc" id="L59">        params.put(&quot;displayName&quot;, etDisplayName.getText().toString().trim());</span>
+<span class="nc" id="L60">        params.put(&quot;bio&quot;, etBio.getText().toString().trim());</span>
+<span class="nc" id="L61">        params.put(&quot;major&quot;, etMajor.getText().toString().trim());</span>
+<span class="nc" id="L62">        params.put(&quot;active&quot;,true);// backend: @Column(name = &quot;active&quot;, nullable = false)</span>
+<span class="nc" id="L63">        params.put(&quot;status&quot;,&quot;NEED_APPROVAL&quot;);// backend: @Column(name = &quot;status&quot;, nullable = false)&quot;)</span>
+        try {
+<span class="nc" id="L65">            String ageStr = etAge.getText().toString().trim();</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            params.put(&quot;age&quot;, ageStr.isEmpty() ? null : Integer.parseInt(ageStr));</span>
+<span class="nc" id="L67">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L68">            params.put(&quot;age&quot;, null);</span>
+<span class="nc" id="L69">        }</span>
+
+<span class="nc" id="L71">        String interestsText = etInterests.getText().toString().trim();</span>
+<span class="nc" id="L72">        org.json.JSONArray interestsArray = new org.json.JSONArray();</span>
+
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (!interestsText.isEmpty()) {</span>
+<span class="nc" id="L75">            String[] interests = interestsText.split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            for (String interest : interests) {</span>
+<span class="nc" id="L77">                String trimmed = interest.trim();</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                if (!trimmed.isEmpty()) {</span>
+<span class="nc" id="L79">                    interestsArray.put(trimmed);</span>
+                }
+            }
+        }
+
+<span class="nc" id="L84">        params.put(&quot;interests&quot;, interestsArray);</span>
+
+<span class="nc" id="L86">        StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_SIGNUP,</span>
+                response -&gt; {
+                    try {
+<span class="nc" id="L89">                        JSONObject jsonResponse = new JSONObject(response);</span>
+<span class="nc" id="L90">                        String message = jsonResponse.optString(&quot;message&quot;, &quot;&quot;);</span>
+                        
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                        if (&quot;success&quot;.equalsIgnoreCase(message)) {</span>
+<span class="nc" id="L93">                            Toast.makeText(getApplicationContext(), &quot;Signup Successful!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L94">                            finish();</span>
+                        } else {
+<span class="nc" id="L96">                            Toast.makeText(getApplicationContext(), &quot;Signup Failed: &quot; + message, Toast.LENGTH_SHORT).show();</span>
+                        }
+<span class="nc" id="L98">                    } catch (JSONException e) {</span>
+                        // If response is just &quot;success&quot; string instead of JSON
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                        if (response.contains(&quot;success&quot;)) {</span>
+<span class="nc" id="L101">                            Toast.makeText(getApplicationContext(), &quot;Signup Successful!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L102">                            finish();</span>
+                        } else {
+<span class="nc" id="L104">                            Log.e(&quot;Signup Error&quot;, &quot;JSON Parsing error&quot;, e);</span>
+<span class="nc" id="L105">                            Toast.makeText(getApplicationContext(), &quot;Server error. Please try again.&quot;, Toast.LENGTH_SHORT).show();</span>
+                        }
+<span class="nc" id="L107">                    }</span>
+<span class="nc" id="L108">                },</span>
+                error -&gt; {
+<span class="nc" id="L110">                    Log.e(&quot;Signup Error&quot;, &quot;Volley Error: &quot; + error.toString());</span>
+<span class="nc" id="L111">                    Toast.makeText(getApplicationContext(), &quot;Signup Failed. Check connection.&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L112">                }) {</span>
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+<span class="nc" id="L115">                return new JSONObject(params).toString().getBytes();</span>
+            }
+            @Override
+            public String getBodyContentType() {
+<span class="nc" id="L119">                return &quot;application/json; charset=utf-8&quot;;</span>
+            }
+        };
+
+<span class="nc" id="L123">        VolleySingleton.getInstance(this).addToRequestQueue(stringRequest);</span>
+<span class="nc" id="L124">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>

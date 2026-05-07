@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminUsageAnalyticsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.androidexample</a> &gt; <span class="el_source">AdminUsageAnalyticsActivity.java</span></div><h1>AdminUsageAnalyticsActivity.java</h1><pre class="source lang-java linenums">package com.example.androidexample;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+<span class="fc" id="L18">public class AdminUsageAnalyticsActivity extends AppCompatActivity {</span>
+
+    private static final String TAG = &quot;AdminUsageAnalytics&quot;;
+    private static final String BASE_URL = &quot;http://coms-3090-015.class.las.iastate.edu:8080&quot;;
+
+    private TextView tvTotalUsers;
+    private TextView tvPendingUsers;
+    private TextView tvApprovedUsers;
+    private TextView tvSuspendedUsers;
+    private TextView tvDisabledUsers;
+    private TextView tvDeclinedUsers;
+    private TextView tvPendingReports;
+    private TextView tvApprovedReports;
+    private TextView tvDeclinedReports;
+    private TextView tvRecentMatches;
+    private TextView tvAnalyticsStatus;
+
+    private Button btnRefreshAnalytics;
+    private Button btnBackUsageAnalytics;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L40">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L41">        setContentView(R.layout.activity_admin_usage_analytics);</span>
+
+<span class="fc" id="L43">        tvTotalUsers = findViewById(R.id.tvTotalUsers);</span>
+<span class="fc" id="L44">        tvPendingUsers = findViewById(R.id.tvPendingUsers);</span>
+<span class="fc" id="L45">        tvApprovedUsers = findViewById(R.id.tvApprovedUsers);</span>
+<span class="fc" id="L46">        tvSuspendedUsers = findViewById(R.id.tvSuspendedUsers);</span>
+<span class="fc" id="L47">        tvDisabledUsers = findViewById(R.id.tvDisabledUsers);</span>
+<span class="fc" id="L48">        tvDeclinedUsers = findViewById(R.id.tvDeclinedUsers);</span>
+<span class="fc" id="L49">        tvPendingReports = findViewById(R.id.tvPendingReports);</span>
+<span class="fc" id="L50">        tvApprovedReports = findViewById(R.id.tvApprovedReports);</span>
+<span class="fc" id="L51">        tvDeclinedReports = findViewById(R.id.tvDeclinedReports);</span>
+<span class="fc" id="L52">        tvRecentMatches = findViewById(R.id.tvRecentMatches);</span>
+<span class="fc" id="L53">        tvAnalyticsStatus = findViewById(R.id.tvAnalyticsStatus);</span>
+
+<span class="fc" id="L55">        btnRefreshAnalytics = findViewById(R.id.btnRefreshAnalytics);</span>
+<span class="fc" id="L56">        btnBackUsageAnalytics = findViewById(R.id.btnBackUsageAnalytics);</span>
+
+<span class="fc" id="L58">        btnRefreshAnalytics.setOnClickListener(v -&gt; loadAnalytics());</span>
+<span class="pc" id="L59">        btnBackUsageAnalytics.setOnClickListener(v -&gt; finish());</span>
+
+<span class="fc" id="L61">        loadAnalytics();</span>
+<span class="fc" id="L62">    }</span>
+
+    private void loadAnalytics() {
+<span class="fc" id="L65">        tvAnalyticsStatus.setText(&quot;Loading analytics...&quot;);</span>
+
+<span class="fc" id="L67">        setMetric(tvTotalUsers, &quot;Total Users&quot;, &quot;...&quot;);</span>
+<span class="fc" id="L68">        setMetric(tvPendingUsers, &quot;Pending Users&quot;, &quot;...&quot;);</span>
+<span class="fc" id="L69">        setMetric(tvApprovedUsers, &quot;Approved Users&quot;, &quot;...&quot;);</span>
+<span class="fc" id="L70">        setMetric(tvSuspendedUsers, &quot;Suspended Users&quot;, &quot;...&quot;);</span>
+<span class="fc" id="L71">        setMetric(tvDisabledUsers, &quot;Disabled Users&quot;, &quot;...&quot;);</span>
+<span class="fc" id="L72">        setMetric(tvDeclinedUsers, &quot;Declined Users&quot;, &quot;...&quot;);</span>
+<span class="fc" id="L73">        setMetric(tvPendingReports, &quot;Pending Reports&quot;, &quot;...&quot;);</span>
+<span class="fc" id="L74">        setMetric(tvApprovedReports, &quot;Approved Reports&quot;, &quot;...&quot;);</span>
+<span class="fc" id="L75">        setMetric(tvDeclinedReports, &quot;Declined Reports&quot;, &quot;...&quot;);</span>
+<span class="fc" id="L76">        setMetric(tvRecentMatches, &quot;Recent Matches&quot;, &quot;...&quot;);</span>
+
+<span class="fc" id="L78">        fetchUserAnalytics();</span>
+<span class="fc" id="L79">        fetchReportAnalytics();</span>
+<span class="fc" id="L80">        fetchRecentMatches();</span>
+<span class="fc" id="L81">    }</span>
+
+    private void fetchUserAnalytics() {
+<span class="fc" id="L84">        String url = BASE_URL + &quot;/users/all&quot;;</span>
+<span class="fc" id="L85">        Log.d(TAG, &quot;GET &quot; + url);</span>
+
+<span class="fc" id="L87">        StringRequest request = new StringRequest(</span>
+                Request.Method.GET,
+                url,
+                response -&gt; {
+<span class="fc" id="L91">                    Log.d(TAG, &quot;Users analytics response: &quot; + response);</span>
+                    try {
+<span class="fc" id="L93">                        JSONArray users = extractArray(response);</span>
+
+<span class="fc" id="L95">                        int total = users.length();</span>
+<span class="fc" id="L96">                        int pending = 0;</span>
+<span class="fc" id="L97">                        int approved = 0;</span>
+<span class="fc" id="L98">                        int suspended = 0;</span>
+<span class="fc" id="L99">                        int disabled = 0;</span>
+<span class="fc" id="L100">                        int declined = 0;</span>
+
+<span class="fc bfc" id="L102" title="All 2 branches covered.">                        for (int i = 0; i &lt; users.length(); i++) {</span>
+<span class="fc" id="L103">                            JSONObject user = users.optJSONObject(i);</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">                            if (user == null) {</span>
+<span class="nc" id="L105">                                continue;</span>
+                            }
+
+<span class="fc" id="L108">                            String status = user.optString(&quot;status&quot;, &quot;UNKNOWN&quot;).toUpperCase();</span>
+
+<span class="pc bpc" id="L110" title="3 of 6 branches missed.">                            switch (status) {</span>
+                                case &quot;NEED_APPROVAL&quot;:
+<span class="fc" id="L112">                                    pending++;</span>
+<span class="fc" id="L113">                                    break;</span>
+                                case &quot;APPROVED&quot;:
+<span class="fc" id="L115">                                    approved++;</span>
+<span class="fc" id="L116">                                    break;</span>
+                                case &quot;SUSPENDED&quot;:
+<span class="nc" id="L118">                                    suspended++;</span>
+<span class="nc" id="L119">                                    break;</span>
+                                case &quot;DISABLED&quot;:
+<span class="nc" id="L121">                                    disabled++;</span>
+<span class="nc" id="L122">                                    break;</span>
+                                case &quot;DECLINED&quot;:
+<span class="fc" id="L124">                                    declined++;</span>
+<span class="fc" id="L125">                                    break;</span>
+                                default:
+                                    break;
+                            }
+                        }
+
+<span class="fc" id="L131">                        setMetric(tvTotalUsers, &quot;Total Users&quot;, String.valueOf(total));</span>
+<span class="fc" id="L132">                        setMetric(tvPendingUsers, &quot;Pending Users&quot;, String.valueOf(pending));</span>
+<span class="fc" id="L133">                        setMetric(tvApprovedUsers, &quot;Approved Users&quot;, String.valueOf(approved));</span>
+<span class="fc" id="L134">                        setMetric(tvSuspendedUsers, &quot;Suspended Users&quot;, String.valueOf(suspended));</span>
+<span class="fc" id="L135">                        setMetric(tvDisabledUsers, &quot;Disabled Users&quot;, String.valueOf(disabled));</span>
+<span class="fc" id="L136">                        setMetric(tvDeclinedUsers, &quot;Declined Users&quot;, String.valueOf(declined));</span>
+<span class="fc" id="L137">                        tvAnalyticsStatus.setText(&quot;Analytics loaded&quot;);</span>
+<span class="nc" id="L138">                    } catch (Exception e) {</span>
+<span class="nc" id="L139">                        Log.e(TAG, &quot;Failed to parse user analytics&quot;, e);</span>
+<span class="nc" id="L140">                        Toast.makeText(this, &quot;Failed to parse user analytics&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L141">                        tvAnalyticsStatus.setText(&quot;User analytics failed&quot;);</span>
+<span class="fc" id="L142">                    }</span>
+<span class="fc" id="L143">                },</span>
+                error -&gt; {
+<span class="nc bnc" id="L145" title="All 2 branches missed.">                    int statusCode = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="nc" id="L146">                    Log.e(TAG, &quot;Failed to load users analytics. HTTP &quot; + statusCode);</span>
+<span class="nc" id="L147">                    Toast.makeText(this, &quot;Failed to load user analytics: &quot; + statusCode, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L148">                    tvAnalyticsStatus.setText(&quot;User analytics failed&quot;);</span>
+<span class="nc" id="L149">                }</span>
+        );
+
+<span class="fc" id="L152">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L153">    }</span>
+
+    private void fetchReportAnalytics() {
+<span class="fc" id="L156">        String url = BASE_URL + &quot;/reports/all&quot;;</span>
+<span class="fc" id="L157">        Log.d(TAG, &quot;GET &quot; + url);</span>
+
+<span class="fc" id="L159">        StringRequest request = new StringRequest(</span>
+                Request.Method.GET,
+                url,
+                response -&gt; {
+<span class="fc" id="L163">                    Log.d(TAG, &quot;Reports analytics response: &quot; + response);</span>
+                    try {
+<span class="fc" id="L165">                        JSONArray reports = extractArray(response);</span>
+
+<span class="fc" id="L167">                        int pending = 0;</span>
+<span class="fc" id="L168">                        int approved = 0;</span>
+<span class="fc" id="L169">                        int declined = 0;</span>
+
+<span class="fc bfc" id="L171" title="All 2 branches covered.">                        for (int i = 0; i &lt; reports.length(); i++) {</span>
+<span class="fc" id="L172">                            JSONObject report = reports.optJSONObject(i);</span>
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">                            if (report == null) {</span>
+<span class="nc" id="L174">                                continue;</span>
+                            }
+
+<span class="fc" id="L177">                            String status = report.optString(&quot;status&quot;, &quot;UNKNOWN&quot;).toUpperCase();</span>
+
+<span class="pc bpc" id="L179" title="1 of 4 branches missed.">                            switch (status) {</span>
+                                case &quot;IN_REVIEW&quot;:
+<span class="fc" id="L181">                                    pending++;</span>
+<span class="fc" id="L182">                                    break;</span>
+                                case &quot;APPROVED&quot;:
+<span class="fc" id="L184">                                    approved++;</span>
+<span class="fc" id="L185">                                    break;</span>
+                                case &quot;DECLINED&quot;:
+<span class="fc" id="L187">                                    declined++;</span>
+<span class="fc" id="L188">                                    break;</span>
+                                default:
+                                    break;
+                            }
+                        }
+
+<span class="fc" id="L194">                        setMetric(tvPendingReports, &quot;Pending Reports&quot;, String.valueOf(pending));</span>
+<span class="fc" id="L195">                        setMetric(tvApprovedReports, &quot;Approved Reports&quot;, String.valueOf(approved));</span>
+<span class="fc" id="L196">                        setMetric(tvDeclinedReports, &quot;Declined Reports&quot;, String.valueOf(declined));</span>
+<span class="nc" id="L197">                    } catch (Exception e) {</span>
+<span class="nc" id="L198">                        Log.e(TAG, &quot;Failed to parse report analytics&quot;, e);</span>
+<span class="nc" id="L199">                        Toast.makeText(this, &quot;Failed to parse report analytics&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="fc" id="L200">                    }</span>
+<span class="fc" id="L201">                },</span>
+                error -&gt; {
+<span class="nc bnc" id="L203" title="All 2 branches missed.">                    int statusCode = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="nc" id="L204">                    Log.e(TAG, &quot;Failed to load report analytics. HTTP &quot; + statusCode);</span>
+<span class="nc" id="L205">                    Toast.makeText(this, &quot;Failed to load report analytics: &quot; + statusCode, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L206">                }</span>
+        );
+
+<span class="fc" id="L209">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L210">    }</span>
+
+    private void fetchRecentMatches() {
+<span class="fc" id="L213">        String url = BASE_URL + &quot;/matches/count/recent&quot;;</span>
+<span class="fc" id="L214">        Log.d(TAG, &quot;GET &quot; + url);</span>
+
+<span class="fc" id="L216">        StringRequest request = new StringRequest(</span>
+                Request.Method.GET,
+                url,
+                response -&gt; {
+<span class="fc" id="L220">                    Log.d(TAG, &quot;Recent matches response: &quot; + response);</span>
+<span class="fc" id="L221">                    String count = parseCountResponse(response);</span>
+<span class="fc" id="L222">                    setMetric(tvRecentMatches, &quot;Recent Matches&quot;, count);</span>
+<span class="fc" id="L223">                },</span>
+                error -&gt; {
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                    int statusCode = error.networkResponse != null ? error.networkResponse.statusCode : -1;</span>
+<span class="nc" id="L226">                    Log.e(TAG, &quot;Failed to load recent matches. HTTP &quot; + statusCode);</span>
+<span class="nc" id="L227">                    setMetric(tvRecentMatches, &quot;Recent Matches&quot;, &quot;N/A&quot;);</span>
+<span class="nc" id="L228">                }</span>
+        );
+
+<span class="fc" id="L231">        VolleySingleton.getInstance(this).addToRequestQueue(request);</span>
+<span class="fc" id="L232">    }</span>
+
+    private JSONArray extractArray(String response) throws JSONException {
+<span class="pc bpc" id="L235" title="2 of 4 branches missed.">        if (response == null || response.trim().isEmpty()) {</span>
+<span class="nc" id="L236">            return new JSONArray();</span>
+        }
+
+<span class="fc" id="L239">        String trimmed = response.trim();</span>
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">        if (trimmed.startsWith(&quot;[&quot;)) {</span>
+<span class="fc" id="L241">            return new JSONArray(trimmed);</span>
+        }
+
+<span class="nc" id="L244">        JSONObject object = new JSONObject(trimmed);</span>
+<span class="nc" id="L245">        String[] possibleKeys = new String[]{&quot;users&quot;, &quot;reports&quot;, &quot;data&quot;, &quot;results&quot;, &quot;items&quot;, &quot;content&quot;};</span>
+
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        for (String key : possibleKeys) {</span>
+<span class="nc" id="L248">            JSONArray array = object.optJSONArray(key);</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">            if (array != null) {</span>
+<span class="nc" id="L250">                return array;</span>
+            }
+        }
+
+<span class="nc" id="L254">        JSONArray singleItem = new JSONArray();</span>
+<span class="nc" id="L255">        singleItem.put(object);</span>
+<span class="nc" id="L256">        return singleItem;</span>
+    }
+
+    private String parseCountResponse(String response) {
+<span class="pc bpc" id="L260" title="1 of 2 branches missed.">        if (response == null) {</span>
+<span class="nc" id="L261">            return &quot;N/A&quot;;</span>
+        }
+
+<span class="fc" id="L264">        String trimmed = response.trim();</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">        if (trimmed.isEmpty()) {</span>
+<span class="nc" id="L266">            return &quot;N/A&quot;;</span>
+        }
+
+        try {
+<span class="nc" id="L270">            JSONObject object = new JSONObject(trimmed);</span>
+<span class="nc bnc" id="L271" title="All 2 branches missed.">            if (object.has(&quot;count&quot;)) {</span>
+<span class="nc" id="L272">                return String.valueOf(object.optLong(&quot;count&quot;));</span>
+            }
+<span class="nc bnc" id="L274" title="All 2 branches missed.">            if (object.has(&quot;recentMatches&quot;)) {</span>
+<span class="nc" id="L275">                return String.valueOf(object.optLong(&quot;recentMatches&quot;));</span>
+            }
+<span class="nc bnc" id="L277" title="All 2 branches missed.">            if (object.has(&quot;value&quot;)) {</span>
+<span class="nc" id="L278">                return String.valueOf(object.optLong(&quot;value&quot;));</span>
+            }
+<span class="fc" id="L280">        } catch (JSONException ignored) {</span>
+<span class="nc" id="L281">        }</span>
+
+<span class="fc" id="L283">        return trimmed.replace(&quot;\&quot;&quot;, &quot;&quot;);</span>
+    }
+
+    private void setMetric(TextView textView, String label, String value) {
+<span class="pc bpc" id="L287" title="1 of 2 branches missed.">        if (textView != null) {</span>
+<span class="fc" id="L288">            textView.setText(label + &quot;: &quot; + value);</span>
+        }
+<span class="fc" id="L290">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span>Generated by the Android Gradle plugin 8.8.1</div></body></html>
