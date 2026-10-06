@@ -1,6 +1,31 @@
-# Campus Social Matching and Groups App (COM S 3090, team 2_sc_2)
+<div align="center">
 
-An Android app where Iowa State students swipe to match with each other, join interest-based groups, and chat, backed by a Spring Boot server.
+# CAMPUS SOCIAL APP
+
+### Swipe to match, join interest groups, and chat — built for Iowa State students
+
+**Android · Spring Boot · WebSocket**
+
+![App](https://img.shields.io/badge/App-Android%20%C2%B7%20Java-6366F1?style=flat-square)
+![Server](https://img.shields.io/badge/Server-Spring%20Boot-0F172A?style=flat-square)
+![Realtime](https://img.shields.io/badge/Realtime-WebSocket-0891B2?style=flat-square)
+![Team](https://img.shields.io/badge/Team-4%20people-F59E0B?style=flat-square)
+
+Iowa State University · COM S 3090 · Team 2_sc_2 · Spring 2026
+
+[Overview](#overview) · [Architecture](#architecture) · [My role](#my-role) · [Results](#results) · [Limitations](#limitations-and-next-steps)
+
+</div>
+
+---
+
+> **Where it stands — Complete**  
+> 18 Android activities run against the production server, with system tests and a coverage report.  
+> This is the preserved copy of the course GitLab repository, with all branches.
+
+| Activities | My commits | User roles | Team |
+| :---: | :---: | :---: | :---: |
+| **18** | **107** | **3** | **4** |
 
 | | |
 |---|---|
@@ -16,6 +41,21 @@ Originally hosted on the Iowa State GitLab; this is the preserved copy with all 
 - **Problem:** even on one campus it is hard to find people or clubs that share your interests. The app lets students browse profiles, match, and move into group chats built around hobbies.
 - **Three user types:** students (profile, swipe, match, join groups, report), group moderators (approve or remove members, handle reports), and administrators (approve sign-ups, manage reports and accounts).
 - **Architecture:** Android app ↔ REST and WebSocket ↔ Spring Boot ↔ database. Backend domains: users, matches, groups, group members, conversations, messages, notifications, reports, user images.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A["Android app · Java"] -->|"REST · Volley"| S["Spring Boot server"]
+    A <-->|"WebSocket · chat and notifications"| S
+    S --> D[("Database")]
+    subgraph Roles
+      U["Student"]
+      M["Group moderator"]
+      AD["Administrator"]
+    end
+    Roles --> A
+```
 
 ## My role
 
