@@ -1,15 +1,11 @@
 <div align="center">
 
-# CAMPUS SOCIAL APP
+<img src="assets/banner.svg" alt="CAMPUS SOCIAL APP — Swipe to match, join interest groups, and chat — built for Iowa State students" width="100%">
 
-### Swipe to match, join interest groups, and chat — built for Iowa State students
-
-**Android · Spring Boot · WebSocket**
-
-![App](https://img.shields.io/badge/App-Android%20%C2%B7%20Java-6366F1?style=flat-square)
-![Server](https://img.shields.io/badge/Server-Spring%20Boot-0F172A?style=flat-square)
-![Realtime](https://img.shields.io/badge/Realtime-WebSocket-0891B2?style=flat-square)
-![Team](https://img.shields.io/badge/Team-4%20people-F59E0B?style=flat-square)
+![App](https://img.shields.io/badge/App-Android%20%C2%B7%20Java-C8102E?style=flat-square&labelColor=7C0A1E)
+![Server](https://img.shields.io/badge/Server-Spring%20Boot-7C0A1E?style=flat-square&labelColor=7C0A1E)
+![Realtime](https://img.shields.io/badge/Realtime-WebSocket-B8860B?style=flat-square&labelColor=7C0A1E)
+![Team](https://img.shields.io/badge/Team-4%20people-9B0D23?style=flat-square&labelColor=7C0A1E)
 
 Iowa State University · COM S 3090 · Team 2_sc_2 · Spring 2026
 
@@ -45,6 +41,7 @@ Originally hosted on the Iowa State GitLab; this is the preserved copy with all 
 ## Architecture
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#C8102E", "primaryTextColor": "#ffffff", "primaryBorderColor": "#7C0A1E", "lineColor": "#94A3B8", "secondaryColor": "#C8102E", "tertiaryColor": "#7C0A1E", "clusterBkg": "#F8FAFC", "clusterBorder": "#94A3B8", "edgeLabelBackground": "#F1F5F9", "fontFamily": "ui-sans-serif, system-ui, sans-serif"}}}%%
 flowchart LR
     A["Android app · Java"] -->|"REST · Volley"| S["Spring Boot server"]
     A <-->|"WebSocket · chat and notifications"| S
