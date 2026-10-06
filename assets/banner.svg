@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 280" role="img" aria-label="CAMPUS SOCIAL APP">
+<title>CAMPUS SOCIAL APP</title>
+<style>
+.kick{font:700 15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:3px;fill:#F1BE48}
+.title{font:800 56px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:1.5px;fill:#ffffff}
+.tag{font:500 21px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;fill:#ffffff;opacity:.86}
+.m{font:500 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace} .mb{font:700 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace} .mbig{font:800 20px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif} .big{font:800 30px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif} .term{font:500 15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.bar{fill:#F1BE48}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7C0A1E"/><stop offset="1" stop-color="#C8102E"/></linearGradient></defs>
+<rect width="1200" height="280" rx="20" fill="url(#g)"/>
+<rect class="bar" x="64" y="62" width="44" height="5" rx="2.5"/>
+<text x="64" y="100" class="kick">ANDROID · SPRING BOOT · WEBSOCKET</text>
+<text x="64" y="158" class="title">CAMPUS SOCIAL APP</text>
+<text x="64" y="196" class="tag">Swipe to match, join interest groups, and chat — built</text>
+<text x="64" y="224" class="tag">for Iowa State students</text>
+<g transform="translate(810,50)"><rect x="110" y="-6" width="120" height="192" rx="20" fill="#0B1220" stroke="#ffffff" stroke-opacity=".35" stroke-width="2"/><rect x="122" y="16" width="96" height="96" rx="12" fill="#C8102E" /><path d="M170 86 c-26 -18 -30 -40 -14 -46 c8 -3 14 2 14 8 c0 -6 6 -11 14 -8 c16 6 12 28 -14 46z" fill="#ffffff"/><circle cx="146" cy="146" r="16" fill="#ffffff" opacity=".18"/><circle cx="194" cy="146" r="16" fill="#F1BE48"/><text x="146" y="152" class="mb" text-anchor="middle" fill="#fff">✕</text><text x="194" y="152" class="mb" text-anchor="middle" fill="#1C1917">♥</text><rect x="0" y="30" width="92" height="34" rx="12" fill="#ffffff" opacity=".14"/><text x="14" y="52" class="m" text-anchor="start" fill="#fff">Hi! 👋</text><rect x="248" y="84" width="92" height="34" rx="12" fill="#F1BE48" /><text x="262" y="106" class="mb" text-anchor="start" fill="#1C1917">Join us?</text></g>
+</svg>
